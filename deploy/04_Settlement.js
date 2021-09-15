@@ -25,10 +25,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         from: deployer,
         log: true,
     });
+    const { address: orderBookMargin } = await deterministic("OrderBookMargin", {
+        from: deployer,
+        log: true,
+    });
 
     await deploy("Settlement", {
         contract,
-        args: [chainId, orderBook, sovrynSwapNetwork],
+        args: [chainId, orderBook, orderBookMargin, sovrynSwapNetwork],
         from: deployer,
         log: true,
         gasLimit: 5000000,

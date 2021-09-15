@@ -3,3 +3,5 @@ deployments
 artifacts
 cache
 .env
+public/dist
+secret
