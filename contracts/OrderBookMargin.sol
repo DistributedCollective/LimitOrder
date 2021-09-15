@@ -9,7 +9,7 @@ import "./libraries/EIP712.sol";
 import "./libraries/Bytes32Pagination.sol";
 
 
-contract OrderBook {
+contract OrderBookMargin {
     using MarginOrders for MarginOrders.Order;
     using Bytes32Pagination for bytes32[];
 
