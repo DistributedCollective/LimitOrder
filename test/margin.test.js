@@ -5,19 +5,19 @@ const getContract = require("./helpers/getContract");
 const { parseEther } = ethers.utils;
 const MarginOrder = require('./helpers/MarginOrder');
 
-var iLoanTokenAddress, loanTokenAddress, collateralTokenAddress;
+var iLoanTokenAddress, collateralTokenAddress;
 
 describe("Margin Order", async () => {
     beforeEach(async () => {
         iLoanTokenAddress = "0x74e00a8ceddc752074aad367785bfae7034ed89f"; //iSUSD
-        loanTokenAddress = "0xcb46c0ddc60d18efeb0e586c17af6ea36452dae0"; //DOC
+        // loanTokenAddress = "0xcb46c0ddc60d18efeb0e586c17af6ea36452dae0"; //DOC
         collateralToken = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1"; //XUSD
     });
 
     const createMarginOrder = async (
         signer,
         leverageAmount,
-        loanTokenAddress,
+        iLoanTokenAddress,
         loanTokenSent,
         collateralTokenSent,
         collateralTokenAddress,
@@ -27,19 +27,21 @@ describe("Margin Order", async () => {
         createdTimestamp,
     ) => {
         const settlement = await getContract("Settlement", signer);
-        const loanToken = await ethers.getContractAt("TestToken", loanTokenAddress, signer);
         if (Number(loanTokenSent) > 0) {
+            const c = new ethers.Contract(iLoanTokenAddress);
+            const loanTokenAddress = await c.loanTokenAddress();
+            const loanToken = await ethers.getContractAt("TestToken", loanTokenAddress, signer);
             await loanToken.approve(settlement.address, loanTokenSent);
         }
-        const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
         if (Number(collateralTokenSent) > 0) {
+            const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
             await collateralToken.approve(settlement.address, collateralTokenSent);
         }
 
         const order = new MarginOrder(
             "0x0000000000000000000000000000000000000000000000000000000000000000",
             leverageAmount,
-            loanTokenAddress,
+            iLoanTokenAddress,
             loanTokenSent,
             collateralTokenSent,
             collateralTokenAddress,
