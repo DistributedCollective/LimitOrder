@@ -18,7 +18,8 @@ const app = express();
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.networkUrl);
 const relayer = new ethers.Wallet(relayerAcc.privateKey, provider);
-const contract = new ethers.Contract(config.contracts.orderBook, orderBookABI);
+const orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, provider);
+const settlementContract = new ethers.Contract(config.contracts.settlement, settlementABI, provider);
 const web3 = new Web3(config.networkUrl);
 
 app.use(bodyParser.json());
@@ -90,10 +91,10 @@ app.post('/api/createOrder', async (req, res) => {
             deadline,
         );
         const orderMsg = order.messageHash(config.chainId, config.contracts.orderBook);
-        console.log('orderMsg', orderMsg);
-        console.log('sign', {v, r, s});
+        // console.log('orderMsg', orderMsg);
+        // console.log('sign', {v, r, s});
         const signature = ethers.utils.joinSignature({ v, r, s });
-        console.log('signature', signature);
+        // console.log('signature', signature);
 
         const signer = web3.eth.accounts.recover(orderMsg, signature, true);
         
@@ -145,12 +146,53 @@ app.post('/api/cancelOrder', async (req, res) => {
         const tx = await provider.sendTransaction(data);
         // console.log(tx);
         const receipt = await tx.wait();
-        console.log(receipt);
+        // console.log(receipt);
         
         res.status(200).json({
             success: true,
             data: receipt
         })
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({error: e});
+    }
+});
+
+app.get('/api/orders/:hash', async (req, res) => {
+    try {
+        const orderHash = req.params.hash;
+        const {
+            maker,
+            fromToken,
+            toToken,
+            amountIn,
+            amountOutMin,
+            recipient,
+            deadline,
+            v,
+            r,
+            s
+        } = await orderBookContract.orderOfHash(orderHash);
+        const order = {
+            maker,
+            fromToken,
+            toToken,
+            amountIn: Number(amountIn),
+            amountOutMin: Number(amountOutMin),
+            recipient,
+            deadline: Number(deadline),
+            v,
+            r,
+            s
+        };
+        order.canceled = await settlementContract.canceledOfHash(order.maker, orderHash);
+        filledAmount = await settlementContract.filledAmountInOfHash[orderHash];
+        order.filledAmount = filledAmount != null ? Number(filledAmount) : 0;
+        
+        res.status(200).json({
+            success: true,
+            data: order
+        });
     } catch (e) {
         console.log(e);
         res.status(500).json({error: e});

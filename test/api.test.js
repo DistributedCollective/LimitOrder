@@ -14,7 +14,7 @@ const Order = require('../src/Order');
 const helpers = require("./helpers");
 
 // const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
-const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(new Date('2021-09-14').getTime() / 1000 + hoursFromNow * 3600));
+const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(new Date('2021-09-15').getTime() / 1000 + hoursFromNow * 3600));
 
 const privateKey = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
 const privateKeyOwner = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
@@ -27,7 +27,7 @@ const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 web3.eth.accounts.wallet.add(account);
 web3.eth.defaultAccount = account.address;
 
-async function createOrder_old(){
+async function createOrder(){
     const apiUrl = 'http://localhost:3001/api/createOrder';
     
     const contract = new ethers.Contract(config.contracts.orderBook, orderBookAbi, trader);
@@ -39,12 +39,11 @@ async function createOrder_old(){
     const toTokenContract = new ethers.Contract(toToken.address, ERC20Abi, provider);
 
     const ownerBal = await toTokenContract.balanceOf(owner.address);
-    console.log('balance trader', Number(await toTokenContract.balanceOf(trader.address)));
-    console.log('balance taker', Number(ownerBal));
-    // return;// just check balance
+    console.log('balance trader', trader.address, Number(await toTokenContract.balanceOf(trader.address)));
+    console.log('balance taker', owner.address, Number(ownerBal));
 
-    // await owner.sendTransaction({ to: trader.address, value: ethers.utils.parseEther("0.01"),gasLimit:50000 });
-    // await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
+    await owner.sendTransaction({ to: trader.address, value: ethers.utils.parseEther("0.01"),gasLimit:50000 });
+    await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
 
     const allowance = await contractToken.allowance(trader.address, config.contracts.settlement,{gasLimit:200000});
     console.log("pre allowance", Number(allowance))
@@ -59,114 +58,10 @@ async function createOrder_old(){
         trader.address,
         getDeadline(24),
     );
-    const args = await order.toArgs(config.chainId, config.contracts.orderBook, privateKey);
-    // console.log(args);
-    const unsignedTx = await contract.populateTransaction.createOrder(args);
-    
-    const nonce = await trader.getTransactionCount();
-    const tx = {
-        ...unsignedTx,
-        gasLimit: 600000,
-        gasPrice: ethers.utils.parseUnits('10', 'gwei'),
-        nonce,
-    };
-    // console.log(req);
-    const signedTx = await trader.signTransaction(tx);
-
-    try {
-        console.log('order hash', await order.hash());
-        const { status, data } = await axios.post(apiUrl, {
-            data: signedTx,
-            from: trader.from
-        }, { json: true });
-
-        console.log(data);
-    } catch(e) {
-        console.log(e);
-    }
-    
-}
-
-async function createOrderWeb3(){
-    const apiUrl = 'http://localhost:3001/api/createOrder';
-    
-    const contract = new ethers.Contract(config.contracts.orderBook, orderBookAbi, trader);
-    const fromToken = SOV[config.chainId];
-    const toToken = XUSD[config.chainId];
-    const amountIn = ethers.utils.parseEther('10');
-
-    const contractToken = new ethers.Contract(fromToken.address, ERC20Abi, provider);
-    const toTokenContract = new ethers.Contract(toToken.address, ERC20Abi, provider);
-
-    // const ownerBal = await toTokenContract.balanceOf(owner.address);
-    // console.log('balance trader', trader.address, Number(await toTokenContract.balanceOf(trader.address)));
-    // console.log('balance taker', owner.address, Number(ownerBal));
-
-    // await owner.sendTransaction({ to: trader.address, value: ethers.utils.parseEther("0.01"),gasLimit:50000 });
-    // await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
-
-    // const allowance = await contractToken.allowance(trader.address, config.contracts.settlement,{gasLimit:200000});
-    // console.log("pre allowance", Number(allowance))
-    // await contractToken.connect(trader).approve(config.contracts.settlement, amountIn.add(allowance), {gasLimit:200000});
-
-    const order = new Order(
-        trader.address,
-        fromToken.address,
-        toToken.address,
-        amountIn,
-        ethers.utils.parseEther('0.003'),
-        trader.address,
-        getDeadline(24),
-    );
-
-    const chainId = config.chainId;
-
-    const msg = order.messageHash(chainId, config.contracts.orderBook);
-    console.log(msg);
-    const signature = await web3.eth.personal.sign(msg, trader.address);
-
-    console.log(signature);
-    const sig = ethers.utils.splitSignature(signature);
-    console.log(sig)
-    console.log(web3.currentProvider)
-
-    // web3.currentProvider.send({
-    //     method: 'eth_sign',
-    //     params: [trader.address, msg],
-    //     from: trader.address
-    // }, (err, sig) => {
-    //     console.log(err, sig);
-    //     console.log(ethers.utils.splitSignature(sig.result))
-    // });
-
-    // return;
-
-    const args = [
-        order.maker,
-        order.fromToken,
-        order.toToken,
-        order.amountIn,
-        order.amountOutMin,
-        order.recipient,
-        order.deadline,
-        sig.v,
-        sig.r,
-        sig.s,
-    ];
+    const args = await order.toArgs(config.chainId, config.contracts.orderBook, "0x" + privateKey);
 
     console.log(args);
     const unsignedTx = await contract.populateTransaction.createOrder(args);
-
-    
-    // const nonce = await trader.getTransactionCount();
-    // const tx = {
-    //     ...unsignedTx,
-    //     gasLimit: 600000,
-    //     gasPrice: ethers.utils.parseUnits('10', 'gwei'),
-    //     nonce
-    // };
-    // // console.log(req);
-    // const signedTx = await trader.signTransaction(tx);
 
     try {
         console.log('order hash', await order.hash());
@@ -183,35 +78,60 @@ async function createOrderWeb3(){
 }
 
 async function cancelOrder(orderHash) {
-    const apiUrl = 'http://localhost:3001/api/cancelOrder';
+    const contract = new ethers.Contract(config.contracts.settlement, settlementAbi, trader);
+    const unsignedTx = await contract.populateTransaction.cancelOrder(orderHash);
     
-    // const contract = new ethers.Contract(config.contracts.settlement, settlementAbi, trader);
-    // const unsignedTx = await contract.populateTransaction.cancelOrder(orderHash);
-    
-    // const nonce = await trader.getTransactionCount();
-    // const tx = {
-    //     ...unsignedTx,
-    //     gasLimit: 100000,
-    //     gasPrice: ethers.utils.parseUnits('1', 'gwei'),
-    //     nonce
-    // };
-    // console.log(tx);
-    // const signedTx = await trader.signTransaction(tx);
-    // const { from, ...withoutFrom } = tx;
-    // console.log(Tx.serialize(withoutFrom));
+    const nonce = await trader.getTransactionCount();
+    const tx = {
+        ...unsignedTx,
+        gasLimit: 100000,
+        gasPrice: ethers.utils.parseUnits('1', 'gwei'),
+        nonce
+    };
+    console.log(tx);
+    const sent = await trader.sendTransaction(tx);
+    console.log('sent tx', sent);
+    const receipt = await sent.wait();
+    console.log('receipt', receipt);
+}
 
-    try {
-        const { status, data } = await axios.post(apiUrl, {
-            data: orderHash,
-            from: trader.address
-        }, { json: true });
+async function getCanceledHashes() {
+    const settlement = new ethers.Contract(config.contracts.settlement, settlementAbi, provider);
+    const filter = settlement.filters.OrderCanceled(null);
+    const events = await settlement.queryFilter(filter);
+    return events.map(event => event.args && event.args[0]).filter(h => !!h);
+}
 
-        console.log(data);
-    } catch(e) {
-        console.log(e);
+async function listAllOpenOrders() {
+    const orderBook = new ethers.Contract(config.contracts.orderBook, orderBookAbi, provider);
+    const total = (await orderBook.numberOfAllHashes()).toNumber();
+    const pageSize = 20;
+    const openHashes = [];
+    const canceled = await getCanceledHashes();
+    const canceledHashes = (canceled || []).reduce((obj, hash) => ({
+        ...obj,
+        [hash]: 1
+    }), {});
+    console.log('canceledHashes', canceledHashes);
+
+    for (let page = 0; page * pageSize < total; page++) {
+        const hashes = await orderBook.allHashes(page, pageSize);
+        openHashes.push(
+            ...(hashes || []).filter(h => h != ethers.constants.HashZero && !canceledHashes[h])
+        );
     }
+    
+    console.log(openHashes);
+    if (openHashes.length > 0) {
+        const orderHash = openHashes[0];
+        const url = `${config.baseAPIUrl}/api/orders/${orderHash}`;
+        const res = await axios.get(url, { json: true });
+        console.log('order detail of', orderHash);
+        console.log(res && res.data);
+    }
+
 }
 
 // createOrder();
 // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
-createOrderWeb3();
+listAllOpenOrders();

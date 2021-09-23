@@ -31,7 +31,7 @@ contract TestSovrynSwap {
 	/**
 	 * calculates the return tokens when swapping _amount, makes sure the return is bigger than _minReturn,
 	 * mints and burns the test tokens accordingly.
-	 * */
+	 **/
 	function convertByPath(
 		IERC20[] calldata _path,
 		uint256 _amount,

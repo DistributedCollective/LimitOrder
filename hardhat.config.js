@@ -33,18 +33,6 @@ module.exports = {
             live: false,
             saveDeployments: true,
         },
-        // kovan: {
-        //     url: "https://eth-kovan.alchemyapi.io/v2/PMRs9b7XcmbELUeDN8zF_ZbKY5W4ktW2",
-        //     accounts: [process.env.PRIVATE_KEY],
-        // },
-        // rinkeby: {
-        //     url: "https://eth-rinkeby.alchemyapi.io/v2/OJZiZG5_0djOzypR6uz3tlam1dlIgvBS",
-        //     accounts: [process.env.PRIVATE_KEY],
-        // },
-        // mainnet: {
-        //     url: "https://eth-mainnet.alchemyapi.io/v2/XJnOcVECGudg6TXd78CsRXl-cFpuunzZ",
-        //     accounts: [process.env.PRIVATE_KEY],
-        // },
         rsktestnet: {
              url: 'https://testnet.sovryn.app/rpc',
              accounts: [process.env.PRIVATE_KEY],

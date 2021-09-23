@@ -3,7 +3,6 @@ const { XUSD, SOV } = require("./tokens");
 const helpers = require("./helpers");
 const getContract = require("./helpers/getContract");
 const { parseEther } = ethers.utils;
-const sSNAbi = require('./ssnabi.json');
 
 var sovrynSwapNetworkAdr, orderG, fromToken, toToken;
 

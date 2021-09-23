@@ -2,7 +2,7 @@ const { ethers, getChainId, deployments, getNamedAccounts } = require("hardhat")
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 class MarginOrder {
-    static ORDER_TYPEHASH = "0x125b609ee8968d7276cb80e662bf0d49e982bf074314f8b1e7b5931a3d946934";
+    static ORDER_TYPEHASH = "0xe30dcb91507ed7c8a9a2019b56e407eee8294529022e84f18b5420374e178404";
 
     constructor(
         loanId,
@@ -35,6 +35,7 @@ class MarginOrder {
             ethers.utils.defaultAbiCoder.encode(
                 [
                     "bytes32",
+                    "bytes32",
                     "uint256",
                     "address",
                     "uint256",
@@ -47,7 +48,7 @@ class MarginOrder {
                     "uint256",
                 ],
                 [
-                    Order.ORDER_TYPEHASH,
+                    MarginOrder.ORDER_TYPEHASH,
                     overrides.loanId || this.loanId,
                     overrides.leverageAmount || this.leverageAmount,
                     overrides.loanTokenAddress || this.loanTokenAddress,
@@ -73,7 +74,7 @@ class MarginOrder {
 
         const chainId = await getChainId();
         const domain = {
-            name: "OrderBook",
+            name: "OrderBookMargin",
             version: "1",
             chainId,
             verifyingContract: address,
@@ -100,7 +101,7 @@ class MarginOrder {
             loanTokenSent: overrides.loanTokenSent || this.loanTokenSent,
             collateralTokenSent: overrides.collateralTokenSent || this.collateralTokenSent,
             collateralTokenAddress: overrides.collateralTokenAddress || this.collateralTokenAddress,
-            address: overrides.trader || this.trader.address,
+            trader: overrides.trader || this.trader.address,
             minReturn: overrides.minReturn || this.minReturn,
             loanDataBytes: overrides.loanDataBytes || this.loanDataBytes,
             deadline: overrides.deadline || this.deadline,

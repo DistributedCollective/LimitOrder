@@ -9,6 +9,7 @@ var iLoanTokenAddress, collateralTokenAddress;
 
 describe("Margin Order", async () => {
     beforeEach(async () => {
+        await deployments.fixture();
         iLoanTokenAddress = "0x74e00a8ceddc752074aad367785bfae7034ed89f"; //iSUSD
         // loanTokenAddress = "0xcb46c0ddc60d18efeb0e586c17af6ea36452dae0"; //DOC
         collateralToken = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1"; //XUSD
@@ -26,6 +27,18 @@ describe("Margin Order", async () => {
         deadline,
         createdTimestamp,
     ) => {
+        console.log({
+            signer,
+        leverageAmount,
+        iLoanTokenAddress,
+        loanTokenSent,
+        collateralTokenSent,
+        collateralTokenAddress,
+        minReturn,
+        loanDataBytes,
+        deadline,
+        createdTimestamp,
+        })
         const settlement = await getContract("Settlement", signer);
         if (Number(loanTokenSent) > 0) {
             const c = new ethers.Contract(iLoanTokenAddress);
@@ -39,7 +52,7 @@ describe("Margin Order", async () => {
         }
 
         const order = new MarginOrder(
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            ethers.constants.HashZero,
             leverageAmount,
             iLoanTokenAddress,
             loanTokenSent,
@@ -52,8 +65,10 @@ describe("Margin Order", async () => {
             createdTimestamp,
         );
 
-        const orderBook = await getContract("OrderBook", signer);
-        const tx = await orderBook.createOrder(await order.toArgs(overrides));
+        const orderBook = await getContract("OrderBookMargin", signer);
+        const args = await order.toArgs();
+        console.log(args)
+        const tx = await orderBook.createOrder(args);
         return { order, tx };
     };
 
@@ -67,20 +82,18 @@ describe("Margin Order", async () => {
             iLoanTokenAddress,
             parseEther("0"),
             parseEther("100"),
-            collateralTokenAddress,
+            collateralToken,
             parseEther("500"),
-            "0x0",
+            ethers.constants.HashZero,
             getDeadline(24),
-            ethers.BigNumber.from(Date.now() / 1000),
+            ethers.BigNumber.from(Math.floor(Date.now() / 1000)),
         );
         console.log(tx);
         const hash = await order.hash();
-        console.log("order created");
-        console.log(hash);
+        console.log("order created", hash);
 
-        await helpers.expectToDeepEqual(await order.toArgs(), await orderBook.orderOfHash(hash));
-
+        console.log(await orderBook.orderOfHash(hash));
         console.log(await orderBook.hashesOfTrader(users[0].address, 0, 10));
-        console.log(await orderBook.hashesOfCollateralToken(collateralTokenAddress, 0, 10));
+        console.log(await orderBook.hashesOfCollateralToken(collateralToken, 0, 10));
     });
 });

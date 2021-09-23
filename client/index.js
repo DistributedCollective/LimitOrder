@@ -4,6 +4,7 @@ const ethers = require('ethers');
 const axios = require('axios');
 const config = require('../src/config');
 const { abi: orderBookAbi } = require('../deployments/localhost/OrderBook.json');
+const { abi: settlementAbi } = require('../deployments/localhost/Settlement.json');
 const ERC20Abi = require("../src/ERC20.json");
 const SOV = "0x6a9A07972D07e58F0daf5122d11E069288A375fb";
 const XUSD = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1";
@@ -56,12 +57,14 @@ function Order(maker,
     }
 }
 
-let web3, bal = 0, account, createOrderBtn;
+let web3, bal = 0, account, createOrderBtn, cancelOrderBtn;
 $(document).ready(() => {
     if (typeof window.ethereum !== 'undefined') {
         connectWallet();
         createOrderBtn = $('#createOrder');
+        cancelOrderBtn = $('#cancelOrder');
         createOrderBtn.on('click', createOrder);
+        cancelOrderBtn.on('click', cancelOrder);
     } else {
         alert('Metamask is not found!');
     }
@@ -87,7 +90,8 @@ async function connectWallet() {
     });
 }
 
-const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
+// const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
+const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(new Date('2021-09-15').getTime() / 1000 + hoursFromNow * 3600));
 
 async function createOrder() {
     const apiUrl = `${config.baseAPIUrl}/api/createOrder`;
@@ -164,6 +168,38 @@ async function createOrder() {
         showMsg(e);
         console.log(e);
         createOrderBtn.removeAttr('disabled');
+    }
+}
+
+async function cancelOrder() {
+    try {
+        const orderHash = prompt('Enter order hash');
+        if (orderHash) {
+            clearMsg();
+            cancelOrderBtn.attr('disabled', 'disabled');
+       
+            const contract = new web3.eth.Contract(settlementAbi, config.contracts.settlement);
+            const txData = await contract.methods.cancelOrder(orderHash).encodeABI();
+            const tx = await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                data: txData,
+                gasLimit: 100000,
+                gasPrice: ethers.utils.parseUnits('10', 'gwei'),
+            }, (err, txHash) => {
+                err && console.log(err);
+                if (txHash) {
+                    showMsg('tx hash: ', txHash);
+                }
+            });
+
+            showMsg('receipt', JSON.stringify(tx, null, 2));
+        }
+    } catch (e) {
+        showMsg(e);
+        console.log(e);
+    } finally {
+        cancelOrderBtn.removeAttr('disabled');
     }
 }
 
