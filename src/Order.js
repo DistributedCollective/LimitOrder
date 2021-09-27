@@ -2,7 +2,7 @@ const ethers = require('ethers');
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 module.exports = class Order {
-    static ORDER_TYPEHASH = "0x7c228c78bd055996a44b5046fb56fa7c28c66bce92d9dc584f742b2cd76a140f";
+    static ORDER_TYPEHASH = "0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c";
   
     constructor(
         maker,
@@ -11,7 +11,8 @@ module.exports = class Order {
         amountIn,
         amountOutMin,
         recipient = maker,
-        deadline
+        deadline,
+        created
     ) {
         this.maker = maker;
         this.fromToken = fromToken;
@@ -20,6 +21,7 @@ module.exports = class Order {
         this.amountOutMin = amountOutMin;
         this.recipient = recipient;
         this.deadline = deadline;
+        this.created = created;
     }
 
     async hash() {
@@ -34,6 +36,7 @@ module.exports = class Order {
                     "uint256",
                     "address",
                     "uint256",
+                    "uint256",
                 ],
                 [
                     Order.ORDER_TYPEHASH,
@@ -44,6 +47,7 @@ module.exports = class Order {
                     this.amountOutMin,
                     this.recipient,
                     this.deadline,
+                    this.created,
                 ]
             )
         );
@@ -65,6 +69,7 @@ module.exports = class Order {
                 { name: "amountOutMin", type: "uint256" },
                 { name: "recipient", type: "address" },
                 { name: "deadline", type: "uint256" },
+                { name: "created", type: "uint256" },
             ],
         };
         const value = {
@@ -75,6 +80,7 @@ module.exports = class Order {
             amountOutMin: this.amountOutMin,
             recipient: this.recipient,
             deadline: this.deadline,
+            created: this.created,
         };
 
         return _TypedDataEncoder.hash(domain, types, value);
@@ -95,6 +101,7 @@ module.exports = class Order {
             this.amountOutMin,
             this.recipient,
             this.deadline,
+            this.created,
             v,
             r,
             s,

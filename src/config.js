@@ -4,7 +4,7 @@ module.exports = {
     baseAPIUrl: 'http://localhost:3001',
     networkUrl: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0x86391fa44418013ca7A4dbeBc7F0a75b4Ad12c28',
-        orderBook: '0x04Fd6Bd7b0d43606F0cd9f2679AfBd6A26D8AE53'
+        settlement: '0xEd73F86F06F419BF965CEa2d0cb852D9c87cAee5',
+        orderBook: '0xb30fCeE20313AAdb88A22fF06B1067170A7c481a'
     }
 };

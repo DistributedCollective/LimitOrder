@@ -1,6 +1,5 @@
 const { ethers, network } = require("hardhat");
 const { replaceInFile } = require("replace-in-file");
-const WETH = require("canonical-weth/build/contracts/WETH9.json");
 const { parseEther } = ethers.utils;
 
 const replaceTokenAddress = async (name, address) => {
@@ -16,11 +15,14 @@ const replaceTokenAddress = async (name, address) => {
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const { deploy } = deployments;
+    console.log("deploying 01erc20", network.name);
 
     if (network.name === "hardhat" || network.name === "localhost") {
         const TestWrbtc = await ethers.getContractFactory("TestWrbtc");
         const wrbtcToken = await TestWrbtc.deploy();
         await wrbtcToken.deployed();
+        await replaceTokenAddress("WRBTC", wrbtcToken.address);
+        console.log("wrbtc:", wrbtcToken.address)
 
         const TestToken = await ethers.getContractFactory("TestToken");
         const protocolToken = await TestToken.deploy('PROTOCOL', 'PROTOCOL', 18, parseEther('1000'));

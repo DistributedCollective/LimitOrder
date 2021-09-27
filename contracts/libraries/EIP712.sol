@@ -13,8 +13,5 @@ library EIP712 {
     ) internal pure returns (address) {
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hash));
         return ecrecover(digest, v, r, s);
-        // return ecrecover(keccak256(
-        //     abi.encodePacked("\x19Ethereum Signed Message:\n32", digest)
-        // ), v, r, s);
     }
 }

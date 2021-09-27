@@ -21,10 +21,10 @@ describe("OrderBook", async () => {
             sovrynSwapNetworkAdr=sovrynSwapNetworkAdr.address;
 
             const accounts = await ethers.getSigners();
-            await Promise.all(accounts.map(async (acc) => {
-                console.log(acc.address, Number(await acc.getBalance()));
-                // console.log(acc)
-            }));
+            // await Promise.all(accounts.map(async (acc) => {
+            //     console.log(acc.address, Number(await acc.getBalance()));
+            //     // console.log(acc)
+            // }));
 
             const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
             await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));

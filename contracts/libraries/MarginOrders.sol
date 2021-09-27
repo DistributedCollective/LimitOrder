@@ -44,7 +44,12 @@ library MarginOrders {
     }
 
     function validate(Order memory order) internal {
-        //@ha please add validation for the other variables
-        require(order.deadline > 0, "invalid-deadline");
+        require(order.trader != address(0), "invalid-trader");
+        require(order.loanTokenAddress != address(0), "invalid-loan-token-address");
+        require(order.leverageAmount > 0, "invalid-leverage-amount");
+        require(order.collateralTokenAddress != address(0), "invalid-collateral-token-address");
+        require(order.minReturn > 0, "invalid-min-return");
+        require(order.deadline > now, "invalid-deadline");
+        require(order.createdTimestamp >= now - 1 minutes, "invalid-created");
     }
 }

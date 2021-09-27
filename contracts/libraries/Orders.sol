@@ -3,8 +3,8 @@
 pragma solidity =0.6.12;
 
 library Orders {
-    // keccak256("Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline)")
-    bytes32 public constant ORDER_TYPEHASH = 0x7c228c78bd055996a44b5046fb56fa7c28c66bce92d9dc584f742b2cd76a140f;
+    // keccak256("Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline,uint256 created)")
+    bytes32 public constant ORDER_TYPEHASH = 0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c;
 
     struct Order {
         address maker;
@@ -14,6 +14,7 @@ library Orders {
         uint256 amountOutMin;
         address recipient;
         uint256 deadline;
+        uint256 created;
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -30,7 +31,8 @@ library Orders {
                     order.amountIn,
                     order.amountOutMin,
                     order.recipient,
-                    order.deadline
+                    order.deadline,
+                    order.created
                 )
             );
     }
@@ -43,6 +45,7 @@ library Orders {
         require(order.amountIn > 0, "invalid-amount-in");
         require(order.amountOutMin > 0, "invalid-amount-out-min");
         require(order.recipient != address(0), "invalid-recipient");
-        require(order.deadline > 0, "invalid-deadline");
+        require(order.created >= now - 5 minutes, "invalid-created");
+        require(order.deadline > now, "invalid-deadline");
     }
 }

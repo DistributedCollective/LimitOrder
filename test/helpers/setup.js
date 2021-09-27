@@ -70,12 +70,21 @@ module.exports = async () => {
         const settlement = await getContract("Settlement", signer);
 
         const fromERC20 = await ethers.getContractAt("TestToken", fromToken.address, signer);
-        console.log("allowance before")
-        console.log(Number(await fromERC20.allowance(signer.address, settlement.address)));
+        // console.log("allowance before")
+        // console.log(Number(await fromERC20.allowance(signer.address, settlement.address)));
         await fromERC20.approve(settlement.address, overrides.amountToApprove || amountIn);
-        console.log("allowance after %s -> %s", signer.address, settlement.address);
-        console.log(Number(await fromERC20.allowance(signer.address, settlement.address)));
-        const order = new Order(signer, fromToken, toToken, amountIn, amountOutMin, signer.address, deadline);
+        // console.log("allowance after %s -> %s", signer.address, settlement.address);
+        // console.log(Number(await fromERC20.allowance(signer.address, settlement.address)));
+        const order = new Order(
+            signer,
+            fromToken,
+            toToken,
+            amountIn,
+            amountOutMin,
+            signer.address,
+            deadline,
+            ethers.BigNumber.from(Math.floor(Date.now() / 1000))
+        );
 
         const orderBook = await getContract("OrderBook", signer);
         const tx = await orderBook.createOrder(await order.toArgs(overrides));

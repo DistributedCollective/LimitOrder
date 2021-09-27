@@ -6,6 +6,7 @@ import "./interfaces/ISovrynSwapNetwork.sol";
 import "./interfaces/ISovrynLoanToken.sol";
 import "./libraries/SafeMath.sol";
 import "./interfaces/IERC20.sol";
+import "./interfaces/IWrbtcERC20.sol";
 import "./interfaces/ISettlement.sol";
 import "./libraries/Orders.sol";
 import "./libraries/MarginOrders.sol";
@@ -28,38 +29,23 @@ contract Settlement is ISettlement {
     mapping(address => mapping(bytes32 => bool)) public canceledOfHash;
     // Hash of an order => filledAmountIn
     mapping(bytes32 => uint256) public filledAmountInOfHash;
+    // Hash of user balance
+    mapping(address => uint256) public balanceOf;
 
     address public immutable RBTC_ADDRESS = address(0);
+    address public WRBTC_ADDRESS;
   
     ISovrynSwapNetwork public sovrynSwapNetwork;
     ISovrynLoanToken public sovrynLoanToken;
 
     uint256 public relayerFeePercent = 2;
 
-    event Swap(
-        address indexed _sourceToken,
-        address indexed _targetToken,
-        uint256 _sourceTokenAmount,
-        uint256 _targetTokenAmount,
-        address _sender
-    );
-
-    event MarginTrade(
-        address indexed loanTokenAddress,
-        address indexed collateralTokenAddress,
-        uint256 leverageAmount,
-        uint256 collateralTokenSent,
-        uint256 principalAmount,
-        uint256 collateralAmount,
-        address trader
-    );
-
-
-     constructor(
+    constructor(
         uint256 orderBookChainId,
         address orderBookAddress,
         address marginOrderBookAddress,
-        ISovrynSwapNetwork _sovrynSwapNetwork
+        ISovrynSwapNetwork _sovrynSwapNetwork,
+        address _WRBTC
     ) public {
         DOMAIN_SEPARATOR1 = keccak256(
             abi.encode(
@@ -73,7 +59,7 @@ contract Settlement is ISettlement {
         DOMAIN_SEPARATOR2 = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256("OrderBook"),
+                keccak256("OrderBookMargin"),
                 keccak256("1"),
                 orderBookChainId,
                 marginOrderBookAddress
@@ -81,6 +67,7 @@ contract Settlement is ISettlement {
         );
 
         sovrynSwapNetwork = _sovrynSwapNetwork;
+        WRBTC_ADDRESS = _WRBTC;
     }
 
     
@@ -101,26 +88,42 @@ contract Settlement is ISettlement {
         address signer = EIP712.recover(DOMAIN_SEPARATOR1, hash, args.order.v, args.order.r, args.order.s);
         require(signer != address(0) && signer == args.order.maker, "invalid-signature");
 
-        // Calculates amountOutMin ??
-        //uint256 amountOutMin = (args.order.amountOutMin.mul(args.amountToFillIn) / args.order.amountIn);
-
         uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(args.path, args.order.amountIn);
        
         require(swapbackReturn >= args.order.amountOutMin, "insufficient-amount-out");
-        
-        IERC20(args.path[0]).transferFrom(args.order.maker, address(this), args.order.amountIn);
+
+        IWrbtcERC20 wrbtc = IWrbtcERC20(WRBTC_ADDRESS);
+        if (args.path[0] == WRBTC_ADDRESS) {
+            require(balanceOf[args.order.maker] >= args.order.amountIn, "insufficient-balance");
+            wrbtc.deposit{value: args.order.amountIn}();
+            balanceOf[args.order.maker] -= args.order.amountIn;
+        } else {
+            IERC20(args.path[0]).transferFrom(args.order.maker, address(this), args.order.amountIn);
+        }
 
         uint256 relayerFee = args.order.amountIn.mul(relayerFeePercent).div(1000);
         uint256 actualAmountIn = args.order.amountIn.sub(relayerFee);
+
+        address recipient = args.order.recipient;
+        if (args.path[args.path.length - 1] == WRBTC_ADDRESS) {
+            //change recipient to settlement for unwrap rbtc after swapping
+            recipient = address(this);
+        }
 
         (address sourceToken, address targetToken, uint256 targetTokenAmount) = swapInternal(
             args.path,
             actualAmountIn,
             args.order.amountOutMin,
-            args.order.recipient
+            recipient
         );
 
         IERC20(args.path[0]).transfer(msg.sender, relayerFee);
+
+        if (targetToken == WRBTC_ADDRESS) {
+            //unwrap rbtc then transfer to recipient of order
+            wrbtc.withdraw(targetTokenAmount);
+            args.order.recipient.call{value: targetTokenAmount}("");
+        }
       
         emit Swap(
             address(sourceToken),
@@ -136,6 +139,21 @@ contract Settlement is ISettlement {
         amountOut = targetTokenAmount;
 
         emit OrderFilled(hash, args.amountToFillIn, amountOut);
+    }
+
+    // Fills multiple orders passed as an array
+    function fillOrders(FillOrderArgs[] memory args) public override returns (uint256[] memory amountsOut) {
+        bool filled = false;
+        amountsOut = new uint256[](args.length);
+        for (uint256 i = 0; i < args.length; i++) {
+            // Returns zero of the order wasn't filled
+            amountsOut[i] = fillOrder(args[i]);
+            if (amountsOut[i] > 0) {
+                // At least one order was filled
+                filled = true;
+            }
+        }
+        require(filled, "no-order-filled");
     }
 
     //
@@ -186,6 +204,30 @@ contract Settlement is ISettlement {
         filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(args.order.collateralTokenSent);
 
         emit MarginOrderFilled(hash, principalAmount, collateralAmount);
+    }
+
+    receive() external payable {
+		deposit(msg.sender);
+	}
+
+    function deposit(address to) public payable override {
+        uint256 amount = msg.value;
+        require(amount > 0, "deposit-amount-required");
+        address receiver = msg.sender;
+        if (to != address(0)) {
+            receiver = to;
+        }
+        balanceOf[receiver] += amount;
+        emit Deposit(to, amount);
+    }
+
+    function withdraw(uint256 amount) public override {
+        address payable receiver = msg.sender;
+        require(balanceOf[receiver] >= amount, "insufficient-balance");
+        (bool success, ) = receiver.call{value: amount}("");
+        require(success, "failed-to-transfer");
+        balanceOf[receiver] -= amount;
+        emit Withdrawal(receiver, amount);
     }
 
     // Checks if an order is canceled / already fully filled
@@ -240,20 +282,5 @@ contract Settlement is ISettlement {
         canceledOfHash[msg.sender][hash] = true;
 
         emit OrderCanceled(hash);
-    }
-
-    // Fills multiple orders passed as an array
-    function fillOrders(FillOrderArgs[] memory args) public override returns (uint256[] memory amountsOut) {
-        bool filled = false;
-        amountsOut = new uint256[](args.length);
-        for (uint256 i = 0; i < args.length; i++) {
-            // Returns zero of the order wasn't filled
-            amountsOut[i] = fillOrder(args[i]);
-            if (amountsOut[i] > 0) {
-                // At least one order was filled
-                filled = true;
-            }
-        }
-        require(filled, "no-order-filled");
     }
 }

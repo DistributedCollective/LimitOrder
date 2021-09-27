@@ -4,13 +4,11 @@ const ethers = require('ethers');
 const bodyParser = require('body-parser');
 const Tx = require("@ethersproject/transactions");
 const { keccak256 } = require("@ethersproject/keccak256");
-const { toUtf8Bytes } = require("@ethersproject/strings");
-const { verifyMessage } = require("@ethersproject/wallet");
 const Web3 = require('web3');
 
 const config = require('./config');
-const { abi: orderBookABI } = require('../deployments/localhost/OrderBook.json');
-const { abi: settlementABI } = require('../deployments/localhost/Settlement.json');
+const { abi: orderBookABI } = require('../deployments/rsktestnet/OrderBook.json');
+const { abi: settlementABI } = require('../deployments/rsktestnet/Settlement.json');
 const Order = require('./Order');
 const { relayer: relayerAcc } = require('../secret/account');
 
@@ -79,6 +77,7 @@ app.post('/api/createOrder', async (req, res) => {
             amountOutMin,
             recipient,
             deadline,
+            created,
             v, r, s
         } = decoded.order;
         const order = new Order(
@@ -89,6 +88,7 @@ app.post('/api/createOrder', async (req, res) => {
             amountOutMin,
             recipient,
             deadline,
+            created
         );
         const orderMsg = order.messageHash(config.chainId, config.contracts.orderBook);
         // console.log('orderMsg', orderMsg);
@@ -169,6 +169,7 @@ app.get('/api/orders/:hash', async (req, res) => {
             amountOutMin,
             recipient,
             deadline,
+            created,
             v,
             r,
             s
@@ -181,6 +182,7 @@ app.get('/api/orders/:hash', async (req, res) => {
             amountOutMin: Number(amountOutMin),
             recipient,
             deadline: Number(deadline),
+            created: Number(created),
             v,
             r,
             s

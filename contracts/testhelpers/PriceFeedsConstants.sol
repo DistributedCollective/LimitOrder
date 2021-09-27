@@ -7,7 +7,7 @@
 
 pragma solidity >=0.5.0 <0.6.13;
 
-import "./interfaces/IWrbtcERC20.sol";
+import "../interfaces/IWrbtcERC20.sol";
 import "./openzeppelin/Address.sol";
 
 contract Constants {

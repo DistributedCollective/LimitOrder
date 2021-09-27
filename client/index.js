@@ -3,8 +3,8 @@ const Web3 = require("web3");
 const ethers = require('ethers');
 const axios = require('axios');
 const config = require('../src/config');
-const { abi: orderBookAbi } = require('../deployments/localhost/OrderBook.json');
-const { abi: settlementAbi } = require('../deployments/localhost/Settlement.json');
+const { abi: orderBookAbi } = require('../deployments/rsktestnet/OrderBook.json');
+const { abi: settlementAbi } = require('../deployments/rsktestnet/Settlement.json');
 const ERC20Abi = require("../src/ERC20.json");
 const SOV = "0x6a9A07972D07e58F0daf5122d11E069288A375fb";
 const XUSD = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1";
@@ -15,7 +15,8 @@ function Order(maker,
     amountIn,
     amountOutMin,
     recipient = maker,
-    deadline
+    deadline,
+    created,
 ) {
     this.maker = maker;
     this.fromToken = fromToken;
@@ -24,6 +25,7 @@ function Order(maker,
     this.amountOutMin = amountOutMin;
     this.recipient = recipient;
     this.deadline = deadline;
+    this.created = created;
     
     this.messageHash = function(chainId, contractAddress) {
         const domain = {
@@ -41,6 +43,7 @@ function Order(maker,
                 { name: "amountOutMin", type: "uint256" },
                 { name: "recipient", type: "address" },
                 { name: "deadline", type: "uint256" },
+                { name: "created", type: "uint256" },
             ],
         };
         const value = {
@@ -51,6 +54,7 @@ function Order(maker,
             amountOutMin: this.amountOutMin,
             recipient: this.recipient,
             deadline: this.deadline,
+            created: this.created,
         };
 
         return _TypedDataEncoder.hash(domain, types, value);
@@ -90,8 +94,7 @@ async function connectWallet() {
     });
 }
 
-// const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
-const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(new Date('2021-09-15').getTime() / 1000 + hoursFromNow * 3600));
+const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
 async function createOrder() {
     const apiUrl = `${config.baseAPIUrl}/api/createOrder`;
@@ -131,6 +134,7 @@ async function createOrder() {
             ethers.utils.parseEther('0.003'),
             account,
             getDeadline(24),
+            ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
         const chainId = config.chainId;
         const msg = order.messageHash(chainId, config.contracts.orderBook);
@@ -150,6 +154,7 @@ async function createOrder() {
             order.amountOutMin,
             order.recipient,
             order.deadline,
+            order.created,
             sig.v,
             sig.r,
             sig.s,
@@ -227,6 +232,7 @@ async function signTypeData(order) {
            amountOutMin: web3.utils.toBN(order.amountOutMin).toString(),
            recipient: order.recipient,
            deadline: web3.utils.toBN(order.deadline).toString(),
+           created: web3.utils.toBN(order.created).toString(),
         },
         primaryType: 'Order',
         types: {
@@ -244,6 +250,7 @@ async function signTypeData(order) {
             { name: "amountOutMin", type: "uint256" },
             { name: "recipient", type: "address" },
             { name: "deadline", type: "uint256" },
+            { name: "created", type: "uint256" },
           ],
         },
     });

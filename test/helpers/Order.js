@@ -2,7 +2,7 @@ const { ethers, getChainId, deployments, getNamedAccounts } = require("hardhat")
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 class Order {
-    static ORDER_TYPEHASH = "0x7c228c78bd055996a44b5046fb56fa7c28c66bce92d9dc584f742b2cd76a140f";
+    static ORDER_TYPEHASH = "0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c";
 
     constructor(
         maker,
@@ -11,7 +11,8 @@ class Order {
         amountIn,
         amountOutMin,
         recipient = maker.address,
-        deadline
+        deadline,
+        created,
     ) {
         this.maker = maker;
         this.fromToken = fromToken;
@@ -20,6 +21,7 @@ class Order {
         this.amountOutMin = amountOutMin;
         this.recipient = recipient;
         this.deadline = deadline;
+        this.created = created;
     }
 
     async hash(overrides = {}) {
@@ -34,6 +36,7 @@ class Order {
                     "uint256",
                     "address",
                     "uint256",
+                    "uint256",
                 ],
                 [
                     Order.ORDER_TYPEHASH,
@@ -44,6 +47,7 @@ class Order {
                     overrides.amountOutMin || this.amountOutMin,
                     overrides.recipient || this.recipient,
                     overrides.deadline || this.deadline,
+                    overrides.created || this.created,
                 ]
             )
         );
@@ -72,6 +76,7 @@ class Order {
                 { name: "amountOutMin", type: "uint256" },
                 { name: "recipient", type: "address" },
                 { name: "deadline", type: "uint256" },
+                { name: "created", type: "uint256" },
             ],
         };
         const value = {
@@ -82,6 +87,7 @@ class Order {
             amountOutMin: overrides.amountOutMin || this.amountOutMin,
             recipient: overrides.recipient || this.recipient,
             deadline: overrides.deadline || this.deadline,
+            created: overrides.created || this.created,
         };
 
         const digest = _TypedDataEncoder.hash(domain, types, value);
@@ -106,6 +112,7 @@ class Order {
             overrides.amountOutMin || this.amountOutMin,
             overrides.recipient || this.recipient,
             overrides.deadline || this.deadline,
+            overrides.created || this.created,
             v,
             r,
             s,
