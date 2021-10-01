@@ -3,7 +3,7 @@ const { XUSD, SOV, WRBTC } = require("./tokens");
 const helpers = require("./helpers");
 const getContract = require("./helpers/getContract");
 let sovrynSwapNetworkAdr;
-const { parseEther } = ethers.utils;
+const { parseEther, formatUnits, formatEther } = ethers.utils;
 const sSNAbi = require('./ssnabi.json');
 const Order = require("./helpers/Order");
 
@@ -28,6 +28,10 @@ describe("Settlement", async () => {
             //     console.log(acc.address, Number(await acc.getBalance()));
             //     // console.log(acc)
             // }));
+            await accounts[0].sendTransaction({
+                to: WRBTC[chainId].address,
+                value: parseEther("10")
+            });
 
             const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
             await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));
@@ -157,6 +161,51 @@ describe("Settlement", async () => {
         const receipt2 = await tx2.wait();
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
+        console.log("Order filled: %sWRBTC -> %sXUSD", formatEther(filled.amountIn.toString()), formatUnits(filled.amountOut.toString(), 18));
+        await helpers.expectToEqual(filled.hash, orderG.hash());
+        await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
+        await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
+    });
+
+    it("Should createOrder() XUSD-RBTC", async () => {
+        const { users, chainId, createOrder, getDeadline } = await helpers.setup();
+        const fromToken = XUSD[chainId];
+        const toToken = WRBTC[chainId];
+
+        const { order, tx } = await createOrder(
+            users[0],
+            fromToken,
+            toToken,
+            parseEther('0.1'),
+            parseEther('0.000001'),
+            getDeadline(24)
+        );
+
+        orderG=order;
+        
+        const hash = await order.hash();
+        console.log("order XUSD-RBTC created hash", hash);
+    });
+
+    it("Should fillOrder() XUSD-RBTC", async () => {
+        const {
+            users,
+            fillOrder,
+            filledAmountIn,
+            chainId
+        } = await helpers.setup();
+        const fromToken = XUSD[chainId].address;
+        const toToken = WRBTC[chainId].address;
+        const settlement = await helpers.getContract("Settlement");
+        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+        const path = await sovrynSwapNetwork.conversionPath(fromToken, toToken);
+
+
+        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+        const receipt2 = await tx2.wait();
+        const event = receipt2.logs[receipt2.logs.length - 1];
+        const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
+        console.log("Order filled: %sXUSD -> %sRBTC", formatUnits(filled.amountIn.toString(), 18), formatEther(filled.amountOut.toString()));
         await helpers.expectToEqual(filled.hash, orderG.hash());
         await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
         await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));

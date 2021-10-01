@@ -70,6 +70,31 @@ contract Settlement is ISettlement {
         WRBTC_ADDRESS = _WRBTC;
     }
 
+    receive() external payable {
+        if (msg.sender != WRBTC_ADDRESS) {
+		    deposit(msg.sender);
+        }
+	}
+
+    function deposit(address to) public payable override {
+        uint256 amount = msg.value;
+        require(amount > 0, "deposit-amount-required");
+        address receiver = msg.sender;
+        if (to != address(0)) {
+            receiver = to;
+        }
+        balanceOf[receiver] += amount;
+        emit Deposit(to, amount);
+    }
+
+    function withdraw(uint256 amount) public override {
+        address payable receiver = msg.sender;
+        require(balanceOf[receiver] >= amount, "insufficient-balance");
+        (bool success, ) = receiver.call{value: amount}("");
+        require(success, "failed-to-transfer");
+        balanceOf[receiver] -= amount;
+        emit Withdrawal(receiver, amount);
+    }
     
     // Fills an order by
     // swapping an exact amount of tokens for another token through the path passed as an argument
@@ -204,30 +229,6 @@ contract Settlement is ISettlement {
         filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(args.order.collateralTokenSent);
 
         emit MarginOrderFilled(hash, principalAmount, collateralAmount);
-    }
-
-    receive() external payable {
-		deposit(msg.sender);
-	}
-
-    function deposit(address to) public payable override {
-        uint256 amount = msg.value;
-        require(amount > 0, "deposit-amount-required");
-        address receiver = msg.sender;
-        if (to != address(0)) {
-            receiver = to;
-        }
-        balanceOf[receiver] += amount;
-        emit Deposit(to, amount);
-    }
-
-    function withdraw(uint256 amount) public override {
-        address payable receiver = msg.sender;
-        require(balanceOf[receiver] >= amount, "insufficient-balance");
-        (bool success, ) = receiver.call{value: amount}("");
-        require(success, "failed-to-transfer");
-        balanceOf[receiver] -= amount;
-        emit Withdrawal(receiver, amount);
     }
 
     // Checks if an order is canceled / already fully filled

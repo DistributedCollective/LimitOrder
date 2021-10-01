@@ -63,6 +63,7 @@ app.post('/api/createOrder', async (req, res) => {
         const { data, from } = req.body;
         console.log('data', data);
 
+        ethers.utils.parseTransaction
         let iface = new ethers.utils.Interface(orderBookABI);
         const decoded = iface.decodeFunctionData('createOrder', data);
         if (!decoded || !decoded.order) {
