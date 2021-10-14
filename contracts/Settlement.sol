@@ -11,6 +11,8 @@ import "./interfaces/ISettlement.sol";
 import "./libraries/Orders.sol";
 import "./libraries/MarginOrders.sol";
 import "./libraries/EIP712.sol";
+import "./OrderBook.sol";
+import "./OrderBookMargin.sol";
 
 //todo: remove after testing
 import "hardhat/console.sol";
@@ -26,7 +28,8 @@ contract Settlement is ISettlement {
     bytes32 public immutable DOMAIN_SEPARATOR2;
 
     // Hash of an order => if canceled
-    mapping(address => mapping(bytes32 => bool)) public canceledOfHash;
+    mapping(bytes32 => bool) public canceledOfHash;
+    bytes32[] internal canceledHashes;
     // Hash of an order => filledAmountIn
     mapping(bytes32 => uint256) public filledAmountInOfHash;
     // Hash of user balance
@@ -36,14 +39,15 @@ contract Settlement is ISettlement {
     address public WRBTC_ADDRESS;
   
     ISovrynSwapNetwork public sovrynSwapNetwork;
-    ISovrynLoanToken public sovrynLoanToken;
+    address public orderBookAddress;
+    address public orderBookMarginAddress;
 
     uint256 public relayerFeePercent = 2;
 
     constructor(
         uint256 orderBookChainId,
-        address orderBookAddress,
-        address marginOrderBookAddress,
+        address _orderBookAddress,
+        address _marginOrderBookAddress,
         ISovrynSwapNetwork _sovrynSwapNetwork,
         address _WRBTC
     ) public {
@@ -53,7 +57,7 @@ contract Settlement is ISettlement {
                 keccak256("OrderBook"),
                 keccak256("1"),
                 orderBookChainId,
-                orderBookAddress
+                _orderBookAddress
             )
         );
         DOMAIN_SEPARATOR2 = keccak256(
@@ -62,12 +66,14 @@ contract Settlement is ISettlement {
                 keccak256("OrderBookMargin"),
                 keccak256("1"),
                 orderBookChainId,
-                marginOrderBookAddress
+                _marginOrderBookAddress
             )
         );
 
         sovrynSwapNetwork = _sovrynSwapNetwork;
         WRBTC_ADDRESS = _WRBTC;
+        orderBookAddress = _orderBookAddress;
+        orderBookMarginAddress = _marginOrderBookAddress;
     }
 
     receive() external payable {
@@ -195,26 +201,15 @@ contract Settlement is ISettlement {
         address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, args.order.v, args.order.r, args.order.s);
         require(signer != address(0) && signer == args.order.trader, "invalid-signature");
 
-        IERC20(args.order.collateralTokenAddress).transferFrom(args.order.trader, address(this), args.order.collateralTokenSent);
+        IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
+        collateralToken.transferFrom(args.order.trader, address(this), args.order.collateralTokenSent);
 
         //@ha
         uint256 relayerFee = args.order.collateralTokenSent.mul(relayerFeePercent).div(1000);
         uint256 actualCollateralAmount = args.order.collateralTokenSent.sub(relayerFee);
 
-        ISovrynLoanToken loanToken = ISovrynLoanToken(args.order.loanTokenAddress);
-        ISovrynLoanToken.MarginTradeOrder memory loanOrder = ISovrynLoanToken.MarginTradeOrder(
-            args.order.loanId,
-            args.order.leverageAmount,
-            args.order.loanTokenSent,
-            actualCollateralAmount,
-            args.order.collateralTokenAddress,
-            args.order.trader,
-            args.order.minReturn,
-            args.order.loanDataBytes,
-            args.order.createdTimestamp
-        );
-        (principalAmount, collateralAmount) = loanToken.marginTradeBySig(loanOrder, args.order.v, args.order.r, args.order.s);
-      
+        (principalAmount, collateralAmount) = _marginTrade(args.order, actualCollateralAmount);
+
         emit MarginTrade(
             address(args.order.loanTokenAddress),
             address(args.order.collateralTokenAddress),
@@ -222,8 +217,10 @@ contract Settlement is ISettlement {
             actualCollateralAmount,
             principalAmount,
             collateralAmount,
-            msg.sender
+            args.order.trader
         );
+
+        collateralToken.transfer(msg.sender, relayerFee);
 
         // This line is free from reentrancy issues since UniswapV2Pair prevents from them
         filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(args.order.collateralTokenSent);
@@ -234,17 +231,46 @@ contract Settlement is ISettlement {
     // Checks if an order is canceled / already fully filled
     function _validateStatus(FillOrderArgs memory args, bytes32 hash) internal view {
         require(args.order.deadline >= block.timestamp, "order-expired");
-        require(!canceledOfHash[args.order.maker][hash], "order-canceled");
+        require(!canceledOfHash[hash], "order-canceled");
         require(filledAmountInOfHash[hash].add(args.amountToFillIn) <= args.order.amountIn, "already-filled");
     }
 
     // Checks if an order is canceled / already fully filled
     function _validateMarginStatus(FillMarginOrderArgs memory args, bytes32 hash) internal view {
         require(args.order.deadline >= block.timestamp, "order-expired");
-        require(!canceledOfHash[args.order.trader][hash], "order-canceled");
+        require(!canceledOfHash[hash], "order-canceled");
         require(filledAmountInOfHash[hash].add(args.order.collateralTokenSent) <= args.order.collateralTokenSent, "already-filled");
     }
 
+    function _marginTrade(MarginOrders.Order memory order, uint256 actualCollateralAmount) internal returns (uint256 principalAmount, uint256 collateralAmount) {
+        address loanTokenAdr = order.loanTokenAddress;
+        IERC20(order.collateralTokenAddress).approve(loanTokenAdr, actualCollateralAmount);
+        if (order.loanTokenSent > 0) {
+            address loanTokenAsset = ISovrynLoanToken(loanTokenAdr).loanTokenAddress();
+            IERC20(loanTokenAsset).transferFrom(order.trader, address(this), order.loanTokenSent);
+            IERC20(loanTokenAsset).approve(loanTokenAdr, order.loanTokenSent);
+        }
+
+        bytes memory data = abi.encodeWithSignature("marginTrade(bytes32,uint256,uint256,uint256,address,address,uint256,bytes)", 
+            order.loanId, /// 0 if new loan
+            order.leverageAmount, /// Expected in x * 10**18 where x is the actual leverage (2, 3, 4, or 5).
+            order.loanTokenSent,
+            actualCollateralAmount,
+            order.collateralTokenAddress,
+            order.trader,
+            order.minReturn, // minimum position size in the collateral tokens
+            order.loanDataBytes /// Arbitrary order data.
+        );
+        (bool success, bytes memory result) = loanTokenAdr.call(data);
+        if (!success) {
+            if (result.length == 0) revert();
+            assembly {
+                revert(add(32, result), mload(result))
+            }
+        }
+
+        (principalAmount, collateralAmount) = abi.decode(result, (uint256, uint256));
+    }
     
     // internal functions
     function swapInternal(
@@ -280,8 +306,28 @@ contract Settlement is ISettlement {
 
      // Cancels an order, has to been called by order maker
     function cancelOrder(bytes32 hash) public override {
-        canceledOfHash[msg.sender][hash] = true;
+        require(!canceledOfHash[hash], "already-canceled");
+        OrderBook orderBook = OrderBook(orderBookAddress);
+        address maker = orderBook.getMaker(hash);
+        if (maker != address(0)) {
+            // check limit order
+            require(msg.sender == maker, "not-called-by-maker");
+        } 
+        else {
+            // check margin order
+            OrderBookMargin orderBookMargin = OrderBookMargin(orderBookMarginAddress);
+            address trader = orderBookMargin.getTrader(hash);
+            require(trader != address(0), "order-hash-not-exist");
+            require(msg.sender == trader, "not-called-by-maker");
+        }
+
+        canceledOfHash[hash] = true;
+        canceledHashes.push(hash);
 
         emit OrderCanceled(hash);
+    }
+
+    function allCanceledHashes() public view override returns (bytes32[] memory) {
+        return canceledHashes;
     }
 }

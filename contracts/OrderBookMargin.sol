@@ -100,4 +100,9 @@ contract OrderBookMargin {
 
         emit OrderCreated(hash);
     }
+
+    function getTrader(bytes32 hash) public view returns (address trader){
+        MarginOrders.Order memory order = orderOfHash[hash];
+        trader = order.trader;
+    }
 }

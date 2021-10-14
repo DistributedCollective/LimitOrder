@@ -50,6 +50,6 @@ library MarginOrders {
         require(order.collateralTokenAddress != address(0), "invalid-collateral-token-address");
         require(order.minReturn > 0, "invalid-min-return");
         require(order.deadline > now, "invalid-deadline");
-        require(order.createdTimestamp >= now - 1 minutes, "invalid-created");
+        require(order.createdTimestamp >= now - 15 minutes, "invalid-created");
     }
 }

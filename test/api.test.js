@@ -8,6 +8,7 @@ const Web3 = require('web3');
 const config = require('../src/config');
 const { SOV, XUSD } = require('./tokens');
 const { abi: orderBookAbi } = require('../deployments/localhost/OrderBook.json');
+const { abi: orderBookMarginAbi } = require('../deployments/localhost/OrderBookMargin.json');
 const { abi: settlementAbi } = require('../deployments/localhost/Settlement.json');
 const ERC20Abi  = require("../src/ERC20.json");
 const Order = require('../src/Order');
@@ -97,21 +98,20 @@ async function cancelOrder(orderHash) {
 
 async function getCanceledHashes() {
     const settlement = new ethers.Contract(config.contracts.settlement, settlementAbi, provider);
-    const filter = settlement.filters.OrderCanceled(null);
-    const events = await settlement.queryFilter(filter);
-    return events.map(event => event.args && event.args[0]).filter(h => !!h);
-}
-
-async function listAllOpenOrders() {
-    const orderBook = new ethers.Contract(config.contracts.orderBook, orderBookAbi, provider);
-    const total = (await orderBook.numberOfAllHashes()).toNumber();
-    const pageSize = 20;
-    const openHashes = [];
-    const canceled = await getCanceledHashes();
+    const canceled = await settlement.allCanceledHashes();
     const canceledHashes = (canceled || []).reduce((obj, hash) => ({
         ...obj,
         [hash]: 1
     }), {});
+    return canceledHashes;
+}
+
+async function listAllOpenLimitOrders() {
+    const orderBook = new ethers.Contract(config.contracts.orderBook, orderBookAbi, provider);
+    const total = (await orderBook.numberOfAllHashes()).toNumber();
+    const pageSize = 20;
+    const openHashes = [];
+    const canceledHashes = await getCanceledHashes();
     console.log('canceledHashes', canceledHashes);
 
     for (let page = 0; page * pageSize < total; page++) {
@@ -129,9 +129,35 @@ async function listAllOpenOrders() {
         console.log('order detail of', orderHash);
         console.log(res && res.data);
     }
+}
 
+async function listAllOpenMarginOrders() {
+    const marginBook = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginAbi, provider);
+    const total = (await marginBook.numberOfAllHashes()).toNumber();
+    const pageSize = 20;
+    const openHashes = [];
+    const canceledHashes = await getCanceledHashes();
+    console.log('canceledHashes', canceledHashes, total);
+
+    for (let page = 0; page * pageSize < total; page++) {
+        const hashes = await marginBook.allHashes(page, pageSize);
+        console.log(hashes);
+        openHashes.push(
+            ...(hashes || []).filter(h => h != ethers.constants.HashZero && !canceledHashes[h])
+        );
+    }
+    
+    console.log(openHashes);
+    if (openHashes.length > 0) {
+        const orderHash = openHashes[0];
+        const url = `${config.baseAPIUrl}/api/orders/${orderHash}`;
+        const res = await axios.get(url, { json: true });
+        console.log('order detail of', orderHash);
+        console.log(res && res.data);
+    }
 }
 
 // createOrder();
 // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
-listAllOpenOrders();
+listAllOpenLimitOrders();
+// listAllOpenMarginOrders();

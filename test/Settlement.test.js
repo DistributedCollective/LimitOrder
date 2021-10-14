@@ -210,4 +210,27 @@ describe("Settlement", async () => {
         await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
         await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
     });
+
+    it("Should cancelOrder()", async () => {
+        const { users, getDeadline, createOrder } = await helpers.setup();
+
+        const { order, tx } = await createOrder(
+            users[0],
+            fromToken,
+            toToken,
+            parseEther('0.01'),
+            parseEther('0.0001'),
+            getDeadline(24)
+        );
+
+        orderG=order;
+        
+        const hash = await order.hash();
+        console.log("order created hash", hash);
+    
+        const settlement = await helpers.getContract("Settlement");
+        const tx1 = await settlement.cancelOrder(hash);
+        const receipt = await tx1.wait();
+        console.log(receipt);
+    });
 });

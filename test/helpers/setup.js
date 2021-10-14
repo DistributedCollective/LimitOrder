@@ -1,7 +1,7 @@
 const { ethers } = require("hardhat");
 const { TokenAmount, Trade, Percent, Router } = require("@sushiswap/sdk");
 const getContract = require("./getContract");
-const findPairs = require("./findPairs");
+// const findPairs = require("./findPairs");
 const sortTokens = require("./sortTokens");
 const Order = require("./Order");
 
@@ -115,7 +115,7 @@ module.exports = async () => {
     return {
         chainId,
         users,
-        getTrade,
+        // getTrade,
         swap,
         addLiquidity,
         getDeadline,

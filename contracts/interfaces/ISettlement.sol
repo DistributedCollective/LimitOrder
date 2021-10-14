@@ -42,10 +42,10 @@ interface ISettlement {
     }
 
     function fillOrder(FillOrderArgs calldata args) external returns (uint256 amountOut);
-    function fillMarginOrder(FillMarginOrderArgs calldata args) external returns (uint256 principalAmount, uint256 collateralAmount);
     function fillOrders(FillOrderArgs[] memory args) external returns (uint256[] memory amountsOut);
-
+    function fillMarginOrder(FillMarginOrderArgs calldata args) external returns (uint256 principalAmount, uint256 collateralAmount);
     function cancelOrder(bytes32 hash) external;
     function deposit(address to) external payable;
     function withdraw(uint256 amount) external;
+    function allCanceledHashes() external view returns (bytes32[] memory);
 }

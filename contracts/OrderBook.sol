@@ -115,4 +115,9 @@ contract OrderBook {
 
         emit OrderCreated(hash);
     }
+
+    function getMaker(bytes32 hash) public view returns (address maker){
+        Orders.Order memory order = orderOfHash[hash];
+        maker = order.maker;
+    }
 }

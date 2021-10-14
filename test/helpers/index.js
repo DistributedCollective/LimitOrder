@@ -8,7 +8,7 @@ const getPair = require("./getPair");
 const expectToBeReverted = require("./expectToBeReverted");
 const expectToDeepEqual = require("./expectToDeepEqual");
 const expectToEqual = require("./expectToEqual");
-const findPairs = require("./findPairs");
+// const findPairs = require("./findPairs");
 const getFactoryAddress = require("./getFactoryAddress");
 const sortTokens = require("./sortTokens");
 const setup = require("./setup");
@@ -25,7 +25,7 @@ module.exports = {
     expectToBeReverted,
     expectToDeepEqual,
     expectToEqual,
-    findPairs,
+    // findPairs,
     getFactoryAddress,
     sortTokens,
     setup,

@@ -2,7 +2,7 @@ const { ChainId, ETHER, Token, TokenAmount, Pair } = require("@sushiswap/sdk");
 const { ethers } = require("ethers");
 const { getCreate2Address, solidityKeccak256, solidityPack } = ethers.utils;
 const artifacts = {
-    IUniswapV2Pair: require("@sushiswap/core/build/contracts/IUniswapV2Pair.json"),
+    IUniswapV2Pair: require("@sushiswap/core/build/abi/IUniswapV2Pair.json"),
 };
 
 //const { WETH, DAI, USDC, USDT, COMP, MKR, SUSHI, YAM, AMPL } = require("../tokens");

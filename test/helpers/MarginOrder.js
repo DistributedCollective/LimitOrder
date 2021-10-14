@@ -113,7 +113,9 @@ class MarginOrder {
         // Deployer private key for default hardhat accounts[0], might want to replace this
         let privateKey;
         if(network.name=="rsktestnet") privateKey = "0x" + process.env.PRIVATE_KEY;
-        else privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+        else {
+            privateKey = this.trader.privateKey || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+        }
        
         const key = new ethers.utils.SigningKey(ethers.utils.hexlify(privateKey));
         const signature = key.signDigest(digest);
