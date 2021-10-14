@@ -2,7 +2,7 @@
   "name": "Sovryn_OrderTypes",
   "version": "0.13.1",
   "license": "MIT",
-  "description": "Contracts that support limit orders feature for SushiSwap",
+  "description": "Contracts that support limit orders feature for Sovryn",
   "files": [
     "contracts",
     "deployments"
