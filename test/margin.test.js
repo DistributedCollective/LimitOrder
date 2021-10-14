@@ -39,7 +39,7 @@ describe("Margin Order", async () => {
         owner = accounts[0];
 
         if(network.name === "mainnet") {
-            //setup loan for testnet
+            //setup loan for mainnet
         }
         else if(network.name=="rsktestnet") {
             //setup loan for testnet
