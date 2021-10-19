@@ -197,18 +197,28 @@ contract Settlement is ISettlement {
         bytes32 hash = args.order.hash();
         _validateMarginStatus(args, hash);
 
+        address trader = args.order.trader;
+        // uint256 loanTokenSent = args.order.loanTokenSent;
+
         // Check if the signature is valid
         address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, args.order.v, args.order.r, args.order.s);
-        require(signer != address(0) && signer == args.order.trader, "invalid-signature");
+        require(signer != address(0) && signer == trader, "invalid-signature");
 
         IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
-        collateralToken.transferFrom(args.order.trader, address(this), args.order.collateralTokenSent);
+        address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress).loanTokenAddress();
+        collateralToken.transferFrom(trader, address(this), args.order.collateralTokenSent);
+        if (args.order.loanTokenSent > 0) {
+            IERC20(_loanTokenAsset).transferFrom(trader, address(this), args.order.loanTokenSent);
+            console.log("_loanTokenAsset", IERC20(_loanTokenAsset).balanceOf(address(this)));
+        }
 
         //@ha
         uint256 relayerFee = args.order.collateralTokenSent.mul(relayerFeePercent).div(1000);
+        uint256 relayerFeeOnLoanAsset = args.order.loanTokenSent.mul(relayerFeePercent).div(1000);
         uint256 actualCollateralAmount = args.order.collateralTokenSent.sub(relayerFee);
+        uint256 actualLoanTokenAmount = args.order.loanTokenSent.sub(relayerFeeOnLoanAsset);
 
-        (principalAmount, collateralAmount) = _marginTrade(args.order, actualCollateralAmount);
+        (principalAmount, collateralAmount) = _marginTrade(args.order, actualLoanTokenAmount, actualCollateralAmount);
 
         emit MarginTrade(
             address(args.order.loanTokenAddress),
@@ -217,10 +227,14 @@ contract Settlement is ISettlement {
             actualCollateralAmount,
             principalAmount,
             collateralAmount,
-            args.order.trader
+            trader
         );
 
+        // Transfer fee for relayer
         collateralToken.transfer(msg.sender, relayerFee);
+        if (relayerFeeOnLoanAsset > 0) {
+            IERC20(_loanTokenAsset).transfer(msg.sender, relayerFeeOnLoanAsset);
+        }
 
         // This line is free from reentrancy issues since UniswapV2Pair prevents from them
         filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(args.order.collateralTokenSent);
@@ -242,19 +256,27 @@ contract Settlement is ISettlement {
         require(filledAmountInOfHash[hash].add(args.order.collateralTokenSent) <= args.order.collateralTokenSent, "already-filled");
     }
 
-    function _marginTrade(MarginOrders.Order memory order, uint256 actualCollateralAmount) internal returns (uint256 principalAmount, uint256 collateralAmount) {
+    function _marginTrade(
+        MarginOrders.Order memory order,
+        uint256 actualLoanTokenAmount,
+        uint256 actualCollateralAmount
+    )
+    internal 
+    returns (
+        uint256 principalAmount,
+        uint256 collateralAmount
+    ) {
         address loanTokenAdr = order.loanTokenAddress;
         IERC20(order.collateralTokenAddress).approve(loanTokenAdr, actualCollateralAmount);
-        if (order.loanTokenSent > 0) {
+        if (actualLoanTokenAmount > 0) {
             address loanTokenAsset = ISovrynLoanToken(loanTokenAdr).loanTokenAddress();
-            IERC20(loanTokenAsset).transferFrom(order.trader, address(this), order.loanTokenSent);
-            IERC20(loanTokenAsset).approve(loanTokenAdr, order.loanTokenSent);
+            IERC20(loanTokenAsset).approve(loanTokenAdr, actualLoanTokenAmount);
         }
 
         bytes memory data = abi.encodeWithSignature("marginTrade(bytes32,uint256,uint256,uint256,address,address,uint256,bytes)", 
             order.loanId, /// 0 if new loan
             order.leverageAmount, /// Expected in x * 10**18 where x is the actual leverage (2, 3, 4, or 5).
-            order.loanTokenSent,
+            actualLoanTokenAmount,
             actualCollateralAmount,
             order.collateralTokenAddress,
             order.trader,
@@ -309,6 +331,7 @@ contract Settlement is ISettlement {
         require(!canceledOfHash[hash], "already-canceled");
         OrderBook orderBook = OrderBook(orderBookAddress);
         address maker = orderBook.getMaker(hash);
+        bool isMarginOrder = false;
         if (maker != address(0)) {
             // check limit order
             require(msg.sender == maker, "not-called-by-maker");
@@ -319,12 +342,17 @@ contract Settlement is ISettlement {
             address trader = orderBookMargin.getTrader(hash);
             require(trader != address(0), "order-hash-not-exist");
             require(msg.sender == trader, "not-called-by-maker");
+            isMarginOrder = true;
         }
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        emit OrderCanceled(hash);
+        if (isMarginOrder) {
+            emit MarginOrderCanceled(hash);
+        } else {
+            emit OrderCanceled(hash);
+        }
     }
 
     function allCanceledHashes() public view override returns (bytes32[] memory) {

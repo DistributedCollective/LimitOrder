@@ -12,6 +12,7 @@ interface ISettlement {
     event FeeTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
     event FeeSplitTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
     event MarginOrderFilled(bytes32 indexed hash, uint256 principal, uint256 collateral);
+    event MarginOrderCanceled(bytes32 indexed hash);
     event Swap(
         address indexed _sourceToken,
         address indexed _targetToken,
