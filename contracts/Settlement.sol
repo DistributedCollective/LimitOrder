@@ -358,4 +358,26 @@ contract Settlement is ISettlement {
     function allCanceledHashes() public view override returns (bytes32[] memory) {
         return canceledHashes;
     }
+
+    function checkCanceledHashes(bytes32[] memory hashes) 
+    public view override
+    returns (CanceledCheck[] memory result) 
+    {
+        result = new CanceledCheck[](hashes.length);
+        for(uint256 i = 0; i < hashes.length; i++) {
+            bytes32 hash = hashes[i];
+            result[i] = CanceledCheck(hash, canceledOfHash[hash]);
+        }
+    }
+
+    function checkFilledAmountHashes(bytes32[] memory hashes)
+    public view override
+    returns (FilledAmountCheck[] memory result) 
+    {
+        result = new FilledAmountCheck[](hashes.length);
+        for(uint256 i = 0; i < hashes.length; i++) {
+            bytes32 hash = hashes[i];
+            result[i] = FilledAmountCheck(hash, filledAmountInOfHash[hash]);
+        }
+    }
 }

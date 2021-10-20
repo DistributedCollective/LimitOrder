@@ -101,7 +101,7 @@ module.exports = {
         },
 		rsktestnet: {
 			url: "https://testnet.sovryn.app/rpc",
-			accounts: [process.env.PRIVATE_KEY],
+			accounts: [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_RELAYER],
 			network_id: 31,
 			confirmations: 4,
 			gasMultiplier: 1.25,

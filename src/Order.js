@@ -24,7 +24,7 @@ module.exports = class Order {
         this.created = created;
     }
 
-    async hash() {
+    hash(overrides = {}) {
         return ethers.utils.keccak256(
             ethers.utils.defaultAbiCoder.encode(
                 [
@@ -40,14 +40,14 @@ module.exports = class Order {
                 ],
                 [
                     Order.ORDER_TYPEHASH,
-                    this.maker,
-                    this.fromToken,
-                    this.toToken,
-                    this.amountIn,
-                    this.amountOutMin,
-                    this.recipient,
-                    this.deadline,
-                    this.created,
+                    overrides.maker || this.maker,
+                    overrides.fromToken || this.fromToken,
+                    overrides.toToken || this.toToken,
+                    overrides.amountIn || this.amountIn,
+                    overrides.amountOutMin || this.amountOutMin,
+                    overrides.recipient || this.recipient,
+                    overrides.deadline || this.deadline,
+                    overrides.created || this.created,
                 ]
             )
         );

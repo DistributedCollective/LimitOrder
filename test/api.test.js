@@ -4,6 +4,7 @@ const { _TypedDataEncoder } = require("@ethersproject/hash");
 const { keccak256 } = require("@ethersproject/keccak256");
 const Tx = require("@ethersproject/transactions");
 const Web3 = require('web3');
+const { getAccountsPrivateKeys } = require("./Utils/hardhat_utils");
 
 const config = require('../src/config');
 const { SOV, XUSD } = require('./tokens');
@@ -14,8 +15,7 @@ const ERC20Abi  = require("../src/ERC20.json");
 const Order = require('../src/Order');
 const helpers = require("./helpers");
 
-// const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
-const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(new Date('2021-09-15').getTime() / 1000 + hoursFromNow * 3600));
+const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
 const privateKey = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
 const privateKeyOwner = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
@@ -39,16 +39,16 @@ async function createOrder(){
     const contractToken = new ethers.Contract(fromToken.address, ERC20Abi, provider);
     const toTokenContract = new ethers.Contract(toToken.address, ERC20Abi, provider);
 
-    const ownerBal = await toTokenContract.balanceOf(owner.address);
-    console.log('balance trader', trader.address, Number(await toTokenContract.balanceOf(trader.address)));
-    console.log('balance taker', owner.address, Number(ownerBal));
+    // const ownerBal = await toTokenContract.balanceOf(owner.address);
+    // console.log('balance trader', trader.address, Number(await toTokenContract.balanceOf(trader.address)));
+    // console.log('balance taker', owner.address, Number(ownerBal));
 
-    await owner.sendTransaction({ to: trader.address, value: ethers.utils.parseEther("0.01"),gasLimit:50000 });
-    await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
+    // await owner.sendTransaction({ to: trader.address, value: ethers.utils.parseEther("0.01"),gasLimit:50000 });
+    // await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
 
-    const allowance = await contractToken.allowance(trader.address, config.contracts.settlement,{gasLimit:200000});
-    console.log("pre allowance", Number(allowance))
-    await contractToken.connect(trader).approve(config.contracts.settlement, amountIn.add(allowance), {gasLimit:200000});
+    // const allowance = await contractToken.allowance(trader.address, config.contracts.settlement,{gasLimit:200000});
+    const approveTx = await contractToken.connect(trader).approve(config.contracts.settlement, amountIn, {gasLimit:200000});
+    await approveTx.wait();
 
     const order = new Order(
         trader.address,
@@ -58,10 +58,10 @@ async function createOrder(){
         ethers.utils.parseEther('0.003'),
         trader.address,
         getDeadline(24),
+        ethers.BigNumber.from(Math.floor(Date.now() / 1000))
     );
     const args = await order.toArgs(config.chainId, config.contracts.orderBook, "0x" + privateKey);
 
-    console.log(args);
     const unsignedTx = await contract.populateTransaction.createOrder(args);
 
     try {
@@ -71,7 +71,8 @@ async function createOrder(){
             from: trader.address
         }, { json: true });
 
-        console.log(data);
+        // console.log(data);
+        return data;
     } catch(e) {
         console.log(e);
     }
@@ -107,28 +108,15 @@ async function getCanceledHashes() {
 }
 
 async function listAllOpenLimitOrders() {
+    console.time("listAllOpenLimitOrders");
     const orderBook = new ethers.Contract(config.contracts.orderBook, orderBookAbi, provider);
     const total = (await orderBook.numberOfAllHashes()).toNumber();
-    const pageSize = 20;
-    const openHashes = [];
-    const canceledHashes = await getCanceledHashes();
-    console.log('canceledHashes', canceledHashes);
 
-    for (let page = 0; page * pageSize < total; page++) {
-        const hashes = await orderBook.allHashes(page, pageSize);
-        openHashes.push(
-            ...(hashes || []).filter(h => h != ethers.constants.HashZero && !canceledHashes[h])
-        );
-    }
-    
-    console.log(openHashes);
-    if (openHashes.length > 0) {
-        const orderHash = openHashes[0];
-        const url = `${config.baseAPIUrl}/api/orders/${orderHash}`;
-        const res = await axios.get(url, { json: true });
-        console.log('order detail of', orderHash);
-        console.log(res && res.data);
-    }
+    const url = `${config.baseAPIUrl}/api/orders/${trader.address}?offset=0&limit=${total}`;
+    const res = await axios.get(url, { json: true });
+    console.log(res && res.data.data);
+
+    console.timeEnd("listAllOpenLimitOrders");
 }
 
 async function listAllOpenMarginOrders() {
@@ -157,7 +145,20 @@ async function listAllOpenMarginOrders() {
     }
 }
 
-// createOrder();
-// cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
-listAllOpenLimitOrders();
-// listAllOpenMarginOrders();
+async function createMultiOrders(nr) {
+    for (let index = 0; index < nr; index++) {
+        console.log("Creating order #%s", index);
+        const { data: tx } = await createOrder();
+        console.log("tx %s", tx.hash);
+    }
+}
+
+(async function start () {
+    // createOrder();
+    // await createMultiOrders(10);
+
+    
+    // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
+    await listAllOpenLimitOrders();
+    // listAllOpenMarginOrders();
+})();

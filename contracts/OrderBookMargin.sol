@@ -105,4 +105,15 @@ contract OrderBookMargin {
         MarginOrders.Order memory order = orderOfHash[hash];
         trader = order.trader;
     }
+
+    function getOrders(address trader, uint256 offset, uint256 limit) public view returns (MarginOrders.Order[] memory orders) {
+        orders = new MarginOrders.Order[](limit);
+        bytes32[] memory hashes = _hashesOfTrader[trader];
+        for (uint256 i = offset; i < limit; i++) {
+            if (i < hashes.length) {
+                bytes32 hash = hashes[i];
+                orders[i - offset] = orderOfHash[hash];
+            }
+        }
+    }
 }

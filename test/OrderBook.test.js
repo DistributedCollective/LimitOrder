@@ -8,7 +8,7 @@ var sovrynSwapNetworkAdr, orderG, fromToken, toToken;
 
 describe("OrderBook", async () => {
     beforeEach(async () => {
-        //await deployments.fixture();
+        // await deployments.fixture();
 
         const {chainId} = await helpers.setup();
         fromToken = XUSD[chainId];
@@ -21,10 +21,6 @@ describe("OrderBook", async () => {
             sovrynSwapNetworkAdr=sovrynSwapNetworkAdr.address;
 
             const accounts = await ethers.getSigners();
-            // await Promise.all(accounts.map(async (acc) => {
-            //     console.log(acc.address, Number(await acc.getBalance()));
-            //     // console.log(acc)
-            // }));
 
             const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
             await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));
@@ -50,8 +46,6 @@ describe("OrderBook", async () => {
         console.log("order created");
         console.log(hash);
 
-        await helpers.expectToDeepEqual(await order.toArgs(), orderBook.orderOfHash(hash));
-
         await helpers.expectToEqual(1, orderBook.numberOfAllHashes());
         await helpers.expectToEqual(1, orderBook.numberOfHashesOfMaker(users[0].address));
         await helpers.expectToEqual(1, orderBook.numberOfHashesOfFromToken(fromToken.address));
@@ -63,177 +57,14 @@ describe("OrderBook", async () => {
         await helpers.expectToDeepEqual([hash], orderBook.hashesOfToToken(toToken.address, 0, 1));
     });
 
-    it("Should revert createOrder() if maker isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
+    it("Should list all orders of trader", async () => {
+        const { users } = await helpers.setup();
 
-        await helpers.expectToBeReverted(
-            "invalid-maker",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24),
-                {
-                    maker: ethers.constants.AddressZero,
-                }
-            )
-        );
-    });
+        const orderBook = await helpers.getContract("OrderBook");
 
-    it("Should revert createOrder() if fromToken isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-         await helpers.expectToBeReverted(
-            "invalid-from-token",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24),
-                {
-                    fromToken: ethers.constants.AddressZero,
-                }
-            )
-        );
-    });
-
-    it("Should revert createOrder() if toToken isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-to-token",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24),
-                {
-                    toToken: ethers.constants.AddressZero,
-                }
-            )
-        );
-    });
-
-    it("Should revert createOrder() if fromToken == toToken valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "duplicate-tokens",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24),
-                {
-                    toToken: fromToken.address,
-                }
-            )
-        );
-    });
-
-    it("Should revert createOrder() if amountIn isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-amount-in",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.Zero,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24)
-            )
-        );
-    });
-
-    it("Should revert createOrder() if amountOutMin isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-amount-out-min",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.Zero,
-                getDeadline(24)
-            )
-        );
-    });
-
-    it("Should revert createOrder() if recipient isn't valid", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-recipient",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24),
-                {
-                    recipient: ethers.constants.AddressZero,
-                }
-            )
-        );
-    });
-
-    it("Should revert createOrder() if deadline isn't valid", async () => {
-        const { users, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-deadline",
-            createOrder(
-                users[0],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                0
-            )
-        );
-    });
-
-    it("Should revert createOrder() if not signed by maker", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        await helpers.expectToBeReverted(
-            "invalid-signature",
-            createOrder(
-                users[1],
-                fromToken,
-                toToken,
-                ethers.constants.WeiPerEther,
-                ethers.constants.WeiPerEther.mul(100),
-                getDeadline(24)
-            )
-        );
-    });
-
-    it("Should revert createOrder() if duplicated", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
-
-        const args = [
-            users[0],
-            fromToken,
-            toToken,
-            ethers.constants.WeiPerEther,
-            ethers.constants.WeiPerEther.mul(100),
-            getDeadline(24),
-        ];
-        await createOrder(...args);
-        await helpers.expectToBeReverted("order-exists", createOrder(...args));
+        const orders = await orderBook.getOrders(users[0].address, 0, 10);
+        // console.log(orders);
+        await helpers.expectToEqual(orders.length, 10);
+        await helpers.expectToEqual(orders.filter(o => o.maker != ethers.constants.AddressZero).length, 1);
     });
 });

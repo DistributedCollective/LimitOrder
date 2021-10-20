@@ -38,8 +38,18 @@ interface ISettlement {
         address[] path;
     }
 
-     struct FillMarginOrderArgs {
+    struct FillMarginOrderArgs {
         MarginOrders.Order order;
+    }
+
+    struct CanceledCheck {
+        bytes32 hash;
+        bool canceled;
+    }
+
+    struct FilledAmountCheck {
+        bytes32 hash;
+        uint256 amount;
     }
 
     function fillOrder(FillOrderArgs calldata args) external returns (uint256 amountOut);
@@ -49,4 +59,6 @@ interface ISettlement {
     function deposit(address to) external payable;
     function withdraw(uint256 amount) external;
     function allCanceledHashes() external view returns (bytes32[] memory);
+    function checkFilledAmountHashes(bytes32[] memory hashes) external view returns (FilledAmountCheck[] memory);
+    function checkCanceledHashes(bytes32[] memory hashes) external view returns (CanceledCheck[] memory);
 }
