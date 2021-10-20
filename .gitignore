@@ -5,3 +5,7 @@ cache
 .env
 public/dist
 secrets
+secret
+src/logs
+package-lock.json
+.pm2
