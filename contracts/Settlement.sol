@@ -212,11 +212,23 @@ contract Settlement is ISettlement {
             console.log("_loanTokenAsset", IERC20(_loanTokenAsset).balanceOf(address(this)));
         }
 
-        //@ha
-        uint256 relayerFee = args.order.collateralTokenSent.mul(relayerFeePercent).div(1000);
-        uint256 relayerFeeOnLoanAsset = args.order.loanTokenSent.mul(relayerFeePercent).div(1000);
-        uint256 actualCollateralAmount = args.order.collateralTokenSent.sub(relayerFee);
-        uint256 actualLoanTokenAmount = args.order.loanTokenSent.sub(relayerFeeOnLoanAsset);
+        uint256 relayerFee;
+        uint256 relayerFeeOnLoanAsset;
+        uint256 actualCollateralAmount;
+        uint256 actualLoanTokenAmount;
+
+        {
+            uint256 _collateralTokenSent = args.order.collateralTokenSent;
+            if (_collateralTokenSent > 0) {
+                relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(1000);
+                actualCollateralAmount = _collateralTokenSent.sub(relayerFee);
+            }
+            uint256 _loanTokenSent = args.order.loanTokenSent;
+            if (_loanTokenSent > 0) {
+                relayerFeeOnLoanAsset = _loanTokenSent.mul(relayerFeePercent).div(1000);
+                actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
+            }
+        }
 
         (principalAmount, collateralAmount) = _marginTrade(args.order, actualLoanTokenAmount, actualCollateralAmount);
 
@@ -231,15 +243,36 @@ contract Settlement is ISettlement {
         );
 
         // Transfer fee for relayer
-        collateralToken.transfer(msg.sender, relayerFee);
+        if (relayerFee > 0) {
+            collateralToken.transfer(msg.sender, relayerFee);
+        }
         if (relayerFeeOnLoanAsset > 0) {
             IERC20(_loanTokenAsset).transfer(msg.sender, relayerFeeOnLoanAsset);
         }
 
         // This line is free from reentrancy issues since UniswapV2Pair prevents from them
-        filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(args.order.collateralTokenSent);
+        filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(
+            args.order.collateralTokenSent + args.order.loanTokenSent
+        );
 
         emit MarginOrderFilled(hash, principalAmount, collateralAmount);
+    }
+
+    // Fills multiple margin orders passed as an array
+    function fillMarginOrders(FillMarginOrderArgs[] memory args) public override
+    returns (uint256[] memory principalAmounts, uint256[] memory collateralAmounts) 
+    {
+        bool filled = false;
+        principalAmounts = new uint256[](args.length);
+        collateralAmounts = new uint256[](args.length);
+        for (uint256 i = 0; i < args.length; i++) {
+            (principalAmounts[i], collateralAmounts[i]) = fillMarginOrder(args[i]);
+            if (principalAmounts[i] > 0) {
+                // At least one order was filled
+                filled = true;
+            }
+        }
+        require(filled, "no-order-filled");
     }
 
     // Checks if an order is canceled / already fully filled
