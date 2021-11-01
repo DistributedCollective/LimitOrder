@@ -11,6 +11,7 @@ import "./interfaces/ISettlement.sol";
 import "./libraries/Orders.sol";
 import "./libraries/MarginOrders.sol";
 import "./libraries/EIP712.sol";
+import "./libraries/RSKAddrValidator.sol";
 import "./OrderBook.sol";
 import "./OrderBookMargin.sol";
 
@@ -117,7 +118,7 @@ contract Settlement is ISettlement {
 
         // Check if the signature is valid
         address signer = EIP712.recover(DOMAIN_SEPARATOR1, hash, args.order.v, args.order.r, args.order.s);
-        require(signer != address(0) && signer == args.order.maker, "invalid-signature");
+        require(RSKAddrValidator.safeEquals(signer, args.order.maker), "invalid-signature");
 
         uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(args.path, args.order.amountIn);
        
@@ -202,7 +203,7 @@ contract Settlement is ISettlement {
 
         // Check if the signature is valid
         address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, args.order.v, args.order.r, args.order.s);
-        require(signer != address(0) && signer == trader, "invalid-signature");
+        require(RSKAddrValidator.safeEquals(signer, trader), "invalid-signature");
 
         IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress).loanTokenAddress();

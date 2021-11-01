@@ -11,7 +11,7 @@ const { SOV, XUSD } = require('./tokens');
 const { abi: orderBookAbi } = require('../deployments/localhost/OrderBook.json');
 const { abi: orderBookMarginAbi } = require('../deployments/localhost/OrderBookMargin.json');
 const { abi: settlementAbi } = require('../deployments/localhost/Settlement.json');
-const ERC20Abi  = require("../src/ERC20.json");
+const { ERC20: ERC20Abi } = require("../src/config/abis");
 const Order = require('../src/Order');
 const helpers = require("./helpers");
 
@@ -120,29 +120,16 @@ async function listAllOpenLimitOrders() {
 }
 
 async function listAllOpenMarginOrders() {
+    console.time("listAllOpenMarginOrders");
     const marginBook = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginAbi, provider);
     const total = (await marginBook.numberOfAllHashes()).toNumber();
-    const pageSize = 20;
-    const openHashes = [];
-    const canceledHashes = await getCanceledHashes();
-    console.log('canceledHashes', canceledHashes, total);
 
-    for (let page = 0; page * pageSize < total; page++) {
-        const hashes = await marginBook.allHashes(page, pageSize);
-        console.log(hashes);
-        openHashes.push(
-            ...(hashes || []).filter(h => h != ethers.constants.HashZero && !canceledHashes[h])
-        );
-    }
-    
-    console.log(openHashes);
-    if (openHashes.length > 0) {
-        const orderHash = openHashes[0];
-        const url = `${config.baseAPIUrl}/api/orders/${orderHash}`;
-        const res = await axios.get(url, { json: true });
-        console.log('order detail of', orderHash);
-        console.log(res && res.data);
-    }
+    const url = `${config.baseAPIUrl}/api/orders/${trader.address}?offset=0&limit=${total}&isMargin=1`;
+    const res = await axios.get(url, { json: true });
+    console.log(res && res.data.data);
+
+    console.timeEnd("listAllOpenMarginOrders");
+
 }
 
 async function createMultiOrders(nr) {
@@ -159,6 +146,6 @@ async function createMultiOrders(nr) {
 
     
     // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
-    await listAllOpenLimitOrders();
-    // listAllOpenMarginOrders();
+    // await listAllOpenLimitOrders();
+    listAllOpenMarginOrders();
 })();

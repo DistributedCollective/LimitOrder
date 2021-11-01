@@ -7,6 +7,7 @@ import "./interfaces/IERC20.sol";
 import "./libraries/MarginOrders.sol";
 import "./libraries/EIP712.sol";
 import "./libraries/Bytes32Pagination.sol";
+import "./libraries/RSKAddrValidator.sol";
 
 
 contract OrderBookMargin {
@@ -89,7 +90,7 @@ contract OrderBookMargin {
 
         bytes32 hash = order.hash();
         address signer = EIP712.recover(DOMAIN_SEPARATOR, hash, order.v, order.r, order.s);
-        require(signer != address(0) && signer == order.trader, "invalid-signature");
+        require(RSKAddrValidator.safeEquals(signer, order.trader), "invalid-signature");
 
         require(orderOfHash[hash].trader == address(0), "order-exists");
         orderOfHash[hash] = order;

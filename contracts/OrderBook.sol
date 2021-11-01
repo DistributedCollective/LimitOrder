@@ -7,6 +7,7 @@ import "./interfaces/IERC20.sol";
 import "./libraries/Orders.sol";
 import "./libraries/EIP712.sol";
 import "./libraries/Bytes32Pagination.sol";
+import "./libraries/RSKAddrValidator.sol";
 
 
 contract OrderBook {
@@ -103,7 +104,7 @@ contract OrderBook {
 
         bytes32 hash = order.hash();
         address signer = EIP712.recover(DOMAIN_SEPARATOR, hash, order.v, order.r, order.s);
-        require(signer != address(0) && signer == order.maker, "invalid-signature");
+        require(RSKAddrValidator.safeEquals(signer, order.maker), "invalid-signature");
 
         require(orderOfHash[hash].maker == address(0), "order-exists");
         orderOfHash[hash] = order;

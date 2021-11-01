@@ -5,7 +5,7 @@ const axios = require('axios');
 const config = require('../src/config');
 const { abi: orderBookAbi } = require('../deployments/rsktestnet/OrderBook.json');
 const { abi: settlementAbi } = require('../deployments/rsktestnet/Settlement.json');
-const ERC20Abi = require("../src/ERC20.json");
+const { ERC20: ERC20Abi } = require("../src/config/abis");
 const SOV = "0x6a9A07972D07e58F0daf5122d11E069288A375fb";
 const XUSD = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1";
 

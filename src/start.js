@@ -7,9 +7,11 @@ const { keccak256 } = require("@ethersproject/keccak256");
 const Web3 = require('web3');
 
 const config = require('./config');
-const { abi: orderBookABI } = require('../deployments/localhost/OrderBook.json');
-const { abi: orderBookMarginABI } = require('../deployments/localhost/OrderBookMargin.json');
-const { abi: settlementABI } = require('../deployments/localhost/Settlement.json');
+const {
+    OrderBook: orderBookABI,
+    OrderBookMargin: orderBookMarginABI,
+    Settlement: settlementABI
+} = require('./config/abis');
 const Order = require('./Order');
 const { relayer: relayerAcc } = require('../secret/account');
 const MarginOrder = require('./MarginOrder');

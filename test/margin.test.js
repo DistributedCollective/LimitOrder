@@ -1,5 +1,5 @@
 const { formatEther } = require("@ethersproject/units");
-const { Wallet } = require("ethers");
+const { BigNumber } = require("ethers");
 const { ethers, deployments } = require("hardhat");
 const helpers = require("./helpers");
 const getContract = require("./helpers/getContract");
@@ -43,7 +43,7 @@ describe("Margin Order", async () => {
         accounts = await ethers.getSigners();
         privKeys = getAccountsPrivateKeys();
         owner = accounts[0];
-        console.log(accounts.map(acc => acc.address))
+        console.log(accounts.map((acc, i) => ({ adr: acc.address, pk: getAccount(i).privateKey })))
 
         if(network.name === "mainnet") {
             //setup loan for mainnet
@@ -52,13 +52,12 @@ describe("Margin Order", async () => {
         else if(network.name=="rsktestnet") {
             //setup loan for testnet
             isLocalNetwork = false;
-            loanTokenSUSD = await ILoanTokenModules.at("0x74e00A8CeDdC752074aad367785bFae7034ed89f");
-            loanTokenWRBTC = await ILoanTokenModules.at("0xe67fe227e0504e8e96a34c3594795756dc26e14b");
+            loanTokenSUSD = await ILoanTokenModules.at("0x9bd0ce087b14ef67c3d37c891139aae7d94a961a"); // iXUSD
+            loanTokenWRBTC = await ILoanTokenModules.at("0xe67fe227e0504e8e96a34c3594795756dc26e14b"); // iWRBTC
             const susdAdr = await loanTokenSUSD.loanTokenAddress();
             const wrbtcAdr = await loanTokenWRBTC.loanTokenAddress();
             SUSD = await TestToken.at(susdAdr);
             WRBTC = await TestWrbtc.at(wrbtcAdr);
-            // RBTC = await TestToken.at(ethers.constants.AddressZero);
 
             console.log("asset susd", await loanTokenSUSD.loanTokenAddress());
             console.log("asset wrbtc", await loanTokenWRBTC.loanTokenAddress());
@@ -83,8 +82,7 @@ describe("Margin Order", async () => {
         const adr = accounts[0].address;
         console.log("bal wrbtc", formatEther((await WRBTC.balanceOf(adr)).toString()) );
         console.log("bal usd", formatEther((await SUSD.balanceOf(adr)).toString()) );
-        // console.log("bal rbtc", formatEther((await RBTC.balanceOf(adr)).toString()) );
-        console.log("bal rbtc1", formatEther((await accounts[0].getBalance()).toString()) );
+        console.log("bal rbtc", formatEther((await accounts[0].getBalance()).toString()) );
     });
 
     const getAccount =  (index) => {
@@ -109,11 +107,15 @@ describe("Margin Order", async () => {
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
             const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
-            await loanTokenAsset.approve(settlement.address, loanTokenSent);
+            const allowance = await loanTokenAsset.allowance(signer.address, settlement.address);
+            const _tx = await loanTokenAsset.approve(settlement.address, loanTokenSent.add(allowance));
+            await _tx.wait();
         }
         if (Number(collateralTokenSent) > 0) {
             const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
-            await collateralToken.approve(settlement.address, collateralTokenSent);
+            const allowance = await loanTokenAsset.allowance(signer.address, settlement.address);
+            const _tx = await collateralToken.approve(settlement.address, collateralTokenSent.add(allowance));
+            await _tx.wait();
         }
 
         const order = new MarginOrder(
@@ -185,13 +187,14 @@ describe("Margin Order", async () => {
         );
         const hash = await order.hash();
         console.log("order created", hash);
+        await tx.wait();
 
-        const filledTx = await fillMarginOrder(relayer, order);
+        // const filledTx = await fillMarginOrder(relayer, order);
 
         return {
             order,
             orderTx: tx,
-            filledTx
+            // filledTx
         }
     }
 
@@ -303,7 +306,6 @@ describe("Margin Order", async () => {
     //     await helpers.expectToEqual(canceled.hash, hash);
     // });
 
-
     // it("Should relayer receive correct fee on loan SUSD", async () => {
     //     const trader = getAccount(1);
     //     const relayer = getAccount(2);
@@ -370,10 +372,38 @@ describe("Margin Order", async () => {
     //     console.log(balances);
     // });
 
-    it("Should create a long position with 2x leverage", async () => {
+    // it("Should create a long position with 2x leverage", async () => {
+    //     const trader = getAccount(0);
+    //     const relayer = getAccount(1);
+    //     const leverageAmount = parseEther("2");
+    //     const loanTokenSent = parseEther("5"); //SUSD
+    //     const collateralToken = WRBTC;
+    //     const collateralTokenSent = parseEther("0");
+    //     const { collateral } = await loanTokenSUSD.getEstimatedMarginDetails(
+    //         leverageAmount,
+    //         loanTokenSent,
+    //         collateralTokenSent,
+    //         collateralToken.address,
+    //     );
+    //     const {order, orderTx, filledTx } = await createFillMarginOrder({
+    //         trader,
+    //         relayer,
+    //         loanToken: loanTokenSUSD,
+    //         loanTokenSent,
+    //         collateralToken,
+    //         collateralTokenSent,
+    //         leverageAmount,
+    //         minReturn: ethers.BigNumber.from(String(collateral)).div(2)
+    //     });
+    //     await orderTx.wait();
+    //     // const receipt = await filledTx.wait();
+    //     // console.log('fill tx', receipt.transactionHash);
+    // });
+
+    it("Should create a long position with 5x leverage", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
-        const leverageAmount = parseEther("2");
+        const leverageAmount = parseEther("5");
         const loanTokenSent = parseEther("20"); //SUSD
         const collateralToken = WRBTC;
         const collateralTokenSent = parseEther("0");
@@ -391,53 +421,41 @@ describe("Margin Order", async () => {
             collateralToken,
             collateralTokenSent,
             leverageAmount,
-            minReturn: ethers.BigNumber.from(String(collateral))
+            minReturn: ethers.BigNumber.from(String(collateral)).div(2)
         });
         await orderTx.wait();
-        const receipt = await filledTx.wait();
-        console.log(JSON.stringify(receipt));
+        // const receipt = await filledTx.wait();
+        // console.log('fill tx', receipt.transactionHash);
     });
 
-    // it("Should create a long position with 5x leverage", async () => {
-    //     const trader = getAccount(1);
-    //     const relayer = getAccount(2);
-    //     const amount = parseEther("2000"); //Collaterral SUSD
-    //     const {order, orderTx, filledTx } = await createFillMarginOrder({
-    //         trader,
-    //         relayer,
-    //         loanToken: loanTokenSUSD,
-    //         loanTokenSent: amount,
-    //         collateralToken: RBTC,
-    //         collateralTokenSent: parseEther("0"),
-    //         leverageAmount: parseEther("5"),
-    //         minReturn: parseEther("1"),
-    //     });
-    //     await orderTx.wait();
-    //     const receipt = await filledTx.wait();
-    //     // console.log(receipt);
-    // });
-
     // it("Should create a short position with 2x leverage", async () => {
-    //     const trader = getAccount(1);
-    //     const relayer = getAccount(2);
-    //     const amount = parseEther("2000"); //Collaterral SUSD
+    //     const trader = getAccount(0);
+    //     const relayer = getAccount(1);
+    //     const loanToken = loanTokenWRBTC;
+    //     const loanTokenSent = parseEther("0");
+    //     const leverageAmount = parseEther("2");
+    //     const collateralToken = SUSD;
+    //     const collateralTokenSent = parseEther("25"); //Collaterral SUSD
+    //     const { collateral } = await loanToken.getEstimatedMarginDetails(
+    //         leverageAmount,
+    //         loanTokenSent,
+    //         collateralTokenSent,
+    //         collateralToken.address,
+    //     );
+    //     console.log(formatEther(String(collateral)));
     //     const {order, orderTx, filledTx } = await createFillMarginOrder({
     //         trader,
     //         relayer,
-    //         loanToken: loanTokenWRBTC,
-    //         loanTokenSent: parseEther("0"),
-    //         collateralToken: SUSD,
-    //         collateralTokenSent: amount,
-    //         leverageAmount: parseEther("2"),
-    //         minReturn: parseEther("4000"),
+    //         loanToken,
+    //         loanTokenSent,
+    //         collateralToken,
+    //         collateralTokenSent,
+    //         leverageAmount,
+    //         minReturn: ethers.BigNumber.from(String(collateral)).div(2),
     //     });
     //     await orderTx.wait();
     //     const receipt = await filledTx.wait();
-    //     // console.log(receipt);
-    // });
-
-    // it("just test", async () => {
-    //     console.log("tested");
+    //     console.log(receipt.transactionHash);
     // });
 
     // it("Should create a short position with 5x leverage", async () => {
@@ -456,7 +474,24 @@ describe("Margin Order", async () => {
     //     });
     //     await orderTx.wait();
     //     const receipt = await filledTx.wait();
-    //     console.log(JSON.stringify(receipt, null, 2));
+    //     console.log(receipt.transactionHash);
     // });
 
+
+    // it("Should cancel orders hashes (for testnet)", async () => {
+    //     const settlement = await helpers.getContract("Settlement");
+    //     const hashes = [
+    //         '0x1cb8f393745cd73fb2dbe9b1f214a80e5dbca975dec521a33b5b5c52691e98ac',
+    //         '0x56adc5145c648e6e2582b6c9604e3cfb40748272724dcac0e32f482fd9647b8c',
+    //         '0xd0851aab09c3630abc17af1c91a56ffa290e374afbfe2aa504d91b2f5b354c44',
+    //         '0x14637868eb3580ffaf54050d621fcfbeed558859bd00420b6eba7f8abd7cb964'
+    //     ];
+    //     for (const hash of hashes) {
+    //         const tx = await settlement.cancelOrder(hash);
+    //         const receipt = await tx.wait();
+    //         const event = receipt.logs[receipt.logs.length - 1];
+    //         const canceled = settlement.interface.decodeEventLog("MarginOrderCanceled", event.data, event.topics);
+    //         await helpers.expectToEqual(canceled.hash, hash);
+    //     }
+    // });
 });
