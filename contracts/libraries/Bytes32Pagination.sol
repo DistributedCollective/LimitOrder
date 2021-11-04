@@ -10,10 +10,10 @@ library Bytes32Pagination {
     ) internal pure returns (bytes32[] memory result) {
         result = new bytes32[](limit);
         for (uint256 i = 0; i < limit; i++) {
-            if (page * limit + i >= hashes.length) {
-                result[i] = bytes32(0);
-            } else {
+            if (page * limit + i < hashes.length) {
                 result[i] = hashes[page * limit + i];
+            } else {
+                break;
             }
         }
     }

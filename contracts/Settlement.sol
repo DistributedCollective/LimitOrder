@@ -4,7 +4,8 @@ pragma experimental ABIEncoderV2;
 
 import "./interfaces/ISovrynSwapNetwork.sol";
 import "./interfaces/ISovrynLoanToken.sol";
-import "./libraries/SafeMath.sol";
+import "./libraries/openzeppelin/SafeMath.sol";
+import "./libraries/openzeppelin/SafeERC20.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IWrbtcERC20.sol";
 import "./interfaces/ISettlement.sol";
@@ -16,11 +17,12 @@ import "./OrderBook.sol";
 import "./OrderBookMargin.sol";
 
 //todo: remove after testing
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 
 contract Settlement is ISettlement {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     using Orders for Orders.Order;
     using MarginOrders for MarginOrders.Order;
 
@@ -79,9 +81,9 @@ contract Settlement is ISettlement {
 
     receive() external payable {
         if (msg.sender != WRBTC_ADDRESS) {
-		    deposit(msg.sender);
+            deposit(msg.sender);
         }
-	}
+    }
 
     function deposit(address to) public payable override {
         uint256 amount = msg.value;
@@ -97,9 +99,9 @@ contract Settlement is ISettlement {
     function withdraw(uint256 amount) public override {
         address payable receiver = msg.sender;
         require(balanceOf[receiver] >= amount, "insufficient-balance");
+        balanceOf[receiver] -= amount;
         (bool success, ) = receiver.call{value: amount}("");
         require(success, "failed-to-transfer");
-        balanceOf[receiver] -= amount;
         emit Withdrawal(receiver, amount);
     }
     
@@ -111,6 +113,9 @@ contract Settlement is ISettlement {
         // voids flashloan attack vectors
         // solhint-disable-next-line avoid-tx-origin
         require(msg.sender == tx.origin, "called-by-contract");
+
+        require(args.order.fromToken == args.path[0], "invalid-path-0");
+        require(args.order.toToken == args.path[args.path.length - 1], "invalid-path-last");
 
         // Check if the order is canceled / already fully filled
         bytes32 hash = args.order.hash();
@@ -130,7 +135,7 @@ contract Settlement is ISettlement {
             wrbtc.deposit{value: args.order.amountIn}();
             balanceOf[args.order.maker] -= args.order.amountIn;
         } else {
-            IERC20(args.path[0]).transferFrom(args.order.maker, address(this), args.order.amountIn);
+            IERC20(args.path[0]).safeTransferFrom(args.order.maker, address(this), args.order.amountIn);
         }
 
         uint256 relayerFee = args.order.amountIn.mul(relayerFeePercent).div(1000);
@@ -149,7 +154,7 @@ contract Settlement is ISettlement {
             recipient
         );
 
-        IERC20(args.path[0]).transfer(msg.sender, relayerFee);
+        IERC20(args.path[0]).safeTransfer(msg.sender, relayerFee);//check this
 
         if (targetToken == WRBTC_ADDRESS) {
             //unwrap rbtc then transfer to recipient of order
@@ -209,8 +214,8 @@ contract Settlement is ISettlement {
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress).loanTokenAddress();
         collateralToken.transferFrom(trader, address(this), args.order.collateralTokenSent);
         if (args.order.loanTokenSent > 0) {
-            IERC20(_loanTokenAsset).transferFrom(trader, address(this), args.order.loanTokenSent);
-            console.log("_loanTokenAsset", IERC20(_loanTokenAsset).balanceOf(address(this)));
+            IERC20(_loanTokenAsset).safeTransferFrom(trader, address(this), args.order.loanTokenSent);
+            // console.log("_loanTokenAsset", IERC20(_loanTokenAsset).balanceOf(address(this)));
         }
 
         uint256 relayerFee;
@@ -245,10 +250,10 @@ contract Settlement is ISettlement {
 
         // Transfer fee for relayer
         if (relayerFee > 0) {
-            collateralToken.transfer(msg.sender, relayerFee);
+            collateralToken.safeTransfer(msg.sender, relayerFee);
         }
         if (relayerFeeOnLoanAsset > 0) {
-            IERC20(_loanTokenAsset).transfer(msg.sender, relayerFeeOnLoanAsset);
+            IERC20(_loanTokenAsset).safeTransfer(msg.sender, relayerFeeOnLoanAsset);
         }
 
         // This line is free from reentrancy issues since UniswapV2Pair prevents from them
@@ -287,7 +292,7 @@ contract Settlement is ISettlement {
     function _validateMarginStatus(FillMarginOrderArgs memory args, bytes32 hash) internal view {
         require(args.order.deadline >= block.timestamp, "order-expired");
         require(!canceledOfHash[hash], "order-canceled");
-        require(filledAmountInOfHash[hash].add(args.order.collateralTokenSent) <= args.order.collateralTokenSent, "already-filled");
+        require(filledAmountInOfHash[hash] == 0, "already-filled");
     }
 
     function _marginTrade(
@@ -301,10 +306,10 @@ contract Settlement is ISettlement {
         uint256 collateralAmount
     ) {
         address loanTokenAdr = order.loanTokenAddress;
-        IERC20(order.collateralTokenAddress).approve(loanTokenAdr, actualCollateralAmount);
+        IERC20(order.collateralTokenAddress).safeApprove(loanTokenAdr, actualCollateralAmount);
         if (actualLoanTokenAmount > 0) {
             address loanTokenAsset = ISovrynLoanToken(loanTokenAdr).loanTokenAddress();
-            IERC20(loanTokenAsset).approve(loanTokenAdr, actualLoanTokenAmount);
+            IERC20(loanTokenAsset).safeApprove(loanTokenAdr, actualLoanTokenAmount);
         }
 
         bytes memory data = abi.encodeWithSignature("marginTrade(bytes32,uint256,uint256,uint256,address,address,uint256,bytes)", 

@@ -4,7 +4,8 @@ pragma solidity =0.6.12;
 
 library Orders {
     // keccak256("Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline,uint256 created)")
-    bytes32 public constant ORDER_TYPEHASH = 0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c;
+    // bytes32 public constant ORDER_TYPEHASH = 0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c;
+    bytes32 public constant ORDER_TYPEHASH = keccak256("Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline,uint256 created)");
 
     struct Order {
         address maker;

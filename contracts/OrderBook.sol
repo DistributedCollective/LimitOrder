@@ -125,10 +125,10 @@ contract OrderBook {
     function getOrders(address maker, uint256 offset, uint256 limit) public view returns (Orders.Order[] memory orders) {
         orders = new Orders.Order[](limit);
         bytes32[] memory hashes = _hashesOfMaker[maker];
-        for (uint256 i = offset; i < limit; i++) {
-            if (i < hashes.length) {
-                bytes32 hash = hashes[i];
-                orders[i - offset] = orderOfHash[hash];
+        for (uint256 i = 0; i < limit; i++) {
+            if (i + offset < hashes.length) {
+                bytes32 hash = hashes[i + offset];
+                orders[i] = orderOfHash[hash];
             }
         }
     }

@@ -95,6 +95,27 @@ describe("Settlement", async () => {
         await helpers.expectToEqual(balance0.add(depositAmount), balance);
     });
 
+    it("Should deposit via normal send", async() => {
+        const { users } = await helpers.setup();
+        const signer = users[0];
+        const settlement = await helpers.getContract("Settlement", signer);
+        const depositTo = signer.address;
+        const depositAmount = ethers.utils.parseEther('0.05');
+        const balance0 = await settlement.balanceOf(depositTo);
+        const tx = await signer.sendTransaction({
+            to: settlement.address,
+            value: depositAmount
+        });
+        const receipt = await tx.wait();
+        const event = receipt.logs[0];
+        const deposited = settlement.interface.decodeEventLog("Deposit", event.data, event.topics);
+        await helpers.expectToEqual(deposited.to, depositTo);
+        await helpers.expectToEqual(deposited.amount, depositAmount);
+
+        const balance = await settlement.balanceOf(depositTo);
+        await helpers.expectToEqual(balance0.add(depositAmount), balance);
+    });
+
     it("Should withdraw()", async() => {
         const { users } = await helpers.setup();
         const user = users[0];
@@ -231,6 +252,6 @@ describe("Settlement", async () => {
         const settlement = await helpers.getContract("Settlement");
         const tx1 = await settlement.cancelOrder(hash);
         const receipt = await tx1.wait();
-        console.log(receipt);
+        // console.log(receipt);
     });
 });
