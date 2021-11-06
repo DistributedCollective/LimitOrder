@@ -46,6 +46,7 @@ contract Settlement is ISettlement {
     address public orderBookMarginAddress;
 
     uint256 public relayerFeePercent = 2;
+    uint256 public minFee = 0; //in wrbtc
 
     constructor(
         uint256 orderBookChainId,
@@ -104,6 +105,10 @@ contract Settlement is ISettlement {
         require(success, "failed-to-transfer");
         emit Withdrawal(receiver, amount);
     }
+
+    function setMinFee(uint256 fee) public override {
+        minFee = fee;
+    }
     
     // Fills an order by
     // swapping an exact amount of tokens for another token through the path passed as an argument
@@ -125,6 +130,11 @@ contract Settlement is ISettlement {
         address signer = EIP712.recover(DOMAIN_SEPARATOR1, hash, args.order.v, args.order.r, args.order.s);
         require(RSKAddrValidator.safeEquals(signer, args.order.maker), "invalid-signature");
 
+        uint256 relayerFee = args.order.amountIn.mul(relayerFeePercent).div(1000);
+        _checkRelayerFee(relayerFee, args.order.fromToken);
+
+        uint256 actualAmountIn = args.order.amountIn.sub(relayerFee);
+
         uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(args.path, args.order.amountIn);
        
         require(swapbackReturn >= args.order.amountOutMin, "insufficient-amount-out");
@@ -138,8 +148,6 @@ contract Settlement is ISettlement {
             IERC20(args.path[0]).safeTransferFrom(args.order.maker, address(this), args.order.amountIn);
         }
 
-        uint256 relayerFee = args.order.amountIn.mul(relayerFeePercent).div(1000);
-        uint256 actualAmountIn = args.order.amountIn.sub(relayerFee);
 
         address recipient = args.order.recipient;
         if (args.path[args.path.length - 1] == WRBTC_ADDRESS) {
@@ -210,30 +218,18 @@ contract Settlement is ISettlement {
         address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, args.order.v, args.order.r, args.order.s);
         require(RSKAddrValidator.safeEquals(signer, trader), "invalid-signature");
 
+        (
+            uint256 relayerFee,
+            uint256 relayerFeeOnLoanAsset,
+            uint256 actualCollateralAmount,
+            uint256 actualLoanTokenAmount
+        ) = _calculateMarginOrderFee(args.order);
+
         IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress).loanTokenAddress();
         collateralToken.transferFrom(trader, address(this), args.order.collateralTokenSent);
         if (args.order.loanTokenSent > 0) {
             IERC20(_loanTokenAsset).safeTransferFrom(trader, address(this), args.order.loanTokenSent);
-            // console.log("_loanTokenAsset", IERC20(_loanTokenAsset).balanceOf(address(this)));
-        }
-
-        uint256 relayerFee;
-        uint256 relayerFeeOnLoanAsset;
-        uint256 actualCollateralAmount;
-        uint256 actualLoanTokenAmount;
-
-        {
-            uint256 _collateralTokenSent = args.order.collateralTokenSent;
-            if (_collateralTokenSent > 0) {
-                relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(1000);
-                actualCollateralAmount = _collateralTokenSent.sub(relayerFee);
-            }
-            uint256 _loanTokenSent = args.order.loanTokenSent;
-            if (_loanTokenSent > 0) {
-                relayerFeeOnLoanAsset = _loanTokenSent.mul(relayerFeePercent).div(1000);
-                actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
-            }
         }
 
         (principalAmount, collateralAmount) = _marginTrade(args.order, actualLoanTokenAmount, actualCollateralAmount);
@@ -331,6 +327,37 @@ contract Settlement is ISettlement {
         }
 
         (principalAmount, collateralAmount) = abi.decode(result, (uint256, uint256));
+    }
+
+    function _calculateMarginOrderFee(MarginOrders.Order memory order) 
+    internal
+    returns (uint256 relayerFee,
+        uint256 relayerFeeOnLoanAsset,
+        uint256 actualCollateralAmount,
+        uint256 actualLoanTokenAmount
+    ) {
+        uint256 _collateralTokenSent = order.collateralTokenSent;
+        if (_collateralTokenSent > 0) {
+            relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(1000);
+            actualCollateralAmount = _collateralTokenSent.sub(relayerFee);
+        }
+
+        uint256 _loanTokenSent = order.loanTokenSent;
+        uint256 _feeLoanAssetByCollateral;
+        if (_loanTokenSent > 0) {
+            relayerFeeOnLoanAsset = _loanTokenSent.mul(relayerFeePercent).div(1000);
+            actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
+            address[] memory _path = sovrynSwapNetwork.conversionPath(order.loanTokenAddress, order.collateralTokenAddress);
+            _feeLoanAssetByCollateral = sovrynSwapNetwork.rateByPath(_path, relayerFeeOnLoanAsset);
+        }
+
+        _checkRelayerFee(relayerFee + _feeLoanAssetByCollateral, order.collateralTokenAddress);
+    }
+
+    function _checkRelayerFee(uint256 fee, address fromToken) internal {
+        address[] memory path = sovrynSwapNetwork.conversionPath(fromToken, WRBTC_ADDRESS);
+        uint256 feeInRbtc = sovrynSwapNetwork.rateByPath(path, fee);
+        require(fee > minFee, "Order amount is too low to pay the relayer fee");
     }
     
     // internal functions

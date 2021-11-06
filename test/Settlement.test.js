@@ -21,7 +21,7 @@ describe("Settlement", async () => {
         else if(network.name=="rsktestnet") sovrynSwapNetworkAdr = "0x61172b53423e205a399640e5283e51fe60ec2256";
         else {
             sovrynSwapNetworkAdr = await getContract("TestSovrynSwap");
-            sovrynSwapNetworkAdr=sovrynSwapNetworkAdr.address;
+            sovrynSwapNetworkAdr = sovrynSwapNetworkAdr.address;
 
             const accounts = await ethers.getSigners();
             // await Promise.all(accounts.map(async (acc) => {
@@ -35,6 +35,8 @@ describe("Settlement", async () => {
 
             const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
             await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));
+            const settlement = await helpers.getContract("Settlement");
+            await settlement.setMinFee(parseEther('0'));
         }
     });
 
@@ -253,5 +255,28 @@ describe("Settlement", async () => {
         const tx1 = await settlement.cancelOrder(hash);
         const receipt = await tx1.wait();
         // console.log(receipt);
+    });
+
+    it("Should failed fillOrder because minFee", async () => {
+        const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
+        const settlement = await helpers.getContract("Settlement");
+        await settlement.setMinFee(parseEther('0.001'));
+        const { order , tx } = await createOrder(
+            users[0],
+            fromToken,
+            toToken,
+            parseEther('0.002'),
+            parseEther('0.0001'),
+            getDeadline(24)
+        );
+        await tx.wait();
+        
+        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+        const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
+
+        await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
+            fillOrder(users[0], order, order.amountIn, path)
+        );
+        await settlement.setMinFee(parseEther('0'));
     });
 });

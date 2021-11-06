@@ -59,6 +59,7 @@ interface ISettlement {
     function cancelOrder(bytes32 hash) external;
     function deposit(address to) external payable;
     function withdraw(uint256 amount) external;
+    function setMinFee(uint256 fee) external;
     function allCanceledHashes() external view returns (bytes32[] memory);
     function checkFilledAmountHashes(bytes32[] memory hashes) external view returns (FilledAmountCheck[] memory);
     function checkCanceledHashes(bytes32[] memory hashes) external view returns (CanceledCheck[] memory);
