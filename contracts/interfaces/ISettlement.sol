@@ -56,7 +56,8 @@ interface ISettlement {
     function fillOrders(FillOrderArgs[] memory args) external returns (uint256[] memory amountsOut);
     function fillMarginOrder(FillMarginOrderArgs calldata args) external returns (uint256 principalAmount, uint256 collateralAmount);
     function fillMarginOrders(FillMarginOrderArgs[] memory args) external returns (uint256[] memory principalAmounts, uint256[] memory collateralAmounts);
-    function cancelOrder(bytes32 hash) external;
+    function cancelOrder(Orders.Order memory order) external;
+    function cancelMarginOrder(MarginOrders.Order memory order) external;
     function deposit(address to) external payable;
     function withdraw(uint256 amount) external;
     function setMinFee(uint256 fee) external;

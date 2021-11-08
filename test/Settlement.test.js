@@ -252,7 +252,7 @@ describe("Settlement", async () => {
         console.log("order created hash", hash);
     
         const settlement = await helpers.getContract("Settlement");
-        const tx1 = await settlement.cancelOrder(hash);
+        const tx1 = await settlement.cancelOrder(await order.toArgs());
         const receipt = await tx1.wait();
         // console.log(receipt);
     });

@@ -299,7 +299,7 @@ describe("Margin Order", async () => {
         console.log("order created", hash);
 
         const settlement = await helpers.getContract("Settlement");
-        const tx1 = await settlement.cancelOrder(hash);
+        const tx1 = await settlement.cancelMarginOrder(await order.toArgs());
         const receipt = await tx1.wait();
         const event = receipt.logs[receipt.logs.length - 1];
         const canceled = settlement.interface.decodeEventLog("MarginOrderCanceled", event.data, event.topics);
@@ -449,22 +449,4 @@ describe("Margin Order", async () => {
         );
         await settlement.setMinFee(parseEther('0'));
     });
-
-
-    // it("Should cancel orders hashes (for testnet)", async () => {
-    //     const settlement = await helpers.getContract("Settlement");
-    //     const hashes = [
-    //         '0x1cb8f393745cd73fb2dbe9b1f214a80e5dbca975dec521a33b5b5c52691e98ac',
-    //         '0x56adc5145c648e6e2582b6c9604e3cfb40748272724dcac0e32f482fd9647b8c',
-    //         '0xd0851aab09c3630abc17af1c91a56ffa290e374afbfe2aa504d91b2f5b354c44',
-    //         '0x14637868eb3580ffaf54050d621fcfbeed558859bd00420b6eba7f8abd7cb964'
-    //     ];
-    //     for (const hash of hashes) {
-    //         const tx = await settlement.cancelOrder(hash);
-    //         const receipt = await tx.wait();
-    //         const event = receipt.logs[receipt.logs.length - 1];
-    //         const canceled = settlement.interface.decodeEventLog("MarginOrderCanceled", event.data, event.topics);
-    //         await helpers.expectToEqual(canceled.hash, hash);
-    //     }
-    // });
 });

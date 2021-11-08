@@ -393,32 +393,28 @@ contract Settlement is ISettlement {
     }
 
      // Cancels an order, has to been called by order maker
-    function cancelOrder(bytes32 hash) public override {
-        require(!canceledOfHash[hash], "already-canceled");
-        OrderBook orderBook = OrderBook(orderBookAddress);
-        address maker = orderBook.getMaker(hash);
-        bool isMarginOrder = false;
-        if (maker != address(0)) {
-            // check limit order
-            require(msg.sender == maker, "not-called-by-maker");
-        } 
-        else {
-            // check margin order
-            OrderBookMargin orderBookMargin = OrderBookMargin(orderBookMarginAddress);
-            address trader = orderBookMargin.getTrader(hash);
-            require(trader != address(0), "order-hash-not-exist");
-            require(msg.sender == trader, "not-called-by-maker");
-            isMarginOrder = true;
-        }
+    function cancelOrder(Orders.Order memory order) public override {
+        bytes32 hash = order.hash();
+        address signer = EIP712.recover(DOMAIN_SEPARATOR1, hash, order.v, order.r, order.s);
+        require(RSKAddrValidator.safeEquals(signer, order.maker), "invalid-signature");
+        require(msg.sender == order.maker, "not-called-by-maker");
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        if (isMarginOrder) {
-            emit MarginOrderCanceled(hash);
-        } else {
-            emit OrderCanceled(hash);
-        }
+        emit OrderCanceled(hash);
+    }
+
+    function cancelMarginOrder(MarginOrders.Order memory order) public override {
+        bytes32 hash = order.hash();
+        address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, order.v, order.r, order.s);
+        require(RSKAddrValidator.safeEquals(signer, order.trader), "invalid-signature");
+        require(msg.sender == order.trader, "not-called-by-maker");
+
+        canceledOfHash[hash] = true;
+        canceledHashes.push(hash);
+
+        emit MarginOrderCanceled(hash);
     }
 
     function allCanceledHashes() public view override returns (bytes32[] memory) {
