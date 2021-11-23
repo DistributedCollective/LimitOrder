@@ -119,8 +119,9 @@ contract Settlement is ISettlement {
         // solhint-disable-next-line avoid-tx-origin
         require(msg.sender == tx.origin, "called-by-contract");
 
-        require(args.order.fromToken == args.path[0], "invalid-path-0");
-        require(args.order.toToken == args.path[args.path.length - 1], "invalid-path-last");
+        address[] memory path = args.path;
+        require(args.order.fromToken == path[0], "invalid-path-0");
+        require(args.order.toToken == path[path.length - 1], "invalid-path-last");
 
         // Check if the order is canceled / already fully filled
         bytes32 hash = args.order.hash();
@@ -135,34 +136,34 @@ contract Settlement is ISettlement {
 
         uint256 actualAmountIn = args.order.amountIn.sub(relayerFee);
 
-        uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(args.path, args.order.amountIn);
+        uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(path, args.order.amountIn);
        
         require(swapbackReturn >= args.order.amountOutMin, "insufficient-amount-out");
 
         IWrbtcERC20 wrbtc = IWrbtcERC20(WRBTC_ADDRESS);
-        if (args.path[0] == WRBTC_ADDRESS) {
+        if (path[0] == WRBTC_ADDRESS) {
             require(balanceOf[args.order.maker] >= args.order.amountIn, "insufficient-balance");
             wrbtc.deposit{value: args.order.amountIn}();
             balanceOf[args.order.maker] -= args.order.amountIn;
         } else {
-            IERC20(args.path[0]).safeTransferFrom(args.order.maker, address(this), args.order.amountIn);
+            IERC20(path[0]).safeTransferFrom(args.order.maker, address(this), args.order.amountIn);
         }
 
 
         address recipient = args.order.recipient;
-        if (args.path[args.path.length - 1] == WRBTC_ADDRESS) {
+        if (path[path.length - 1] == WRBTC_ADDRESS) {
             //change recipient to settlement for unwrap rbtc after swapping
             recipient = address(this);
         }
 
         (address sourceToken, address targetToken, uint256 targetTokenAmount) = swapInternal(
-            args.path,
+            path,
             actualAmountIn,
             args.order.amountOutMin,
             recipient
         );
 
-        IERC20(args.path[0]).safeTransfer(msg.sender, relayerFee);//check this
+        IERC20(path[0]).safeTransfer(msg.sender, relayerFee);//check this
 
         if (targetToken == WRBTC_ADDRESS) {
             //unwrap rbtc then transfer to recipient of order
@@ -183,7 +184,7 @@ contract Settlement is ISettlement {
 
         amountOut = targetTokenAmount;
 
-        emit OrderFilled(hash, args.amountToFillIn, amountOut);
+        emit OrderFilled(hash, args.order.maker, args.amountToFillIn, amountOut, path);
     }
 
     // Fills multiple orders passed as an array
@@ -212,7 +213,6 @@ contract Settlement is ISettlement {
         _validateMarginStatus(args, hash);
 
         address trader = args.order.trader;
-        // uint256 loanTokenSent = args.order.loanTokenSent;
 
         // Check if the signature is valid
         address signer = EIP712.recover(DOMAIN_SEPARATOR2, hash, args.order.v, args.order.r, args.order.s);
@@ -257,7 +257,19 @@ contract Settlement is ISettlement {
             args.order.collateralTokenSent + args.order.loanTokenSent
         );
 
-        emit MarginOrderFilled(hash, principalAmount, collateralAmount);
+        MarginOrders.Order memory order = args.order;
+
+        emit MarginOrderFilled(
+            hash,
+            order.trader,
+            principalAmount,
+            collateralAmount,
+            order.leverageAmount,
+            order.loanTokenAddress,
+            order.loanTokenSent,
+            order.collateralTokenSent,
+            order.collateralTokenAddress
+        );
     }
 
     // Fills multiple margin orders passed as an array
@@ -402,7 +414,7 @@ contract Settlement is ISettlement {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        emit OrderCanceled(hash);
+        emit OrderCanceled(hash, order.maker);
     }
 
     function cancelMarginOrder(MarginOrders.Order memory order) public override {
@@ -414,7 +426,7 @@ contract Settlement is ISettlement {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        emit MarginOrderCanceled(hash);
+        emit MarginOrderCanceled(hash, order.trader);
     }
 
     function allCanceledHashes() public view override returns (bytes32[] memory) {

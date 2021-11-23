@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "solhint": "solhint 'contracts/**/*.sol'",
-    "build": "hardhat prepend-spdx-license && hardhat compile",
+    "build": "hardhat compile",
     "start": "hardhat node",
     "console": "hardhat console",
     "test": "hardhat test",

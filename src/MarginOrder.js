@@ -2,7 +2,9 @@ const ethers = require('ethers');
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 module.exports = class MarginOrder {
-    static ORDER_TYPEHASH = "0xe30dcb91507ed7c8a9a2019b56e407eee8294529022e84f18b5420374e178404";
+    static get ORDER_TYPEHASH() {
+        return "0xe30dcb91507ed7c8a9a2019b56e407eee8294529022e84f18b5420374e178404";
+    }
 
     constructor(
         loanId,
@@ -55,7 +57,7 @@ module.exports = class MarginOrder {
                     overrides.loanTokenSent || this.loanTokenSent,
                     overrides.collateralTokenSent || this.collateralTokenSent,
                     overrides.collateralTokenAddress || this.collateralTokenAddress,
-                    overrides.trader || this.trader.address,
+                    overrides.trader || this.trader,
                     overrides.minReturn || this.minReturn,
                     overrides.loanDataBytes || this.loanDataBytes,
                     overrides.deadline || this.deadline,
@@ -94,7 +96,7 @@ module.exports = class MarginOrder {
             loanTokenSent: this.loanTokenSent,
             collateralTokenSent: this.collateralTokenSent,
             collateralTokenAddress: this.collateralTokenAddress,
-            trader: this.trader.address,
+            trader: this.trader,
             minReturn: this.minReturn,
             loanDataBytes: this.loanDataBytes,
             deadline: this.deadline,

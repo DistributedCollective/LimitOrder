@@ -7,12 +7,28 @@ import "../libraries/Orders.sol";
 import "../libraries/MarginOrders.sol";
 
 interface ISettlement {
-    event OrderFilled(bytes32 indexed hash, uint256 amountIn, uint256 amountOut);
-    event OrderCanceled(bytes32 indexed hash);
+    event OrderFilled(
+        bytes32 indexed hash,
+        address indexed maker,
+        uint256 amountIn,
+        uint256 amountOut,
+        address[] path  
+    );
+    event OrderCanceled(bytes32 indexed hash, address indexed maker);
     event FeeTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
     event FeeSplitTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
-    event MarginOrderFilled(bytes32 indexed hash, uint256 principal, uint256 collateral);
-    event MarginOrderCanceled(bytes32 indexed hash);
+    event MarginOrderFilled(
+        bytes32 indexed hash,
+        address indexed trader,
+        uint256 principal,
+        uint256 collateral,
+        uint256 leverageAmount,
+        address loanTokenAddress,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        address collateralTokenAddress
+    );
+    event MarginOrderCanceled(bytes32 indexed hash, address indexed trader);
     event Swap(
         address indexed _sourceToken,
         address indexed _targetToken,

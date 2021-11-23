@@ -34,9 +34,41 @@ The maker of an order can cancel it with `cancelOrder()` on `Settlement`.
 It is possible to fill only a certain amount of tokens, not all. In most cases, submitted orders will reside on the `OrderBook` and their amount will be filled by different callers in different blocks.
 
 
+
 ## Audits
-This repository has been audited by ??
+This repository has been reviewed by pessimistic. 
 
 
 ## License
 MIT
+
+## Install
+
+```sh
+1. yarn install
+2. yarn build
+3. create ".env" file contain 2 private keys: 1 for Deployer and other for Relayer(used for testing)
+
+PRIVATE_KEY=..
+PRIVATE_KEY_RELAYER=...
+
+4. Create directory "secrets" and within a file accounts.js with the credentials of the relayer
+
+module.exports = {
+    relayer: {
+        adr: "",
+        privateKey: ""
+    }
+}
+
+```
+
+### Deploy on testnet
+
+```sh
+1. yarn deploy:rsktest
+2. copy deployed address of these contracts "Settlement, OrderBook, OrderBookMargin" into config file "src/config/testnet.js"
+3. yarn build-client (simple client frontend for creating orders)
+4. yarn start-relay
+5. open "http://localhost:3001" on browser
+```

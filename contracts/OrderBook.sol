@@ -9,12 +9,11 @@ import "./libraries/EIP712.sol";
 import "./libraries/Bytes32Pagination.sol";
 import "./libraries/RSKAddrValidator.sol";
 
-
 contract OrderBook {
     using Orders for Orders.Order;
     using Bytes32Pagination for bytes32[];
 
-    event OrderCreated(bytes32 indexed hash);
+    event OrderCreated(bytes32 indexed hash, Orders.Order order);
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable DOMAIN_SEPARATOR;
@@ -114,7 +113,7 @@ contract OrderBook {
         _hashesOfFromToken[order.fromToken].push(hash);
         _hashesOfToToken[order.toToken].push(hash);
 
-        emit OrderCreated(hash);
+        emit OrderCreated(hash, order);
     }
 
     function getMaker(bytes32 hash) public view returns (address maker){

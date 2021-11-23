@@ -2,7 +2,9 @@ const ethers = require('ethers');
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 module.exports = class Order {
-    static ORDER_TYPEHASH = "0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c";
+    static get ORDER_TYPEHASH() {
+        "0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c";
+    }
   
     constructor(
         maker,

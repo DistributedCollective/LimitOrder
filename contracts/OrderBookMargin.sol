@@ -14,7 +14,7 @@ contract OrderBookMargin {
     using MarginOrders for MarginOrders.Order;
     using Bytes32Pagination for bytes32[];
 
-    event OrderCreated(bytes32 indexed hash);
+    event MarginOrderCreated(bytes32 indexed hash, MarginOrders.Order order);
 
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public immutable DOMAIN_SEPARATOR;
@@ -99,7 +99,7 @@ contract OrderBookMargin {
         _hashesOfTrader[order.trader].push(hash);
         _hashesOfCollateralToken[order.collateralTokenAddress].push(hash);
 
-        emit OrderCreated(hash);
+        emit MarginOrderCreated(hash, order);
     }
 
     function getTrader(bytes32 hash) public view returns (address trader){
