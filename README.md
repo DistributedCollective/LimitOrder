@@ -46,13 +46,13 @@ MIT
 
 ```sh
 1. yarn install
-2. yarn build
-3. create ".env" file contain 2 private keys: 1 for Deployer and other for Relayer(used for testing)
-
-PRIVATE_KEY=..
-PRIVATE_KEY_RELAYER=...
-
-4. Create directory "secrets" and within a file accounts.js with the credentials of the relayer
+2. create a file ".env" containing 2 private keys: 
+```
+PRIVATE_KEY=[your-private-key]
+PRIVATE_KEY_RELAYER=[your-private-key]
+```
+3. yarn build
+4. Create a directory "secrets" and within a file accounts.js with the credentials of the relayer
 
 module.exports = {
     relayer: {
@@ -63,12 +63,17 @@ module.exports = {
 
 ```
 
-### Deploy on testnet
+### Deployment on testnet
 
 ```sh
 1. yarn deploy:rsktest
-2. copy deployed address of these contracts "Settlement, OrderBook, OrderBookMargin" into config file "src/config/testnet.js"
-3. yarn build-client (simple client frontend for creating orders)
-4. yarn start-relay
-5. open "http://localhost:3001" on browser
+2. copy deployed address of the contracts "Settlement, OrderBook, OrderBookMargin" into the config file "src/config/testnet.js"
+3. yarn start-relay
+```
+
+### Test client
+```
+1. yarn build-client
+2. yarn start-relay
+3. open "http://localhost:3001" on your browser
 ```
