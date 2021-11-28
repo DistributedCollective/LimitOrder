@@ -129,7 +129,7 @@ contract Settlement is ISettlement {
 
         // Check if the signature is valid
         address signer = EIP712.recover(DOMAIN_SEPARATOR1, hash, args.order.v, args.order.r, args.order.s);
-        require(RSKAddrValidator.safeEquals(signer, args.order.maker), "invalid-signature");
+        require(RSKAddrValidator.safeEquals(signer, args.order.maker), "invalid-maker-signature");
 
         uint256 relayerFee = args.order.amountIn.mul(relayerFeePercent).div(1000);
         _checkRelayerFee(relayerFee, args.order.fromToken);

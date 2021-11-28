@@ -29,14 +29,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         wrbtcAddress = "0x542fDA317318eBF1d3DEAf76E0b632741A7e677d";
     }
 
-    const { address: orderBook } = await deterministic("OrderBook", {
+    const { address: orderBook } = await deploy("OrderBook", {
         from: deployer,
         log: true,
-    });
-    const { address: orderBookMargin } = await deterministic("OrderBookMargin", {
+      });
+      const { address: orderBookMargin } = await deploy("OrderBookMargin", {
         from: deployer,
         log: true,
-    });
+      });
+    
 
     await deploy("Settlement", {
         contract,

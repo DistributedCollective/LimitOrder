@@ -4,4 +4,5 @@ module.exports = {
     OrderBookMargin: require('./OrderBookMargin.json'),
     Settlement: require('./Settlement.json'),
     LoanToken: require('./LoanToken.json'),
+    SovrynSwap: require('./SovrynSwap.json'),
 }

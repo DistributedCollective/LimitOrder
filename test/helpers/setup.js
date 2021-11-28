@@ -100,11 +100,13 @@ module.exports = async () => {
         const settlement = await getContract("Settlement", signer);
         const orderArgs = await order.toArgs(overrides);
 
-        return await settlement.fillOrder([
+        return await settlement.fillOrders([[
             orderArgs,
             amountToFillIn,
             path
-        ]);
+        ]], {
+            gasLimit: '1000000'
+        });
     };
 
     const filledAmountIn = async (signer, order) => {
