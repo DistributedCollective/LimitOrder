@@ -5,7 +5,7 @@ const INIT_CODE_HASH = "e18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dc
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
-    const { call, deploy, deterministic } = deployments;
+    const { deploy } = deployments;
 
     const artifact = await deployments.getArtifact("Settlement");
     const contract = {
@@ -29,20 +29,26 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         wrbtcAddress = "0x542fDA317318eBF1d3DEAf76E0b632741A7e677d";
     }
 
-    const { address: orderBook } = await deterministic("OrderBook", {
+    const orderBook = await deployments.get('OrderBookSwapProxy');
+    const orderBookMargin = await deployments.get('OrderBookMarginProxy');
+
+    const deployProxy = await deploy('SettlementProxy', {
         from: deployer,
-        log: true,
-    });
-    const { address: orderBookMargin } = await deterministic("OrderBookMargin", {
-        from: deployer,
-        log: true,
+        log: true
     });
 
-    await deploy("Settlement", {
-        contract,
-        args: [chainId, orderBook, orderBookMargin, sovrynSwapNetwork, wrbtcAddress],
+    const deployLogic = await deploy('SettlementLogic', {
         from: deployer,
-        log: true,
-        gasLimit: 5000000,
+        log: true
     });
+
+    const SettlementProxy = await deployments.get('SettlementProxy');
+    const settlementProxy = new web3.eth.Contract(SettlementProxy.abi, deployProxy.address);
+    let tx = await settlementProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
+    console.log(tx.transactionHash);
+    
+    const SettlementLogic = await deployments.get('SettlementLogic');
+    const settlement = new web3.eth.Contract(SettlementLogic.abi, deployProxy.address);
+    tx = await settlement.methods.initialize(chainId, orderBook.address, orderBookMargin.address, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
+    console.log(tx.transactionHash);
 };
