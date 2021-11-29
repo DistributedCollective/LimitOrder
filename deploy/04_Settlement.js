@@ -7,12 +7,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const { deploy } = deployments;
 
-    const artifact = await deployments.getArtifact("Settlement");
-    const contract = {
-        abi: artifact.abi,
-        bytecode: artifact.bytecode,
-    };
-
     let sovrynSwapNetwork;
     let wrbtcAddress;
     const chainId = network.name === "mainnet" ? 30 : await getChainId();

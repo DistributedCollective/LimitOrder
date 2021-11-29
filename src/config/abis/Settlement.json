@@ -1,36 +1,5 @@
 [
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "orderBookChainId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "address",
-                "name": "_orderBookAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_marginOrderBookAddress",
-                "type": "address"
-            },
-            {
-                "internalType": "contract ISovrynSwapNetwork",
-                "name": "_sovrynSwapNetwork",
-                "type": "address"
-            },
-            {
-                "internalType": "address",
-                "name": "_WRBTC",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
         "anonymous": false,
         "inputs": [
             {
@@ -282,6 +251,25 @@
             }
         ],
         "name": "OrderFilled",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "previousOwner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "OwnershipTransferred",
         "type": "event"
     },
     {
@@ -1085,6 +1073,52 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "orderBookChainId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "_orderBookAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_marginOrderBookAddress",
+                "type": "address"
+            },
+            {
+                "internalType": "contract ISovrynSwapNetwork",
+                "name": "_sovrynSwapNetwork",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_WRBTC",
+                "type": "address"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "isOwner",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "minFee",
         "outputs": [
@@ -1113,6 +1147,19 @@
     {
         "inputs": [],
         "name": "orderBookMarginAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "owner",
         "outputs": [
             {
                 "internalType": "address",
@@ -1165,6 +1212,19 @@
     {
         "inputs": [
             {
+                "internalType": "address",
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
@@ -1174,9 +1234,5 @@
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
-    },
-    {
-        "stateMutability": "payable",
-        "type": "receive"
     }
 ]
