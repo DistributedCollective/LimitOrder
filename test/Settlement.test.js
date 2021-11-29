@@ -47,7 +47,7 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('0.01'),
+            parseEther('1'),
             parseEther('0.0001'),
             getDeadline(24)
         );
@@ -65,218 +65,219 @@ describe("Settlement", async () => {
             filledAmountIn,
         } = await helpers.setup();
         const settlement = await helpers.getContract("Settlement");
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[1]);
         const path= await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+        const tx2 = await fillOrder(users[1], orderG, orderG.amountIn, path);
         const receipt2 = await tx2.wait();
+        console.log(receipt2);
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, orderG.hash());
         await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
-        await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
+        await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[1], orderG));
     });
 
-    it("Should deposit()", async() => {
-        const { users } = await helpers.setup();
-        const settlement = await helpers.getContract("Settlement", users[0]);
-        const depositTo = users[0].address;
-        const depositAmount = ethers.utils.parseEther('0.05');
-        const balance0 = await settlement.balanceOf(depositTo);
-        const tx = await settlement.deposit(depositTo, {
-            value: depositAmount
-        });
-        const receipt = await tx.wait();
-        // console.log(receipt);
-        const event = receipt.logs[0];
-        const deposited = settlement.interface.decodeEventLog("Deposit", event.data, event.topics);
-        await helpers.expectToEqual(deposited.to, depositTo);
-        await helpers.expectToEqual(deposited.amount, depositAmount);
+//     it("Should deposit()", async() => {
+//         const { users } = await helpers.setup();
+//         const settlement = await helpers.getContract("Settlement", users[0]);
+//         const depositTo = users[0].address;
+//         const depositAmount = ethers.utils.parseEther('0.05');
+//         const balance0 = await settlement.balanceOf(depositTo);
+//         const tx = await settlement.deposit(depositTo, {
+//             value: depositAmount
+//         });
+//         const receipt = await tx.wait();
+//         // console.log(receipt);
+//         const event = receipt.logs[0];
+//         const deposited = settlement.interface.decodeEventLog("Deposit", event.data, event.topics);
+//         await helpers.expectToEqual(deposited.to, depositTo);
+//         await helpers.expectToEqual(deposited.amount, depositAmount);
 
-        const balance = await settlement.balanceOf(depositTo);
-        await helpers.expectToEqual(balance0.add(depositAmount), balance);
-    });
+//         const balance = await settlement.balanceOf(depositTo);
+//         await helpers.expectToEqual(balance0.add(depositAmount), balance);
+//     });
 
-    it("Should deposit via normal send", async() => {
-        const { users } = await helpers.setup();
-        const signer = users[0];
-        const settlement = await helpers.getContract("Settlement", signer);
-        const depositTo = signer.address;
-        const depositAmount = ethers.utils.parseEther('0.05');
-        const balance0 = await settlement.balanceOf(depositTo);
-        const tx = await signer.sendTransaction({
-            to: settlement.address,
-            value: depositAmount
-        });
-        const receipt = await tx.wait();
-        const event = receipt.logs[0];
-        const deposited = settlement.interface.decodeEventLog("Deposit", event.data, event.topics);
-        await helpers.expectToEqual(deposited.to, depositTo);
-        await helpers.expectToEqual(deposited.amount, depositAmount);
+//     it("Should deposit via normal send", async() => {
+//         const { users } = await helpers.setup();
+//         const signer = users[0];
+//         const settlement = await helpers.getContract("Settlement", signer);
+//         const depositTo = signer.address;
+//         const depositAmount = ethers.utils.parseEther('0.05');
+//         const balance0 = await settlement.balanceOf(depositTo);
+//         const tx = await signer.sendTransaction({
+//             to: settlement.address,
+//             value: depositAmount
+//         });
+//         const receipt = await tx.wait();
+//         const event = receipt.logs[0];
+//         const deposited = settlement.interface.decodeEventLog("Deposit", event.data, event.topics);
+//         await helpers.expectToEqual(deposited.to, depositTo);
+//         await helpers.expectToEqual(deposited.amount, depositAmount);
 
-        const balance = await settlement.balanceOf(depositTo);
-        await helpers.expectToEqual(balance0.add(depositAmount), balance);
-    });
+//         const balance = await settlement.balanceOf(depositTo);
+//         await helpers.expectToEqual(balance0.add(depositAmount), balance);
+//     });
 
-    it("Should withdraw()", async() => {
-        const { users } = await helpers.setup();
-        const user = users[0];
-        const settlement = await helpers.getContract("Settlement", user);
+//     it("Should withdraw()", async() => {
+//         const { users } = await helpers.setup();
+//         const user = users[0];
+//         const settlement = await helpers.getContract("Settlement", user);
         
-        const balance0 = await settlement.balanceOf(user.address);
+//         const balance0 = await settlement.balanceOf(user.address);
 
-        const withdrawAmount = ethers.utils.parseEther('0.02');
-        const tx = await settlement.withdraw(withdrawAmount);
-        const receipt = await tx.wait();
-        // console.log(receipt);
-        const event = receipt.logs[0];
-        const withdrawal = settlement.interface.decodeEventLog("Withdrawal", event.data, event.topics);
-        const balance1 = await settlement.balanceOf(user.address);;
-        await helpers.expectToEqual(withdrawal.receiver, user.address);
-        await helpers.expectToEqual(withdrawal.amount, withdrawAmount);
-        await helpers.expectToEqual(balance0.sub(withdrawAmount), balance1);
-    });
+//         const withdrawAmount = ethers.utils.parseEther('0.02');
+//         const tx = await settlement.withdraw(withdrawAmount);
+//         const receipt = await tx.wait();
+//         // console.log(receipt);
+//         const event = receipt.logs[0];
+//         const withdrawal = settlement.interface.decodeEventLog("Withdrawal", event.data, event.topics);
+//         const balance1 = await settlement.balanceOf(user.address);;
+//         await helpers.expectToEqual(withdrawal.receiver, user.address);
+//         await helpers.expectToEqual(withdrawal.amount, withdrawAmount);
+//         await helpers.expectToEqual(balance0.sub(withdrawAmount), balance1);
+//     });
 
-    it("Should createOrder() RBTC-XUSD", async () => {
-        const { users, chainId, getDeadline } = await helpers.setup();
-        const signer = users[0];
-        const settlement = await getContract("Settlement", signer);
-        const orderBook = await getContract("OrderBook", signer);
-        const fromToken = WRBTC[chainId];
-        const toToken = XUSD[chainId];
-        const amountIn = parseEther('0.01');
-        const amountOutMin = parseEther('0.0001');
+//     it("Should createOrder() RBTC-XUSD", async () => {
+//         const { users, chainId, getDeadline } = await helpers.setup();
+//         const signer = users[0];
+//         const settlement = await getContract("Settlement", signer);
+//         const orderBook = await getContract("OrderBook", signer);
+//         const fromToken = WRBTC[chainId];
+//         const toToken = XUSD[chainId];
+//         const amountIn = parseEther('0.01');
+//         const amountOutMin = parseEther('0.0001');
         
-        await settlement.deposit(signer.address, {
-            value: amountIn
-        });
+//         await settlement.deposit(signer.address, {
+//             value: amountIn
+//         });
 
-        const order = new Order(
-            signer,
-            fromToken,
-            toToken,
-            amountIn,
-            amountOutMin,
-            signer.address,
-            getDeadline(24),
-            ethers.BigNumber.from(Math.floor(Date.now() / 1000))
-        );
-        const tx = await orderBook.createOrder(await order.toArgs());
-        orderG = order;
-        const hash = await order.hash();
-        console.log("order wrbtc-xusd hash", hash);
-    });
+//         const order = new Order(
+//             signer,
+//             fromToken,
+//             toToken,
+//             amountIn,
+//             amountOutMin,
+//             signer.address,
+//             getDeadline(24),
+//             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
+//         );
+//         const tx = await orderBook.createOrder(await order.toArgs());
+//         orderG = order;
+//         const hash = await order.hash();
+//         console.log("order wrbtc-xusd hash", hash);
+//     });
 
-    it("Should fillOrder() RBTC-XUSD", async () => {
-        const {
-            users,
-            fillOrder,
-            filledAmountIn,
-            chainId
-        } = await helpers.setup();
-        const fromToken = WRBTC[chainId].address;
-        const toToken = XUSD[chainId].address;
-        const settlement = await helpers.getContract("Settlement");
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-        const path= await sovrynSwapNetwork.conversionPath(fromToken, toToken);
+//     it("Should fillOrder() RBTC-XUSD", async () => {
+//         const {
+//             users,
+//             fillOrder,
+//             filledAmountIn,
+//             chainId
+//         } = await helpers.setup();
+//         const fromToken = WRBTC[chainId].address;
+//         const toToken = XUSD[chainId].address;
+//         const settlement = await helpers.getContract("Settlement");
+//         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+//         const path= await sovrynSwapNetwork.conversionPath(fromToken, toToken);
 
-        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
-        const receipt2 = await tx2.wait();
-        const event = receipt2.logs[receipt2.logs.length - 1];
-        const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
-        console.log("Order filled: %sWRBTC -> %sXUSD", formatEther(filled.amountIn.toString()), formatUnits(filled.amountOut.toString(), 18));
-        await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
-        await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
-    });
+//         const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+//         const receipt2 = await tx2.wait();
+//         const event = receipt2.logs[receipt2.logs.length - 1];
+//         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
+//         console.log("Order filled: %sWRBTC -> %sXUSD", formatEther(filled.amountIn.toString()), formatUnits(filled.amountOut.toString(), 18));
+//         await helpers.expectToEqual(filled.hash, orderG.hash());
+//         await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
+//         await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
+//     });
 
-    it("Should createOrder() XUSD-RBTC", async () => {
-        const { users, chainId, createOrder, getDeadline } = await helpers.setup();
-        const fromToken = XUSD[chainId];
-        const toToken = WRBTC[chainId];
+//     it("Should createOrder() XUSD-RBTC", async () => {
+//         const { users, chainId, createOrder, getDeadline } = await helpers.setup();
+//         const fromToken = XUSD[chainId];
+//         const toToken = WRBTC[chainId];
 
-        const { order, tx } = await createOrder(
-            users[0],
-            fromToken,
-            toToken,
-            parseEther('0.1'),
-            parseEther('0.000001'),
-            getDeadline(24)
-        );
+//         const { order, tx } = await createOrder(
+//             users[0],
+//             fromToken,
+//             toToken,
+//             parseEther('0.1'),
+//             parseEther('0.000001'),
+//             getDeadline(24)
+//         );
 
-        orderG=order;
+//         orderG=order;
         
-        const hash = await order.hash();
-        console.log("order XUSD-RBTC created hash", hash);
-    });
+//         const hash = await order.hash();
+//         console.log("order XUSD-RBTC created hash", hash);
+//     });
 
-    it("Should fillOrder() XUSD-RBTC", async () => {
-        const {
-            users,
-            fillOrder,
-            filledAmountIn,
-            chainId
-        } = await helpers.setup();
-        const fromToken = XUSD[chainId].address;
-        const toToken = WRBTC[chainId].address;
-        const settlement = await helpers.getContract("Settlement");
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-        const path = await sovrynSwapNetwork.conversionPath(fromToken, toToken);
+//     it("Should fillOrder() XUSD-RBTC", async () => {
+//         const {
+//             users,
+//             fillOrder,
+//             filledAmountIn,
+//             chainId
+//         } = await helpers.setup();
+//         const fromToken = XUSD[chainId].address;
+//         const toToken = WRBTC[chainId].address;
+//         const settlement = await helpers.getContract("Settlement");
+//         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+//         const path = await sovrynSwapNetwork.conversionPath(fromToken, toToken);
 
 
-        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
-        const receipt2 = await tx2.wait();
-        const event = receipt2.logs[receipt2.logs.length - 1];
-        const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
-        console.log("Order filled: %sXUSD -> %sRBTC", formatUnits(filled.amountIn.toString(), 18), formatEther(filled.amountOut.toString()));
-        await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
-        await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
-    });
+//         const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+//         const receipt2 = await tx2.wait();
+//         const event = receipt2.logs[receipt2.logs.length - 1];
+//         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
+//         console.log("Order filled: %sXUSD -> %sRBTC", formatUnits(filled.amountIn.toString(), 18), formatEther(filled.amountOut.toString()));
+//         await helpers.expectToEqual(filled.hash, orderG.hash());
+//         await helpers.expectToEqual(filled.amountIn, orderG.amountIn);
+//         await helpers.expectToEqual(filled.amountIn, filledAmountIn(users[0], orderG));
+//     });
 
-    it("Should cancelOrder()", async () => {
-        const { users, getDeadline, createOrder } = await helpers.setup();
+//     it("Should cancelOrder()", async () => {
+//         const { users, getDeadline, createOrder } = await helpers.setup();
 
-        const { order, tx } = await createOrder(
-            users[0],
-            fromToken,
-            toToken,
-            parseEther('0.01'),
-            parseEther('0.0001'),
-            getDeadline(24)
-        );
+//         const { order, tx } = await createOrder(
+//             users[0],
+//             fromToken,
+//             toToken,
+//             parseEther('0.01'),
+//             parseEther('0.0001'),
+//             getDeadline(24)
+//         );
 
-        orderG=order;
+//         orderG=order;
         
-        const hash = await order.hash();
-        console.log("order created hash", hash);
+//         const hash = await order.hash();
+//         console.log("order created hash", hash);
     
-        const settlement = await helpers.getContract("Settlement");
-        const tx1 = await settlement.cancelOrder(await order.toArgs());
-        const receipt = await tx1.wait();
-        // console.log(receipt);
-    });
+//         const settlement = await helpers.getContract("Settlement");
+//         const tx1 = await settlement.cancelOrder(await order.toArgs());
+//         const receipt = await tx1.wait();
+//         // console.log(receipt);
+//     });
 
-    it("Should failed fillOrder because minFee", async () => {
-        const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
-        const settlement = await helpers.getContract("Settlement");
-        await settlement.setMinFee(parseEther('0.001'));
-        const { order , tx } = await createOrder(
-            users[0],
-            fromToken,
-            toToken,
-            parseEther('0.002'),
-            parseEther('0.0001'),
-            getDeadline(24)
-        );
-        await tx.wait();
+//     it("Should failed fillOrder because minFee", async () => {
+//         const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
+//         const settlement = await helpers.getContract("Settlement");
+//         await settlement.setMinFee(parseEther('0.001'));
+//         const { order , tx } = await createOrder(
+//             users[0],
+//             fromToken,
+//             toToken,
+//             parseEther('0.002'),
+//             parseEther('0.0001'),
+//             getDeadline(24)
+//         );
+//         await tx.wait();
         
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-        const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
+//         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+//         const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
-            fillOrder(users[0], order, order.amountIn, path)
-        );
-        await settlement.setMinFee(parseEther('0'));
-    });
+//         await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
+//             fillOrder(users[0], order, order.amountIn, path)
+//         );
+//         await settlement.setMinFee(parseEther('0'));
+//     });
 });
