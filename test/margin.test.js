@@ -2,7 +2,6 @@ const { formatEther } = require("@ethersproject/units");
 const { BigNumber } = require("ethers");
 const { ethers, deployments } = require("hardhat");
 const helpers = require("./helpers");
-const getContract = require("./helpers/getContract");
 const { parseEther, parseUnits } = ethers.utils;
 const MarginOrder = require('./helpers/MarginOrder');
 const { getAccountsPrivateKeys } = require("./Utils/hardhat_utils");
@@ -103,7 +102,9 @@ describe("Margin Order", async () => {
         deadline,
         createdTimestamp,
     ) => {
-        const settlement = await getContract("Settlement", signer);
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
             const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
@@ -132,14 +133,18 @@ describe("Margin Order", async () => {
             createdTimestamp,
         );
 
-        const orderBook = await getContract("OrderBookMargin", signer);
+        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
+        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
+        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
         const args = await order.toArgs({ privateKey: signer.privateKey });
         const tx = await orderBook.createOrder(args);
         return { order, tx };
     };
 
     const fillMarginOrder = async (signer, order) => {
-        const settlement = await getContract("Settlement", signer);
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const orderArgs = await order.toArgs();
 
         return await settlement.fillMarginOrder([orderArgs]);
@@ -200,8 +205,9 @@ describe("Margin Order", async () => {
 
     it("Should createMarginOrder SUSD", async () => {
         const { getDeadline } = await helpers.setup();
-        const settlement = await helpers.getContract("Settlement");
-        const orderBook = await helpers.getContract("OrderBookMargin");
+        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
+        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
+        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
         const trader = getAccount(1);
         const collateralToken = RBTC.address;
         const collateralAmount = parseEther("1");
@@ -228,14 +234,16 @@ describe("Margin Order", async () => {
 
         const receipt = await tx.wait();
         const event = receipt.logs[receipt.logs.length - 1];
-        const created = orderBook.interface.decodeEventLog("OrderCreated", event.data, event.topics);
+        const created = orderBook.interface.decodeEventLog("MarginOrderCreated", event.data, event.topics);
         await helpers.expectToEqual(created.hash, order.hash());
 
         orderG = order;
     });
 
     it("Should fillMarginOrder SUSD", async () => {
-        const settlement = await helpers.getContract("Settlement");
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const relayer = getAccount(2);
         const tx = await fillMarginOrder(relayer, orderG);
         const receipt = await tx.wait();
@@ -248,8 +256,13 @@ describe("Margin Order", async () => {
     });
 
     it("Should createMarginOrder - fillMarginOrder WRBTC", async () => {
-        const settlement = await helpers.getContract("Settlement");
-        const orderBook = await helpers.getContract("OrderBookMargin");
+        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
+        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
+        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
+        
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const trader = getAccount(1);
         const relayer = getAccount(2);
         const {order, orderTx, filledTx } = await createFillMarginOrder({
@@ -265,7 +278,7 @@ describe("Margin Order", async () => {
 
         const receipt = await orderTx.wait();
         const event = receipt.logs[receipt.logs.length - 1];
-        const created = orderBook.interface.decodeEventLog("OrderCreated", event.data, event.topics);
+        const created = orderBook.interface.decodeEventLog("MarginOrderCreated", event.data, event.topics);
         await helpers.expectToEqual(created.hash, order.hash());
 
         const receipt1 = await filledTx.wait();
@@ -279,7 +292,9 @@ describe("Margin Order", async () => {
 
     it("Should cancel marginOrder", async () => {
         const { users, getDeadline } = await helpers.setup();
-        const orderBook = await helpers.getContract("OrderBookMargin");
+        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
+        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
+        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
         const collateralToken = RBTC.address;
 
         const { order, tx } = await createMarginOrder(
@@ -298,7 +313,9 @@ describe("Margin Order", async () => {
         const hash = await order.hash();
         console.log("order created", hash);
 
-        const settlement = await helpers.getContract("Settlement");
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const tx1 = await settlement.cancelMarginOrder(await order.toArgs());
         const receipt = await tx1.wait();
         const event = receipt.logs[receipt.logs.length - 1];
@@ -433,7 +450,9 @@ describe("Margin Order", async () => {
     it("Should failed fillMarginOrder because minFee", async () => {
         const trader = getAccount(1);
         const relayer = getAccount(2);
-        const settlement = await helpers.getContract("Settlement");
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         await settlement.setMinFee(parseEther('0.1'));
         await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
             createFillMarginOrder({

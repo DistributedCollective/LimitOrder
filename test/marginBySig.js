@@ -2,7 +2,6 @@
 const { BN } = require("@openzeppelin/test-helpers");
 const { ethers, deployments } = require("hardhat");
 const helpers = require("./helpers");
-const getContract = require("./helpers/getContract");
 const { parseEther } = ethers.utils;
 const ethUtil = require("ethereumjs-util");
 const EIP712 = require("./Utils/EIP712");

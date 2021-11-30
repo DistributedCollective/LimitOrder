@@ -67,10 +67,7 @@ class MarginOrder {
 
     async sign(overrides = {}) {
         const { deployer } = await getNamedAccounts();
-        const { address } = await deployments.deterministic("OrderBookMargin", {
-            from: deployer,
-            log: true,
-        });
+        const { address } = await deployments.get("OrderBookMarginProxy");
 
         const chainId = await getChainId();
         const domain = {

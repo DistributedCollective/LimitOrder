@@ -8,9 +8,9 @@ const { getAccountsPrivateKeys } = require("./Utils/hardhat_utils");
 
 const config = require('../src/config');
 const { SOV, XUSD } = require('./tokens');
-const { abi: orderBookAbi } = require('../deployments/localhost/OrderBook.json');
-const { abi: orderBookMarginAbi } = require('../deployments/localhost/OrderBookMargin.json');
-const { abi: settlementAbi } = require('../deployments/localhost/Settlement.json');
+const { abi: orderBookAbi } = require('../deployments/localhost/OrderBookSwapLogic.json');
+const { abi: orderBookMarginAbi } = require('../deployments/localhost/OrderBookMarginLogic.json');
+const { abi: settlementAbi } = require('../deployments/localhost/SettlementLogic.json');
 const { ERC20: ERC20Abi } = require("../src/config/abis");
 const Order = require('../src/Order');
 const helpers = require("./helpers");
