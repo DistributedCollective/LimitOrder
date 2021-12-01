@@ -24,6 +24,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     /**
      * @notice Replace constructor with initialize function for Upgradable Contracts
      * This function will be called only once by the owner
+     * @param orderBookChainId Chain Id
+     * @param _orderBookAddress OrderBook proxy address
+     * @param _marginOrderBookAddress Margin OrderBook proxy address
+     * @param _sovrynSwapNetwork SovrynSwapNetwork address
+     * @param _WRBTC wRBTC address
      * */
     function initialize(
         uint256 orderBookChainId,
@@ -59,9 +64,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         WRBTC_ADDRESS = _WRBTC;
         orderBookAddress = _orderBookAddress;
         orderBookMarginAddress = _marginOrderBookAddress;
-        relayerFeePercent = 2;
+        relayerFeePercent = 2; // Relayer fee percent
     }
 
+    // User deposits a balance to the contract
     function deposit(address to) public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "deposit-amount-required");
@@ -73,6 +79,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit Deposit(to, amount);
     }
 
+    // Withdraw user balance
     function withdraw(uint256 amount) public override {
         address payable receiver = msg.sender;
         require(balanceOf[receiver] >= amount, "insufficient-balance");
@@ -82,7 +89,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit Withdrawal(receiver, amount);
     }
 
-    function setMinFee(uint256 fee) public override {
+    // Sets minimum fee
+    function setMinFee(uint256 fee) public override onlyOwner {
         minFee = fee;
     }
 
@@ -118,6 +126,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             args.order.r,
             args.order.s
         );
+
         require(
             RSKAddrValidator.safeEquals(signer, args.order.maker),
             "invalid-signature"
@@ -227,7 +236,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filled, "no-order-filled");
     }
 
-    //
+    // Fills a margin order
     function fillMarginOrder(FillMarginOrderArgs memory args)
         public
         override

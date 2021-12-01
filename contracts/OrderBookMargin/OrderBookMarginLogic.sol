@@ -12,6 +12,7 @@ contract OrderBookMarginLogic is OrderBookMarginStorage {
     using MarginOrders for MarginOrders.Order;
     using Bytes32Pagination for bytes32[];
 
+    //Events
     event MarginOrderCreated(bytes32 indexed hash, MarginOrders.Order order);
 
     /**
@@ -113,11 +114,13 @@ contract OrderBookMarginLogic is OrderBookMarginStorage {
         emit MarginOrderCreated(hash, order);
     }
 
+    // Returns the address of maker for an order
     function getTrader(bytes32 hash) public view returns (address trader) {
         MarginOrders.Order memory order = orderOfHash[hash];
         trader = order.trader;
     }
 
+    //Returns all orders(specified by offset/start and limit/count) of a maker
     function getOrders(
         address trader,
         uint256 offset,

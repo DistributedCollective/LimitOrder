@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity =0.6.12;
 
 library Orders {
-    // keccak256("Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline,uint256 created)")
-    // bytes32 public constant ORDER_TYPEHASH = 0xd6dcdb8a8034d5997072fdf38e109521eb631713bc0470668aa787bb502b623c;
+    // Struct signature hash
     bytes32 public constant ORDER_TYPEHASH =
         keccak256(
             "Order(address maker,address fromToken,address toToken,uint256 amountIn,uint256 amountOutMin,address recipient,uint256 deadline,uint256 created)"
         );
 
+    // Order details including the v, r and s components of a signature
     struct Order {
         address maker;
         address fromToken;
@@ -24,6 +23,7 @@ library Orders {
         bytes32 s;
     }
 
+    // Creates the hash of the typehash and all paramaters, used for recovering signer
     function hash(Order memory order) internal pure returns (bytes32) {
         return
             keccak256(
@@ -41,6 +41,7 @@ library Orders {
             );
     }
 
+    // Validates all the parameters of the struct
     function validate(Order memory order) internal view {
         require(order.maker != address(0), "invalid-maker");
         require(order.fromToken != address(0), "invalid-from-token");

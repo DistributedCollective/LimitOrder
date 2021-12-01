@@ -7,7 +7,7 @@ import "../libraries/MarginOrders.sol";
 
 /**
  * @title Order Book - Margin Storage contract.
- * @notice Just the storage part of Order Book - Margin contract, no functions,
+ * @notice Just the storage part of MarginOrder Book - Margin contract, no functions,
  * only constant, variables and required structures (mappings).
  * Used by OrderBookMarginProxy.
  * */

@@ -12,6 +12,7 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
     using Orders for Orders.Order;
     using Bytes32Pagination for bytes32[];
 
+    //Events
     event OrderCreated(bytes32 indexed hash, Orders.Order order);
 
     /**
@@ -36,6 +37,7 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
         );
     }
 
+    // Return the number of orders from the address of a maker
     function numberOfHashesOfMaker(address maker)
         public
         view
@@ -131,11 +133,13 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
         emit OrderCreated(hash, order);
     }
 
+    // Returns the address of maker for an order
     function getMaker(bytes32 hash) public view returns (address maker) {
         Orders.Order memory order = orderOfHash[hash];
         maker = order.maker;
     }
 
+    //Returns all orders(specified by offset/start and limit/count) of a maker
     function getOrders(
         address maker,
         uint256 offset,
