@@ -67,6 +67,14 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         relayerFeePercent = 2; // Relayer fee percent
     }
 
+    // Fallback function to receive tokens
+    // TODO: Check for vulnerabilites if any
+    receive() external payable {
+        if (msg.sender != WRBTC_ADDRESS) {
+            deposit(msg.sender);
+        }
+    }
+
     // User deposits a balance to the contract
     function deposit(address to) public payable override {
         uint256 amount = msg.value;
