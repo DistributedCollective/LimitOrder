@@ -59,6 +59,7 @@
     "@ethersproject/transactions": "^5.4.0",
     "@openzeppelin/test-helpers": "^0.5.10",
     "@sushiswap/core": "^1.2.1",
+    "abi-decoder": "^2.4.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
