@@ -12,5 +12,9 @@ import "../proxy/UpgradableProxy.sol";
  * the possibility of being enhanced and re-deployed.
  * */
 contract SettlementProxy is SettlementStorage, UpgradableProxy {
-
+    receive () override external payable {
+        if (msg.sender != WRBTC_ADDRESS) {
+            _fallback();
+        }
+    }
 }

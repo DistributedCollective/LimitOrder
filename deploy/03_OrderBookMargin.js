@@ -4,6 +4,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const { deploy } = deployments;
     if (network.name !== "mainnet") {
+
         const deployProxy = await deploy('OrderBookMarginProxy', {
             from: deployer,
             log: true

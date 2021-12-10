@@ -110,7 +110,7 @@ contract Proxy {
      * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if call data
      * is empty.
      */
-    receive () external payable {
+    receive () virtual external payable {
         _fallback();
     }
 
