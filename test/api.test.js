@@ -18,6 +18,7 @@ const helpers = require("./helpers");
 const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
 const privateKey = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
+// const privateKey = 'ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'; //local
 const privateKeyOwner = 'd3d0d94035b81e3200eb070ee3250e7e567a0f97d1ad15f333860a292e5c7c20';
 const provider = new ethers.providers.JsonRpcProvider(config.networkUrl)
 let owner = new ethers.Wallet(privateKeyOwner, provider);
@@ -28,13 +29,13 @@ const account = web3.eth.accounts.privateKeyToAccount(privateKey);
 web3.eth.accounts.wallet.add(account);
 web3.eth.defaultAccount = account.address;
 
-async function createOrder(){
+async function createOrder(needApprove = true){
     const apiUrl = 'http://localhost:3001/api/createOrder';
     
     const contract = new ethers.Contract(config.contracts.orderBook, orderBookAbi, trader);
     const fromToken = SOV[config.chainId];
     const toToken = XUSD[config.chainId];
-    const amountIn = ethers.utils.parseEther('10');
+    const amountIn = ethers.utils.parseEther((Math.random()*10+5).toString());
 
     const contractToken = new ethers.Contract(fromToken.address, ERC20Abi, provider);
     const toTokenContract = new ethers.Contract(toToken.address, ERC20Abi, provider);
@@ -47,8 +48,13 @@ async function createOrder(){
     // await contractToken.connect(owner).transfer(trader.address, amountIn,{gasLimit:50000});
 
     // const allowance = await contractToken.allowance(trader.address, config.contracts.settlement,{gasLimit:200000});
-    const approveTx = await contractToken.connect(trader).approve(config.contracts.settlement, amountIn, {gasLimit:200000});
-    await approveTx.wait();
+    if (needApprove) {
+        const bal = await contractToken.balanceOf(trader.address);
+        console.log(`approving ${ethers.utils.formatEther(bal)} ${fromToken.symbol}`)
+        const approveTx = await contractToken.connect(trader).approve(config.contracts.settlement, bal, {gasLimit:200000});
+        console.log('approve tx', approveTx.hash);
+        await approveTx.wait();
+    }
 
     const order = new Order(
         trader.address,
@@ -135,17 +141,19 @@ async function listAllOpenMarginOrders() {
 async function createMultiOrders(nr) {
     for (let index = 0; index < nr; index++) {
         console.log("Creating order #%s", index);
-        const { data: tx } = await createOrder();
-        console.log("tx %s", tx.hash);
+        createOrder(index == 0).then(result => {
+            console.log(result)
+        });
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 }
 
 (async function start () {
     // createOrder();
-    // await createMultiOrders(10);
+    await createMultiOrders(4);
 
     
     // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
     // await listAllOpenLimitOrders();
-    listAllOpenMarginOrders();
+    // listAllOpenMarginOrders();
 })();

@@ -12,18 +12,23 @@ const {
     OrderBookMargin: orderBookMarginABI,
     Settlement: settlementABI
 } = require('./config/abis');
-const { relayer: relayerAcc } = require('../secrets/account');
+// const { relayer: relayerAcc } = require('../secrets/account');
 const Order = require('./Order');
 const MarginOrder = require('./MarginOrder');
+const relayer = require('./relayer');
 
 const app = express();
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.networkUrl);
-const relayer = new ethers.Wallet(relayerAcc.privateKey, provider);
-const orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, provider);
-const orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, provider);
+const orderBookProvider = new ethers.providers.JsonRpcProvider(config.orderBookNetwork);
+
+const orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, orderBookProvider);
+const orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, orderBookProvider);
 const settlementContract = new ethers.Contract(config.contracts.settlement, settlementABI, provider);
+
 const web3 = new Web3(config.networkUrl);
+
+relayer.init(orderBookProvider);
 
 app.use(bodyParser.json());
 
@@ -63,11 +68,6 @@ const validateContractParams = (res, rawTx, from, contractAddress) => {
     return parsedTx;
 }
 
-const getGasPrice = async () => {
-    const gasPrice = await provider.getGasPrice();
-    return ethers.BigNumber.from(Math.round(Number(gasPrice) * 1.2).toString());
-}
-
 app.post('/api/createOrder', async (req, res) => {
     try {
         const { data, from } = req.body;
@@ -101,7 +101,7 @@ app.post('/api/createOrder', async (req, res) => {
         );
         const orderMsg = order.messageHash(config.chainId, config.contracts.orderBook);
         const signature = ethers.utils.joinSignature({ v, r, s });
-
+        
         const signer = web3.eth.accounts.recover(orderMsg, signature, true);
         
         if ((signer||"").toLowerCase() !== (from||"").toLowerCase()) {
@@ -109,13 +109,13 @@ app.post('/api/createOrder', async (req, res) => {
             return res.status(200).json({ error: 'Invalid signature' });
         }
 
-        const nonce = await relayer.getTransactionCount();
-        const tx = await relayer.sendTransaction({
+        console.log("Creating limit order hash", order.hash());
+        console.log('order msg', orderMsg);
+        
+        const tx = await relayer.sendTx({
             to: config.contracts.orderBook,
             data: data,
             gasLimit: 600000,
-            gasPrice: await getGasPrice(),
-            nonce
         });
         
         res.status(200).json({
@@ -175,14 +175,12 @@ app.post('/api/createMarginOrder', async (req, res) => {
             return res.status(200).json({ error: 'Invalid signature' });
         }
 
-        const nonce = await relayer.getTransactionCount();
-        const pric = await getGasPrice();
-        const tx = await relayer.sendTransaction({
+        console.log("Creating margin order hash", order.hash());
+
+        const tx = await relayer.sendTx({
             to: config.contracts.orderBookMargin,
             data: data,
             gasLimit: 600000,
-            gasPrice: pric,
-            nonce
         });
 
         res.status(200).json({
@@ -210,8 +208,6 @@ app.post('/api/cancelOrder', async (req, res) => {
         if (!cancelTx || cancelTx.name !== 'cancelOrder' || !cancelTx.args['hash']) {
             return res.status(200).json({ error: 'Invalid cancel order tx' });
         }
-
-        /// todo: should we check order hash existed on OrderBook contractx?
 
         const tx = await provider.sendTransaction(data);
         // console.log(tx);

@@ -75,7 +75,7 @@ describe("Settlement", async () => {
 
         const tx2 = await fillOrder(users[1], orderG, orderG.amountIn, path);
         const receipt2 = await tx2.wait();
-        console.log(receipt2);
+        // console.log(receipt2);
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, orderG.hash());
@@ -177,7 +177,7 @@ describe("Settlement", async () => {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const tx = await orderBook.createOrder(await order.toArgs());
+        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }));
         orderG = order;
         const hash = await order.hash();
         console.log("order wrbtc-xusd hash", hash);
@@ -273,7 +273,6 @@ describe("Settlement", async () => {
         const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const tx1 = await settlement.cancelOrder(await order.toArgs());
         const receipt = await tx1.wait();
-        // console.log(receipt);
     });
 
     it("Should failed fillOrder because minFee", async () => {
@@ -299,5 +298,76 @@ describe("Settlement", async () => {
             fillOrder(users[0], order, order.amountIn, path)
         );
         await settlement.setMinFee(parseEther('0'));
+    });
+
+    it("Should withdraw RBTC when cancel order", async () => {
+        const { users, chainId, getDeadline, createOrder } = await helpers.setup();
+        const signer = users[0];
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+
+        const fromToken = WRBTC[chainId];
+        const toToken = XUSD[chainId];
+        const amountIn = parseEther('0.5');
+        const amountOutMin = parseEther('0.5');
+
+        await settlement.deposit(signer.address, {
+            value: amountIn
+        });
+
+        const { order } = await createOrder(
+            signer,
+            fromToken,
+            toToken,
+            amountIn,
+            amountOutMin,
+            getDeadline(24)
+        );
+
+        const tx = await settlement.cancelOrder(await order.toArgs());
+        const receipt = await tx.wait();
+        const event = receipt.events.find(e => e.event == 'Withdrawal');
+        const withdrawn = settlement.interface.decodeEventLog("Withdrawal", event.data, event.topics);
+        await helpers.expectToEqual(withdrawn.receiver, signer.address);
+        await helpers.expectToEqual(withdrawn.amount, order.amountIn);
+    });
+    
+    it("Should fill order partial", async () => {
+        const { users, getDeadline, createOrder, fillOrder, chainId } = await helpers.setup();
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+        await settlement.setMinFee(parseEther('0.001'));
+        
+        const fromToken = XUSD[chainId];
+        const toToken = SOV[chainId];
+        const { order, tx } = await createOrder(
+            users[0],
+            fromToken,
+            toToken,
+            parseEther('100'),
+            parseEther('10'),
+            getDeadline(24)
+        );
+        await tx.wait();
+
+        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+        const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
+
+        const fillAmount1 = parseEther('45'), fillAmount2 = parseEther('55');
+        const tx1 = await fillOrder(users[0], order, fillAmount1, path);
+        const receipt1 = await tx1.wait();
+        const event = receipt1.logs[receipt1.logs.length - 1];
+        const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
+        await helpers.expectToEqual(filled.hash, order.hash());
+        await helpers.expectToEqual(filled.amountIn, fillAmount1);
+        
+        const tx2 = await fillOrder(users[0], order, fillAmount2, path);
+        const receipt2 = await tx2.wait();
+        const event2 = receipt2.logs[receipt2.logs.length - 1];
+        const filled2 = settlement.interface.decodeEventLog("OrderFilled", event2.data, event2.topics);
+        await helpers.expectToEqual(filled2.hash, order.hash());
+        await helpers.expectToEqual(filled2.amountIn, fillAmount2);
     });
 });

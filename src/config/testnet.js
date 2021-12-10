@@ -3,10 +3,11 @@ module.exports = {
     chainId: 31,
     baseAPIUrl: 'http://localhost:3001',
     networkUrl: 'https://testnet.sovryn.app/rpc',
+    orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0xaf7E9C25c4b86f4359314D0a3626d372fB2649F0',
-        orderBook: '0xb75A8B04C73f39d3cc93c663BAB1c1e62a1a04df',
-        orderBookMargin: '0xA0C98E8B84C99860159bd065a44579694287F61e',
+        settlement: '0xce6f382DE5A761A29960ED612BD7153611AC1fCb',
+        orderBook: '0xCA6322eabe8Bf0B08f06Ba749A7338FCce220D8A',
+        orderBookMargin: '0x1a2E1eBb998511d6b090CFC493B0f22D6DcB56f7',
         swap: '0x61172b53423e205a399640e5283e51fe60ec2256'
     },
     loanContracts: {
@@ -21,6 +22,6 @@ module.exports = {
         DOC: "0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0",
         USDT: "0x4d5A316d23EBe168D8f887b4447BF8DBfA4901cc",
         ETHs: "0x499bb1355b36adeb93706b08a897ce6022de6ac9",
-        BNBs: "0x801f223dEF9A4e3A543EACcefB79dcE981Fa2fB5",
+        BNBs: "0x801f223def9a4e3a543eaccefb79dce981fa2fb5",
     }
 };

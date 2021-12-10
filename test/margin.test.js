@@ -60,6 +60,10 @@ describe("Margin Order", async () => {
 
             console.log("asset susd", await loanTokenSUSD.loanTokenAddress());
             console.log("asset wrbtc", await loanTokenWRBTC.loanTokenAddress());
+
+            const settlement = await getContract('Settlement');
+            await settlement.setMinFee(parseEther('0'));
+            
         } else {
             SUSD = await getSUSD();
             RBTC = await getRBTC();
@@ -77,6 +81,9 @@ describe("Margin Order", async () => {
             await WRBTC.deposit({value: parseEther("1000")});
             await WRBTC.transfer(loanTokenWRBTC.address, parseEther("1000"));
             await SUSD.transfer(loanTokenSUSD.address, parseEther("100000"));
+
+            const settlement = await getContract('Settlement');
+            await settlement.setMinFee(parseEther('0'));
         }
         const adr = accounts[0].address;
         console.log("bal wrbtc", formatEther((await WRBTC.balanceOf(adr)).toString()) );
@@ -88,6 +95,12 @@ describe("Margin Order", async () => {
         const acc = accounts[index];
         acc.privateKey = privKeys[index] && privKeys[index].privateKey || privKeys[index];
         return acc;
+    };
+
+    const getContract = async (name) => {
+        const { abi } = await deployments.get(`${name}Logic`);
+        const { address } = await deployments.get(`${name}Proxy`);
+        return await ethers.getContractAt(abi, address);
     }
 
     const createMarginOrder = async (
@@ -102,9 +115,7 @@ describe("Margin Order", async () => {
         deadline,
         createdTimestamp,
     ) => {
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+        const settlement = await getContract('Settlement');
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
             const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
@@ -133,18 +144,14 @@ describe("Margin Order", async () => {
             createdTimestamp,
         );
 
-        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
-        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
-        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
+        const orderBook = await getContract('OrderBookMargin')
         const args = await order.toArgs({ privateKey: signer.privateKey });
         const tx = await orderBook.createOrder(args);
         return { order, tx };
     };
 
     const fillMarginOrder = async (signer, order) => {
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+        const settlement = await getContract('Settlement')
         const orderArgs = await order.toArgs();
 
         return await settlement.fillMarginOrder([orderArgs]);
@@ -205,26 +212,27 @@ describe("Margin Order", async () => {
 
     it("Should createMarginOrder SUSD", async () => {
         const { getDeadline } = await helpers.setup();
-        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
-        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
-        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
-        const trader = getAccount(1);
-        const collateralToken = RBTC.address;
-        const collateralAmount = parseEther("1");
+        const orderBook = await getContract('OrderBookMargin')
+        const trader = getAccount(0);
+        const collateralToken = WRBTC.address;
+        const collateralAmount = parseEther("0.01");
 
-        await set_demand_curve(loanTokenSUSD);
-        await SUSD.transfer(loanTokenSUSD.address, parseEther("1000000"));
-        await SUSD.transfer(trader.address, parseEther("1000"));
-        await RBTC.transfer(trader.address, collateralAmount);
+        if (isLocalNetwork) {
+            await set_demand_curve(loanTokenSUSD);
+            await SUSD.transfer(loanTokenSUSD.address, parseEther("1000000"));
+            await SUSD.transfer(trader.address, parseEther("1000"));
+            await RBTC.transfer(trader.address, collateralAmount);
+            await WRBTC.deposit({ value: collateralAmount });
+        }
 
         const { order, tx } = await createMarginOrder(
             trader,
-            parseEther("5"), // leverage amount
+            parseEther("2"), // leverage amount
             loanTokenSUSD, // loan token (SUSD)
             parseEther("0"), // loan token sent
             collateralAmount, // collateral token sent
             collateralToken, // collateral token
-            parseEther("5"), // min return
+            parseEther("0.02"), // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -241,10 +249,9 @@ describe("Margin Order", async () => {
     });
 
     it("Should fillMarginOrder SUSD", async () => {
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        const relayer = getAccount(2);
+        const settlement = await getContract('Settlement');
+
+        const relayer = getAccount(1);
         const tx = await fillMarginOrder(relayer, orderG);
         const receipt = await tx.wait();
         const event = receipt.logs[receipt.logs.length - 1];
@@ -256,15 +263,10 @@ describe("Margin Order", async () => {
     });
 
     it("Should createMarginOrder - fillMarginOrder WRBTC", async () => {
-        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
-        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
-        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
-        
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        const trader = getAccount(1);
-        const relayer = getAccount(2);
+        const orderBook = await getContract('OrderBookMargin');
+        const settlement = await getContract('Settlement');
+        const trader = getAccount(0);
+        const relayer = getAccount(1);
         const {order, orderTx, filledTx } = await createFillMarginOrder({
             trader,
             relayer,
@@ -292,10 +294,7 @@ describe("Margin Order", async () => {
 
     it("Should cancel marginOrder", async () => {
         const { users, getDeadline } = await helpers.setup();
-        const { abi: orderBookMarginABI } = await deployments.get("OrderBookMarginLogic");
-        const { address: orderBookMarginAddress } = await deployments.get("OrderBookMarginProxy");
-        const orderBook = await ethers.getContractAt(orderBookMarginABI, orderBookMarginAddress);
-        const collateralToken = RBTC.address;
+        const collateralToken = WRBTC.address;
 
         const { order, tx } = await createMarginOrder(
             users[0],
@@ -313,9 +312,7 @@ describe("Margin Order", async () => {
         const hash = await order.hash();
         console.log("order created", hash);
 
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+        const settlement = await getContract('Settlement');
         const tx1 = await settlement.cancelMarginOrder(await order.toArgs());
         const receipt = await tx1.wait();
         const event = receipt.logs[receipt.logs.length - 1];
@@ -324,14 +321,14 @@ describe("Margin Order", async () => {
     });
 
     it("Should relayer receive correct fee on loan SUSD", async () => {
-        const trader = getAccount(1);
-        const relayer = getAccount(2);
+        const trader = getAccount(0);
+        const relayer = getAccount(1);
         const balances = {
             susd: {
                 before: formatEther((await SUSD.balanceOf(relayer.address)).toString())
             },
             rbtc: {
-                before: formatEther((await RBTC.balanceOf(relayer.address)).toString())
+                before: formatEther((await relayer.getBalance()).toString())
             },
             wrbtc: {
                 before: formatEther((await WRBTC.balanceOf(relayer.address)).toString())
@@ -351,20 +348,20 @@ describe("Margin Order", async () => {
         await filledTx.wait();
         
         balances.susd.after = formatEther((await SUSD.balanceOf(relayer.address)).toString());
-        balances.rbtc.after = formatEther((await RBTC.balanceOf(relayer.address)).toString());
+        balances.rbtc.after = formatEther((await relayer.getBalance()).toString());
         balances.wrbtc.after = formatEther((await WRBTC.balanceOf(relayer.address)).toString());
         console.log(balances);
     });
 
     it("Should relayer receive correct fee on loan WRBTC", async () => {
-        const trader = getAccount(1);
-        const relayer = getAccount(2);
+        const trader = getAccount(0);
+        const relayer = getAccount(1);
         const balances = {
             susd: {
                 before: formatEther((await SUSD.balanceOf(relayer.address)).toString())
             },
             rbtc: {
-                before: formatEther((await RBTC.balanceOf(relayer.address)).toString())
+                before: formatEther((await relayer.getBalance()).toString())
             },
             wrbtc: {
                 before: formatEther((await WRBTC.balanceOf(relayer.address)).toString())
@@ -384,7 +381,7 @@ describe("Margin Order", async () => {
         await filledTx.wait();
         
         balances.susd.after = formatEther((await SUSD.balanceOf(relayer.address)).toString());
-        balances.rbtc.after = formatEther((await RBTC.balanceOf(relayer.address)).toString());
+        balances.rbtc.after = formatEther((await relayer.getBalance()).toString());
         balances.wrbtc.after = formatEther((await WRBTC.balanceOf(relayer.address)).toString());
         console.log(balances);
     });
@@ -413,8 +410,8 @@ describe("Margin Order", async () => {
             minReturn: ethers.BigNumber.from(String(collateral)).div(2)
         });
         await orderTx.wait();
-        // const receipt = await filledTx.wait();
-        // console.log('fill tx', receipt.transactionHash);
+        const receipt = await filledTx.wait();
+        console.log('fill tx', receipt.transactionHash);
     });
 
     it("Should create a short position with 2x leverage", async () => {
@@ -448,12 +445,11 @@ describe("Margin Order", async () => {
     });
 
     it("Should failed fillMarginOrder because minFee", async () => {
-        const trader = getAccount(1);
-        const relayer = getAccount(2);
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        await settlement.setMinFee(parseEther('0.1'));
+        const trader = getAccount(0);
+        const relayer = getAccount(1);
+        const settlement = await getContract('Settlement');
+        const tx = await settlement.setMinFee(parseEther('0.1'));
+        await tx.wait();
         await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
             createFillMarginOrder({
                 trader,
