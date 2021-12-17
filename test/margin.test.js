@@ -232,7 +232,7 @@ describe("Margin Order", async () => {
             parseEther("0"), // loan token sent
             collateralAmount, // collateral token sent
             collateralToken, // collateral token
-            parseEther("0.02"), // min return
+            parseEther("0.00002"), // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -375,7 +375,7 @@ describe("Margin Order", async () => {
             collateralToken: RBTC,
             collateralTokenSent: parseEther("1"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("5"),
+            minEntryPrice: parseEther("0.00005"),
         });
         await orderTx.wait();
         await filledTx.wait();
@@ -407,7 +407,7 @@ describe("Margin Order", async () => {
             collateralToken,
             collateralTokenSent,
             leverageAmount,
-            minEntryPrice: ethers.BigNumber.from(String(collateral)).div(2)
+            minEntryPrice:  parseEther("0.00001") //ethers.BigNumber.from(String(collateral)).div(2)
         });
         await orderTx.wait();
         const receipt = await filledTx.wait();
