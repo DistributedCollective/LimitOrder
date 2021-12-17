@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "./LoanTokenLogicStandard.sol";
+import "../../LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 	/**
@@ -22,7 +22,7 @@ contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 	 * @return The list of function signatures (bytes4[])
 	 */
 	function getListFunctionSignatures() external pure returns (bytes4[] memory functionSignatures, bytes32 moduleName) {
-		bytes4[] memory res = new bytes4[](35);
+		bytes4[] memory res = new bytes4[](36);
 
 		// Loan Token Logic Standard
 		res[0] = this.mint.selector;
@@ -52,22 +52,23 @@ contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 		res[24] = this.checkPriceDivergence.selector;
 		res[25] = this.checkPause.selector;
 		res[26] = this.setLiquidityMiningAddress.selector;
+		res[27] = this.calculateSupplyInterestRate.selector;
 
 		// Loan Token WRBTC
-		res[27] = this.mintWithBTC.selector;
-		res[28] = this.burnToBTC.selector;
+		res[28] = this.mintWithBTC.selector;
+		res[29] = this.burnToBTC.selector;
 
 		// Advanced Token
-		res[29] = this.approve.selector;
+		res[30] = this.approve.selector;
 
 		// Advanced Token Storage
-		res[30] = this.totalSupply.selector;
-		res[31] = this.balanceOf.selector;
-		res[32] = this.allowance.selector;
+		res[31] = this.totalSupply.selector;
+		res[32] = this.balanceOf.selector;
+		res[33] = this.allowance.selector;
 
 		// Loan Token Logic Storage Additional Variable
-		res[33] = bytes4(keccak256("liquidityMiningAddress()"));
-		res[34] = this.marginTradeBySig.selector;
+		res[34] = this.getLiquidityMiningAddress.selector;
+		res[35] = this.withdrawRBTCTo.selector;
 
 		return (res, stringToBytes32("LoanTokenLogicWrbtc"));
 	}
@@ -115,7 +116,6 @@ contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 	 * @return msgValue The amount of value sent.
 	 * */
 	function _verifyTransfers(
-		address sender,
 		address collateralTokenAddress,
 		address[4] memory sentAddresses,
 		uint256[5] memory sentAmounts,
@@ -144,7 +144,7 @@ contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 		}
 
 		if (collateralTokenSent != 0) {
-			_safeTransferFrom(collateralTokenAddress, sender, sovrynContractAddress, collateralTokenSent, "28");
+			_safeTransferFrom(collateralTokenAddress, msg.sender, sovrynContractAddress, collateralTokenSent, "28");
 		}
 
 		if (loanTokenSent != 0) {
@@ -153,7 +153,7 @@ contract LoanTokenLogicWrbtc is LoanTokenLogicStandard {
 				_safeTransfer(_loanTokenAddress, sovrynContractAddress, loanTokenSent, "29");
 				msgValue -= loanTokenSent;
 			} else {
-				_safeTransferFrom(_loanTokenAddress, sender, sovrynContractAddress, loanTokenSent, "29");
+				_safeTransferFrom(_loanTokenAddress, msg.sender, sovrynContractAddress, loanTokenSent, "29");
 			}
 		}
 	}

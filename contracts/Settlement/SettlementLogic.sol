@@ -420,7 +420,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             actualCollateralAmount,
             order.collateralTokenAddress,
             order.trader,
-            order.minReturn, // minimum position size in the collateral tokens
+            order.minEntryPrice, // minimum position size in the collateral tokens
             order.loanDataBytes /// Arbitrary order data.
         );
         (bool success, bytes memory result) = loanTokenAdr.call(data);
@@ -460,7 +460,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 1000
             );
             actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
-            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress).loanTokenAddress();
+            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+                .loanTokenAddress();
             address[] memory _path = sovrynSwapNetwork.conversionPath(
                 loanTokenAsset,
                 order.collateralTokenAddress
@@ -552,7 +553,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        if (order.fromToken == WRBTC_ADDRESS && balanceOf[order.maker] >= order.amountIn) {
+        if (
+            order.fromToken == WRBTC_ADDRESS &&
+            balanceOf[order.maker] >= order.amountIn
+        ) {
             withdraw(order.amountIn);
         }
 

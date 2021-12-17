@@ -462,7 +462,7 @@ async function createMarginOrder() {
             collateralTokenSent,
             collateralToken,
         ).call();
-        const minReturn = ethers.BigNumber.from(String(collateral)).div(2);
+        const minEntryPrice = ethers.BigNumber.from(String(collateral)).div(2);
 
         const order = new MarginOrder(
             ethers.constants.HashZero,
@@ -472,7 +472,7 @@ async function createMarginOrder() {
             collateralTokenSent,
             collateralToken,
             account, //trader,
-            minReturn,
+            minEntryPrice,
             ethers.constants.HashZero, //loanDataBytes,
             getDeadline(24),//deadline,
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), //createdTimestamp,
@@ -519,7 +519,7 @@ async function createMarginOrder() {
             order.collateralTokenSent,
             order.collateralTokenAddress,
             order.trader,
-            order.minReturn,
+            order.minEntryPrice,
             order.loanDataBytes,
             order.deadline,
             order.createdTimestamp,
@@ -623,7 +623,7 @@ async function signTypeMarginOrderData(order) {
             collateralTokenSent: web3.utils.toBN(order.collateralTokenSent).toString(),
             collateralTokenAddress: order.collateralTokenAddress,
             trader: order.trader,
-            minReturn: web3.utils.toBN(order.minReturn).toString(),
+            minEntryPrice: web3.utils.toBN(order.minEntryPrice).toString(),
             loanDataBytes: order.loanDataBytes,
             deadline: web3.utils.toBN(order.deadline).toString(),
             createdTimestamp: web3.utils.toBN(order.createdTimestamp).toString(),
@@ -644,7 +644,7 @@ async function signTypeMarginOrderData(order) {
                 { name: "collateralTokenSent", type: "uint256" },
                 { name: "collateralTokenAddress", type: "address" },
                 { name: "trader", type: "address" },
-                { name: "minReturn", type: "uint256" },
+                { name: "minEntryPrice", type: "uint256" },
                 { name: "loanDataBytes", type: "bytes32" },
                 { name: "deadline", type: "uint256" },
                 { name: "createdTimestamp", type: "uint256" },

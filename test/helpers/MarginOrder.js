@@ -2,7 +2,7 @@ const { ethers, getChainId, deployments, getNamedAccounts } = require("hardhat")
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 class MarginOrder {
-    static ORDER_TYPEHASH = "0xe30dcb91507ed7c8a9a2019b56e407eee8294529022e84f18b5420374e178404";
+    static ORDER_TYPEHASH = "0x081065ed5fb223d1fbe21ab1bb041dfac552070112cff5e8d4be7dada1f96cd6";
 
     constructor(
         loanId,
@@ -12,7 +12,7 @@ class MarginOrder {
         collateralTokenSent,
         collateralTokenAddress,
         trader,
-        minReturn,
+        minEntryPrice,
         loanDataBytes,
         deadline,
         createdTimestamp,
@@ -24,7 +24,7 @@ class MarginOrder {
         this.loanTokenSent = loanTokenSent;
         this.collateralTokenSent = collateralTokenSent;
         this.collateralTokenAddress = collateralTokenAddress;
-        this.minReturn = minReturn;
+        this.minEntryPrice = minEntryPrice;
         this.loanDataBytes = loanDataBytes;
         this.deadline = deadline;
         this.createdTimestamp = createdTimestamp;
@@ -56,7 +56,7 @@ class MarginOrder {
                     overrides.collateralTokenSent || this.collateralTokenSent,
                     overrides.collateralTokenAddress || this.collateralTokenAddress,
                     overrides.trader || this.trader.address,
-                    overrides.minReturn || this.minReturn,
+                    overrides.minEntryPrice || this.minEntryPrice,
                     overrides.loanDataBytes || this.loanDataBytes,
                     overrides.deadline || this.deadline,
                     overrides.createdTimestamp || this.createdTimestamp,
@@ -83,7 +83,7 @@ class MarginOrder {
                 { name: "collateralTokenSent", type: "uint256" },
                 { name: "collateralTokenAddress", type: "address" },
                 { name: "trader", type: "address" },
-                { name: "minReturn", type: "uint256" },
+                { name: "minEntryPrice", type: "uint256" },
                 { name: "loanDataBytes", type: "bytes32" },
                 { name: "deadline", type: "uint256" },
                 { name: "createdTimestamp", type: "uint256" },
@@ -97,7 +97,7 @@ class MarginOrder {
             collateralTokenSent: overrides.collateralTokenSent || this.collateralTokenSent,
             collateralTokenAddress: overrides.collateralTokenAddress || this.collateralTokenAddress,
             trader: overrides.trader || this.trader.address,
-            minReturn: overrides.minReturn || this.minReturn,
+            minEntryPrice: overrides.minEntryPrice || this.minEntryPrice,
             loanDataBytes: overrides.loanDataBytes || this.loanDataBytes,
             deadline: overrides.deadline || this.deadline,
             createdTimestamp: overrides.createdTimestamp || this.createdTimestamp,
@@ -127,7 +127,7 @@ class MarginOrder {
             overrides.collateralTokenSent || this.collateralTokenSent,
             overrides.collateralTokenAddress || this.collateralTokenAddress,
             overrides.trader || this.trader.address,
-            overrides.minReturn || this.minReturn,
+            overrides.minEntryPrice || this.minEntryPrice,
             overrides.loanDataBytes || this.loanDataBytes,
             overrides.deadline || this.deadline,
             overrides.createdTimestamp || this.createdTimestamp,
