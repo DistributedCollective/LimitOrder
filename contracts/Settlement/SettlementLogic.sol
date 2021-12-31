@@ -393,6 +393,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filledAmountInOfHash[hash] == 0, "already-filled");
     }
 
+    // Calls the marginTrade function for the LoanToken address
     function _marginTrade(
         MarginOrders.Order memory order,
         uint256 actualLoanTokenAmount,
@@ -437,6 +438,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
+    // Calculates fees
     function _calculateMarginOrderFee(MarginOrders.Order memory order)
         internal
         view
@@ -478,6 +480,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
+    // Checks the relayer fee
     function _checkRelayerFee(uint256 fee, address fromToken) internal view {
         uint256 feeInRbtc = fee;
         if (fromToken != WRBTC_ADDRESS) {
@@ -494,6 +497,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // internal functions
+    // Checks the amount returned from the token swap
     function swapInternal(
         address[] memory _conversionPath,
         uint256 _amount,
@@ -563,6 +567,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit OrderCanceled(hash, order.maker);
     }
 
+    // Cancels margin order
     function cancelMarginOrder(MarginOrders.Order memory order)
         public
         override
@@ -587,6 +592,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit MarginOrderCanceled(hash, order.trader);
     }
 
+    // Fetches all cancelled order hashes
     function allCanceledHashes()
         public
         view
@@ -596,6 +602,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         return canceledHashes;
     }
 
+    // Stores the order hashes and the cancelled flag
     function checkCanceledHashes(bytes32[] memory hashes)
         public
         view
@@ -609,6 +616,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
+    // Stores the filled orders and the respective amounts
     function checkFilledAmountHashes(bytes32[] memory hashes)
         public
         view
