@@ -1,6 +1,8 @@
 const { formatEther } = require("@ethersproject/units");
 const { BigNumber } = require("ethers");
 const { ethers, deployments } = require("hardhat");
+const { replaceInFile } = require("replace-in-file");
+
 const helpers = require("./helpers");
 const { parseEther, parseUnits } = ethers.utils;
 const MarginOrder = require('./helpers/MarginOrder');
@@ -11,7 +13,6 @@ const {
 	getWRBTC,
 	getBZRX,
 	getSOV,
-    getLoanTokenLogic1,
 	getLoanToken,
 	getLoanTokenWRBTC,
 	loan_pool_setup,
@@ -19,6 +20,7 @@ const {
 	getPriceFeeds,
 	getSovryn,
 } = require("./Utils/initializer.js");
+const { approve } = require('../scripts/approval');
 
 const ILoanTokenModules = artifacts.require("ILoanTokenModules");
 const TestToken = artifacts.require("TestToken");
@@ -42,7 +44,7 @@ describe("Margin Order", async () => {
         accounts = await ethers.getSigners();
         privKeys = getAccountsPrivateKeys();
         owner = accounts[0];
-        console.log(accounts.map((acc, i) => ({ adr: acc.address, pk: getAccount(i).privateKey })))
+        // console.log(accounts.map((acc, i) => ({ adr: acc.address, pk: getAccount(i).privateKey })))
 
         if(network.name === "mainnet") {
             //setup loan for mainnet
@@ -78,12 +80,35 @@ describe("Margin Order", async () => {
             await loan_pool_setup(sovryn, owner.address, RBTC, WRBTC, SUSD, loanTokenSUSD, loanTokenWRBTC);
             SOV = await getSOV(sovryn, priceFeeds, SUSD, [owner.address]);
 
-            await WRBTC.deposit({value: parseEther("1000")});
-            await WRBTC.transfer(loanTokenWRBTC.address, parseEther("1000"));
+            await WRBTC.deposit({value: parseEther("100")});
+            await WRBTC.transfer(loanTokenWRBTC.address, parseEther("100"));
             await SUSD.transfer(loanTokenSUSD.address, parseEther("100000"));
 
             const settlement = await getContract('Settlement');
             await settlement.setMinFee(parseEther('0'));
+            
+            console.log('iloanSUSD', loanTokenSUSD.address);
+            console.log('iloanWRBTC', loanTokenWRBTC.address);
+            await replaceInFile({
+                files: 'src/config/local.js',
+                from: new RegExp('iXUSD: "0x([0-9a-fA-F]{40})"'),
+                to: 'iXUSD: "' + loanTokenSUSD.address + '"',
+            });
+            await replaceInFile({
+                files: 'src/config/local.js',
+                from: new RegExp('iRBTC: "0x([0-9a-fA-F]{40})"'),
+                to: 'iRBTC: "' + loanTokenWRBTC.address + '"',
+            });
+
+            await approve({
+                iXUSD: loanTokenSUSD.address,
+                iRBTC: loanTokenWRBTC.address
+            }, {
+                SOV: SOV.address,
+                XUSD: SUSD.address,
+                WRBTC: WRBTC.address,
+                RBTC: RBTC.address,
+            });
         }
         const adr = accounts[0].address;
         console.log("bal wrbtc", formatEther((await WRBTC.balanceOf(adr)).toString()) );
@@ -110,24 +135,30 @@ describe("Margin Order", async () => {
         loanTokenSent,
         collateralTokenSent,
         collateralTokenAddress,
-        minEntryPrice,
+        minReturn,
         loanDataBytes,
         deadline,
         createdTimestamp,
     ) => {
         const settlement = await getContract('Settlement');
+        const checkAllowance = async (token, owner, spender) => {
+            const allowance = await token.allowance(owner, spender);
+            console.log(`Allowance of ${token.address} ${await token.symbol()}, owner ${owner}, spender ${spender}: ${Number(allowance)}`);
+        }
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
             const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
             const allowance = await loanTokenAsset.allowance(signer.address, settlement.address);
             const _tx = await loanTokenAsset.approve(settlement.address, loanTokenSent.add(allowance));
             await _tx.wait();
+            await checkAllowance(loanTokenAsset, settlement.address, loanToken.address)
         }
         if (Number(collateralTokenSent) > 0) {
             const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
             const allowance = await collateralToken.allowance(signer.address, settlement.address);
             const _tx = await collateralToken.approve(settlement.address, collateralTokenSent.add(allowance));
             await _tx.wait();
+            await checkAllowance(collateralToken, settlement.address, loanToken.address)
         }
 
         const order = new MarginOrder(
@@ -138,7 +169,7 @@ describe("Margin Order", async () => {
             collateralTokenSent,
             collateralTokenAddress,
             signer,
-            minEntryPrice,
+            minReturn,
             loanDataBytes,
             deadline,
             createdTimestamp,
@@ -165,7 +196,7 @@ describe("Margin Order", async () => {
         collateralToken,
         collateralTokenSent,
         leverageAmount,
-        minEntryPrice
+        minReturn
     }) => {
         const { getDeadline } = await helpers.setup();
 
@@ -192,7 +223,7 @@ describe("Margin Order", async () => {
             loanTokenSent, // loan token sent
             collateralTokenSent, // collateral token sent
             collateralToken.address, // collateral token
-            minEntryPrice, // min return
+            minReturn, // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -232,7 +263,7 @@ describe("Margin Order", async () => {
             parseEther("0"), // loan token sent
             collateralAmount, // collateral token sent
             collateralToken, // collateral token
-            parseEther("0.00002"), // min return
+            parseEther("0.02"), // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -275,7 +306,7 @@ describe("Margin Order", async () => {
             collateralToken: SUSD,
             collateralTokenSent: parseEther("1000"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("5000"),
+            minReturn: parseEther("5000"),
         });
 
         const receipt = await orderTx.wait();
@@ -342,7 +373,7 @@ describe("Margin Order", async () => {
             collateralToken: SUSD,
             collateralTokenSent: parseEther("1000"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("5000"),
+            minReturn: parseEther("3000"),
         });
         await orderTx.wait();
         await filledTx.wait();
@@ -371,11 +402,11 @@ describe("Margin Order", async () => {
             trader,
             relayer,
             loanToken: loanTokenSUSD,
-            loanTokenSent: parseEther("1200"),
-            collateralToken: RBTC,
-            collateralTokenSent: parseEther("1"),
+            loanTokenSent: parseEther("200"),
+            collateralToken: WRBTC,
+            collateralTokenSent: parseEther("0.2"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("0.00005"),
+            minReturn: parseEther("0.5"),
         });
         await orderTx.wait();
         await filledTx.wait();
@@ -407,7 +438,7 @@ describe("Margin Order", async () => {
             collateralToken,
             collateralTokenSent,
             leverageAmount,
-            minEntryPrice:  parseEther("0.00001") //ethers.BigNumber.from(String(collateral)).div(2)
+            minReturn: ethers.BigNumber.from(String(collateral)).div(2)
         });
         await orderTx.wait();
         const receipt = await filledTx.wait();
@@ -437,7 +468,7 @@ describe("Margin Order", async () => {
             collateralToken,
             collateralTokenSent,
             leverageAmount,
-            minEntryPrice: ethers.BigNumber.from(String(collateral)).div(2),
+            minReturn: ethers.BigNumber.from(String(collateral)).div(2),
         });
         await orderTx.wait();
         const receipt = await filledTx.wait();
@@ -459,7 +490,7 @@ describe("Margin Order", async () => {
                 collateralToken: SUSD,
                 collateralTokenSent: parseEther('1'),
                 leverageAmount: parseEther("2"),
-                minEntryPrice: parseEther("2"),
+                minReturn: parseEther("2"),
             })
         );
         await settlement.setMinFee(parseEther('0'));

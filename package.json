@@ -17,9 +17,13 @@
     "test:gas": "REPORT_GAS=true yarn test",
     "deploy:hardhat": "hardhat deploy",
     "deploy:rsktest": "hardhat deploy --network rsktestnet",
+    "deploy:main": "hardhat deploy --network mainnet",
     "prepublishOnly": "yarn run build",
-    "start-relay": "node src/start.js",
-    "build-client": "npx webpack"
+    "start-relay": "node src/start.js --testnet",
+    "start-relay:main": "node src/start.js --mainnet",
+    "build-client": "npx webpack",
+    "approveSettlement:testnet": "node scripts/approval.js --testnet",
+    "approveSettlement:main": "node scripts/approval.js --mainnet"
   },
   "devDependencies": {
     "@ethersproject/hash": "^5.0.10",

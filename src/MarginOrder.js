@@ -14,7 +14,7 @@ module.exports = class MarginOrder {
         collateralTokenSent,
         collateralTokenAddress,
         trader,
-        minEntryPrice,
+        minReturn,
         loanDataBytes,
         deadline,
         createdTimestamp,
@@ -26,7 +26,7 @@ module.exports = class MarginOrder {
         this.loanTokenSent = loanTokenSent;
         this.collateralTokenSent = collateralTokenSent;
         this.collateralTokenAddress = collateralTokenAddress;
-        this.minEntryPrice = minEntryPrice;
+        this.minReturn = minReturn;
         this.loanDataBytes = loanDataBytes;
         this.deadline = deadline;
         this.createdTimestamp = createdTimestamp;
@@ -58,7 +58,7 @@ module.exports = class MarginOrder {
                     overrides.collateralTokenSent || this.collateralTokenSent,
                     overrides.collateralTokenAddress || this.collateralTokenAddress,
                     overrides.trader || this.trader,
-                    overrides.minEntryPrice || this.minEntryPrice,
+                    overrides.minReturn || this.minReturn,
                     overrides.loanDataBytes || this.loanDataBytes,
                     overrides.deadline || this.deadline,
                     overrides.createdTimestamp || this.createdTimestamp,
@@ -83,7 +83,7 @@ module.exports = class MarginOrder {
                 { name: "collateralTokenSent", type: "uint256" },
                 { name: "collateralTokenAddress", type: "address" },
                 { name: "trader", type: "address" },
-                { name: "minEntryPrice", type: "uint256" },
+                { name: "minReturn", type: "uint256" },
                 { name: "loanDataBytes", type: "bytes32" },
                 { name: "deadline", type: "uint256" },
                 { name: "createdTimestamp", type: "uint256" },
@@ -97,7 +97,7 @@ module.exports = class MarginOrder {
             collateralTokenSent: this.collateralTokenSent,
             collateralTokenAddress: this.collateralTokenAddress,
             trader: this.trader,
-            minEntryPrice: this.minEntryPrice,
+            minReturn: this.minReturn,
             loanDataBytes: this.loanDataBytes,
             deadline: this.deadline,
             createdTimestamp: this.createdTimestamp,
@@ -119,8 +119,8 @@ module.exports = class MarginOrder {
             this.loanTokenSent,
             this.collateralTokenSent,
             this.collateralTokenAddress,
-            this.trader.address,
-            this.minEntryPrice,
+            this.trader,
+            this.minReturn,
             this.loanDataBytes,
             this.deadline,
             this.createdTimestamp,

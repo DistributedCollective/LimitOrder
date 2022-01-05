@@ -3,13 +3,13 @@ const Web3 = require("web3");
 const ethers = require('ethers');
 const axios = require('axios');
 const abiDecoder = require('abi-decoder');
-const config = require('../src/config');
+const config = require('../src/config/main');
 const ABIs = require("../src/config/abis");
 const Order = require('../src/Order');
 const MarginOrder = require('../src/MarginOrder');
 const { formatEther } = require("@ethersproject/units");
 
-let web3, bal = 0, account, cancelOrderBtn, createMarginOrderBtn;
+let web3, bal = 0, account;
 $(document).ready(() => {
     if (typeof window.ethereum !== 'undefined') {
         connectWallet();
@@ -216,12 +216,21 @@ $(document).ready(() => {
         $('#buyEthsBnbsBtn').on('click', function () {
             createOrder('BNBs', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
         });
-        
-        createMarginOrderBtn = $('#createMarginOrder');
-        createMarginOrderBtn.on('click', createMarginOrder);
 
-        cancelOrderBtn = $('#cancelOrder');
-        cancelOrderBtn.on('click', cancelOrder);
+
+        $('#longBTCx2').on('click', function () {
+            createMarginOrder('long', '100', $(this));
+        });
+        $('#shortBTCx2').on('click', function () {
+            createMarginOrder('short', '100', $(this));
+        });
+        
+        $('#cancelOrder').on('click', function () {
+            cancelOrder($(this));
+        });
+        $('#cancelMarginOrder').on('click', function () {
+            cancelMarginOrder($(this));
+        });
     } else {
         alert('Metamask is not found!');
     }
@@ -235,7 +244,7 @@ async function connectWallet() {
         const chainId = await web3.eth.getChainId();
 
         if (chainId != config.chainId) {
-            return alert('Wrong network');
+            // return alert('Wrong network');
         }
 
         account = accounts[0];
@@ -342,7 +351,7 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const chainId = config.chainId;
+        const chainId = config.orderBookChainId;
         const msg = order.messageHash(chainId, config.contracts.orderBook);
         const hash = order.hash();
         showMsg('order hash', hash);
@@ -389,56 +398,7 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
     }
 }
 
-async function cancelOrder() {
-    try {
-        const orderHash = prompt('Enter order hash');
-        if (orderHash) {
-            clearMsg();
-            cancelOrderBtn.attr('disabled', 'disabled');
-            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}`, { json: true });
-
-            let order = (orders || []).find(o => o.hash == orderHash);
-
-            if (!order) return showMsg('Order hash is not found on your history');
-
-            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
-            const txData = await contract.methods.cancelOrder([
-                order.maker,
-                order.fromToken,
-                order.toToken,
-                ethers.BigNumber.from(order.amountIn.hex),
-                ethers.BigNumber.from(order.amountOutMin),
-                order.recipient,
-                ethers.BigNumber.from(order.deadline),
-                ethers.BigNumber.from(order.created),
-                order.v,
-                order.r,
-                order.s,
-            ]).encodeABI();
-            const tx = await web3.eth.sendTransaction({
-                from: account,
-                to: config.contracts.settlement,
-                data: txData,
-                gasLimit: 500000,
-                gasPrice: ethers.utils.parseUnits('10', 'gwei'),
-            }, (err, txHash) => {
-                err && console.log(err);
-                if (txHash) {
-                    showMsg('tx hash: ', txHash);
-                }
-            });
-
-            showMsg('receipt', JSON.stringify(tx, null, 2));
-        }
-    } catch (e) {
-        showMsg(e);
-        console.log(e);
-    } finally {
-        cancelOrderBtn.removeAttr('disabled');
-    }
-}
-
-async function createMarginOrder() {
+async function createMarginOrder(pos, amountUSD, $btn) {
     if (bal <= 0) {
         alert('Insufficient balance');
         return;
@@ -447,22 +407,31 @@ async function createMarginOrder() {
     try {
 
         clearMsg();
-        createMarginOrderBtn.attr('disabled', 'disabled');
+        $btn.attr('disabled', 'disabled');
        
         const apiUrl = `${config.baseAPIUrl}/api/createMarginOrder`;
         const orderBookMargin = new web3.eth.Contract(ABIs.OrderBookMargin, config.contracts.orderBookMargin);
-        const loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iXUSD);
+        let loanToken, collateralToken,
+            loanTokenSent = ethers.utils.parseEther('0'),
+            collateralTokenSent = ethers.utils.parseEther('0');
         const leverageAmount = ethers.utils.parseEther('2');
-        const loanTokenSent = ethers.utils.parseEther('100');
-        const collateralTokenSent = ethers.utils.parseEther('0');
-        const collateralToken = config.tokens.WRBTC;
+
+        if (pos == 'long') {
+            loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iXUSD);
+            collateralToken = config.tokens.WRBTC;
+            loanTokenSent = ethers.utils.parseEther(amountUSD);
+        } else {
+            loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iRBTC);
+            collateralToken = config.tokens.XUSD;
+            collateralToken = ethers.utils.parseEther(amountUSD);
+        }
         const { collateral } = await loanToken.methods.getEstimatedMarginDetails(
             leverageAmount,
             loanTokenSent,
             collateralTokenSent,
             collateralToken,
         ).call();
-        const minEntryPrice = ethers.BigNumber.from(String(collateral)).div(2);
+        const minReturn = ethers.BigNumber.from(String(collateral)).div(2);
 
         const order = new MarginOrder(
             ethers.constants.HashZero,
@@ -472,7 +441,7 @@ async function createMarginOrder() {
             collateralTokenSent,
             collateralToken,
             account, //trader,
-            minEntryPrice,
+            minReturn,
             ethers.constants.HashZero, //loanDataBytes,
             getDeadline(24),//deadline,
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), //createdTimestamp,
@@ -501,7 +470,7 @@ async function createMarginOrder() {
                 });
         }
 
-        const chainId = config.chainId;
+        const chainId = config.orderBookChainId;
         const msg = order.messageHash(chainId, config.contracts.orderBookMargin);
         showMsg('order msg', msg);
 
@@ -519,7 +488,7 @@ async function createMarginOrder() {
             order.collateralTokenSent,
             order.collateralTokenAddress,
             order.trader,
-            order.minEntryPrice,
+            order.minReturn,
             order.loanDataBytes,
             order.deadline,
             order.createdTimestamp,
@@ -536,11 +505,114 @@ async function createMarginOrder() {
 
         showMsg('tx', JSON.stringify(data, null, 2));
 
-        createMarginOrderBtn.removeAttr('disabled');
+        $btn.removeAttr('disabled');
     } catch (e) {
         showMsg(e);
         console.log(e);
-        createMarginOrderBtn.removeAttr('disabled');
+        $btn.removeAttr('disabled');
+    }
+}
+
+
+
+async function cancelOrder($btn) {
+    try {
+        const orderHash = prompt('Enter order hash');
+        if (orderHash) {
+            clearMsg();
+            $btn.attr('disabled', 'disabled');
+            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}`, { json: true });
+
+            let order = (orders || []).find(o => o.hash == orderHash);
+
+            if (!order) return showMsg('Order hash is not found on your history');
+
+            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+            const txData = await contract.methods.cancelOrder([
+                order.maker,
+                order.fromToken,
+                order.toToken,
+                ethers.BigNumber.from(order.amountIn.hex),
+                ethers.BigNumber.from(order.amountOutMin),
+                order.recipient,
+                ethers.BigNumber.from(order.deadline),
+                ethers.BigNumber.from(order.created),
+                order.v,
+                order.r,
+                order.s,
+            ]).encodeABI();
+            const tx = await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                data: txData,
+                gasLimit: 500000,
+                gasPrice: await getGasPrice(),
+            }, (err, txHash) => {
+                err && console.log(err);
+                if (txHash) {
+                    showMsg('tx hash: ', txHash);
+                }
+            });
+
+            showMsg('receipt', JSON.stringify(tx, null, 2));
+        }
+    } catch (e) {
+        showMsg(e);
+        console.log(e);
+    } finally {
+        $btn.removeAttr('disabled');
+    }
+}
+
+async function cancelMarginOrder($btn) {
+    try {
+        const orderHash = prompt('Enter order hash');
+        if (orderHash) {
+            clearMsg();
+            $btn.attr('disabled', 'disabled');
+            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}?isMargin=1`, { json: true });
+
+            let order = (orders || []).find(o => o.hash == orderHash);
+
+            if (!order) return showMsg('Margin Order hash is not found on your history');
+
+            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+            const txData = await contract.methods.cancelMarginOrder([
+                order.loanId,
+                order.leverageAmount,
+                order.loanTokenAddress,
+                ethers.BigNumber.from(order.loanTokenSent),
+                ethers.BigNumber.from(order.collateralTokenSent),
+                order.collateralTokenAddress,
+                order.trader,
+                ethers.BigNumber.from(order.minReturn),
+                order.loanDataBytes,
+                ethers.BigNumber.from(order.deadline),
+                ethers.BigNumber.from(order.createdTimestamp),
+                order.v,
+                order.r,
+                order.s,
+            ]).encodeABI();
+            const tx = await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                data: txData,
+                gasLimit: 500000,
+                gasPrice: await getGasPrice(),
+            }, (err, txHash) => {
+                err && console.log(err);
+                if (txHash) {
+                    showMsg('tx hash: ', txHash);
+                }
+            });
+
+            showMsg('receipt', JSON.stringify(tx, null, 2));
+        }
+    } catch (e) {
+        showMsg(e);
+        console.log(e);
+    } finally {
+        $btn.removeAttr('disabled');
     }
 }
 
@@ -554,7 +626,7 @@ function showMsg(...msg) {
 async function signTypeOrderData(order) {
     const msgParams = JSON.stringify({
         domain: {
-            chainId: config.chainId,
+            chainId: config.orderBookChainId,
             name: 'OrderBook',
             verifyingContract: config.contracts.orderBook,
             version: '1'
@@ -609,7 +681,7 @@ async function signTypeOrderData(order) {
 async function signTypeMarginOrderData(order) {
     const msgParams = JSON.stringify({
         domain: {
-            chainId: config.chainId,
+            chainId: config.orderBookChainId,
             name: 'OrderBookMargin',
             verifyingContract: config.contracts.orderBookMargin,
             version: '1'
@@ -623,7 +695,7 @@ async function signTypeMarginOrderData(order) {
             collateralTokenSent: web3.utils.toBN(order.collateralTokenSent).toString(),
             collateralTokenAddress: order.collateralTokenAddress,
             trader: order.trader,
-            minEntryPrice: web3.utils.toBN(order.minEntryPrice).toString(),
+            minReturn: web3.utils.toBN(order.minReturn).toString(),
             loanDataBytes: order.loanDataBytes,
             deadline: web3.utils.toBN(order.deadline).toString(),
             createdTimestamp: web3.utils.toBN(order.createdTimestamp).toString(),
@@ -644,7 +716,7 @@ async function signTypeMarginOrderData(order) {
                 { name: "collateralTokenSent", type: "uint256" },
                 { name: "collateralTokenAddress", type: "address" },
                 { name: "trader", type: "address" },
-                { name: "minEntryPrice", type: "uint256" },
+                { name: "minReturn", type: "uint256" },
                 { name: "loanDataBytes", type: "bytes32" },
                 { name: "deadline", type: "uint256" },
                 { name: "createdTimestamp", type: "uint256" },

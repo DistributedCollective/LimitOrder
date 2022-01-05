@@ -6,7 +6,7 @@ library MarginOrders {
     // Struct signature hash
     bytes32 public constant ORDER_TYPEHASH =
         keccak256(
-            "Order(bytes32 loanId,uint256 leverageAmount,address loanTokenAddress,uint256 loanTokenSent,uint256 collateralTokenSent,address collateralTokenAddress,address trader,uint256 minEntryPrice,bytes32 loanDataBytes,uint256 deadline,uint256 createdTimestamp)"
+            "Order(bytes32 loanId,uint256 leverageAmount,address loanTokenAddress,uint256 loanTokenSent,uint256 collateralTokenSent,address collateralTokenAddress,address trader,uint256 minReturn,bytes32 loanDataBytes,uint256 deadline,uint256 createdTimestamp)"
         );
 
     // MarginOrder details including the v, r and s components of a signature
@@ -18,7 +18,7 @@ library MarginOrders {
         uint256 collateralTokenSent;
         address collateralTokenAddress;
         address trader;
-        uint256 minEntryPrice; //optional
+        uint256 minReturn; //optional
         bytes32 loanDataBytes;
         uint256 deadline;
         uint256 createdTimestamp;
@@ -40,7 +40,7 @@ library MarginOrders {
                     order.collateralTokenSent,
                     order.collateralTokenAddress,
                     order.trader,
-                    order.minEntryPrice,
+                    order.minReturn,
                     order.loanDataBytes,
                     order.deadline,
                     order.createdTimestamp
@@ -60,7 +60,7 @@ library MarginOrders {
             order.collateralTokenAddress != address(0),
             "invalid-collateral-token-address"
         );
-        require(order.minEntryPrice > 0, "invalid-min-return");
+        require(order.minReturn > 0, "invalid-min-return");
         require(order.deadline > now, "invalid-deadline");
         require(order.createdTimestamp >= now - 15 minutes, "invalid-created");
     }

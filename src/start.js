@@ -7,6 +7,7 @@ const { keccak256 } = require("@ethersproject/keccak256");
 const Web3 = require('web3');
 
 const config = require('./config');
+console.log(config);
 const {
     OrderBook: orderBookABI,
     OrderBookMargin: orderBookMarginABI,
@@ -26,7 +27,7 @@ const orderBookContract = new ethers.Contract(config.contracts.orderBook, orderB
 const orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, orderBookProvider);
 const settlementContract = new ethers.Contract(config.contracts.settlement, settlementABI, provider);
 
-const web3 = new Web3(config.networkUrl);
+const web3 = new Web3(config.orderBookNetwork);
 
 relayer.init(orderBookProvider);
 
@@ -99,7 +100,7 @@ app.post('/api/createOrder', async (req, res) => {
             deadline,
             created
         );
-        const orderMsg = order.messageHash(config.chainId, config.contracts.orderBook);
+        const orderMsg = order.messageHash(config.orderBookChainId, config.contracts.orderBook);
         const signature = ethers.utils.joinSignature({ v, r, s });
         
         const signer = web3.eth.accounts.recover(orderMsg, signature, true);
@@ -146,7 +147,7 @@ app.post('/api/createMarginOrder', async (req, res) => {
             collateralTokenSent,
             collateralTokenAddress,
             trader,
-            minEntryPrice,
+            minReturn,
             loanDataBytes,
             deadline,
             createdTimestamp,
@@ -160,12 +161,12 @@ app.post('/api/createMarginOrder', async (req, res) => {
             collateralTokenSent,
             collateralTokenAddress,
             trader,
-            minEntryPrice,
+            minReturn,
             loanDataBytes,
             deadline,
             createdTimestamp,
         );
-        const orderMsg = order.messageHash(config.chainId, config.contracts.orderBookMargin);
+        const orderMsg = order.messageHash(config.orderBookChainId, config.contracts.orderBookMargin);
         const signature = ethers.utils.joinSignature({ v, r, s });
 
         const signer = web3.eth.accounts.recover(orderMsg, signature, true);
@@ -238,7 +239,7 @@ app.get('/api/orders/:adr', async (req, res) => {
             'collateralTokenSent',
             'collateralTokenAddress',
             'trader',
-            'minEntryPrice',
+            'minReturn',
             'loanDataBytes',
             'deadline',
             'createdTimestamp',

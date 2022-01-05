@@ -15,7 +15,7 @@ interface ISovrynLoanToken {
         uint256 collateralTokenSent,
         address collateralTokenAddress,
         address trader,
-        uint256 minEntryPrice, // minimum position size in the collateral tokens
+        uint256 minReturn, // minimum position size in the collateral tokens
         bytes32 loanDataBytes // Arbitrary order data.
     )
         external

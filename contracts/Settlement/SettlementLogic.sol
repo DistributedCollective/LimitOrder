@@ -219,7 +219,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit OrderFilled(
             hash,
             args.order.maker,
-            args.amountToFillIn,
+            actualAmountIn,
             amountOut,
             path
         );
@@ -284,7 +284,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress)
             .loanTokenAddress();
         if (args.order.collateralTokenSent > 0) {
-            collateralToken.transferFrom(
+            collateralToken.safeTransferFrom(
                 trader,
                 address(this),
                 args.order.collateralTokenSent
@@ -393,25 +393,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filledAmountInOfHash[hash] == 0, "already-filled");
     }
 
-    // Calls the marginTrade function for the LoanToken address
     function _marginTrade(
         MarginOrders.Order memory order,
         uint256 actualLoanTokenAmount,
         uint256 actualCollateralAmount
     ) internal returns (uint256 principalAmount, uint256 collateralAmount) {
         address loanTokenAdr = order.loanTokenAddress;
-        IERC20(order.collateralTokenAddress).safeApprove(
-            loanTokenAdr,
-            actualCollateralAmount
-        );
-        if (actualLoanTokenAmount > 0) {
-            address loanTokenAsset = ISovrynLoanToken(loanTokenAdr)
-                .loanTokenAddress();
-            IERC20(loanTokenAsset).safeApprove(
-                loanTokenAdr,
-                actualLoanTokenAmount
-            );
-        }
 
         bytes memory data = abi.encodeWithSignature(
             "marginTrade(bytes32,uint256,uint256,uint256,address,address,uint256,bytes)",
@@ -421,7 +408,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             actualCollateralAmount,
             order.collateralTokenAddress,
             order.trader,
-            order.minEntryPrice, // minimum position size in the collateral tokens
+            order.minReturn, // minimum position size in the collateral tokens
             order.loanDataBytes /// Arbitrary order data.
         );
         (bool success, bytes memory result) = loanTokenAdr.call(data);
@@ -438,7 +425,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
-    // Calculates fees
     function _calculateMarginOrderFee(MarginOrders.Order memory order)
         internal
         view
@@ -462,8 +448,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 1000
             );
             actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
-            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
-                .loanTokenAddress();
+            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress).loanTokenAddress();
             address[] memory _path = sovrynSwapNetwork.conversionPath(
                 loanTokenAsset,
                 order.collateralTokenAddress
@@ -480,7 +465,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
-    // Checks the relayer fee
     function _checkRelayerFee(uint256 fee, address fromToken) internal view {
         uint256 feeInRbtc = fee;
         if (fromToken != WRBTC_ADDRESS) {
@@ -557,17 +541,13 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        if (
-            order.fromToken == WRBTC_ADDRESS &&
-            balanceOf[order.maker] >= order.amountIn
-        ) {
+        if (order.fromToken == WRBTC_ADDRESS && balanceOf[order.maker] >= order.amountIn) {
             withdraw(order.amountIn);
         }
 
         emit OrderCanceled(hash, order.maker);
     }
 
-    // Cancels margin order
     function cancelMarginOrder(MarginOrders.Order memory order)
         public
         override
@@ -592,7 +572,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit MarginOrderCanceled(hash, order.trader);
     }
 
-    // Fetches all cancelled order hashes
     function allCanceledHashes()
         public
         view
@@ -628,5 +607,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             bytes32 hash = hashes[i];
             result[i] = FilledAmountCheck(hash, filledAmountInOfHash[hash]);
         }
+    }
+
+    function approveTokenLoan(address loanToken, address asset, uint256 amount) public onlyOwner
+    {
+        IERC20(asset).safeApprove(loanToken, amount);
     }
 }
