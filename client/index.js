@@ -3,7 +3,7 @@ const Web3 = require("web3");
 const ethers = require('ethers');
 const axios = require('axios');
 const abiDecoder = require('abi-decoder');
-const config = require('../src/config/main');
+const config = require('../src/config/testnet');
 const ABIs = require("../src/config/abis");
 const Order = require('../src/Order');
 const MarginOrder = require('../src/MarginOrder');
@@ -329,17 +329,26 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         const minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn)).mul('8').div('10');
         showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency}`);
 
-        showMsg('waiting approve token');
-        const approved = await approveToken(fromToken, account, config.contracts.settlement, amountIn)
-            .then(approveHash => {
-                showMsg('approve tx', approveHash);
-                return true;
-            })
-            .catch(err => {
-                showMsg('reject approve');
+        if (fromToken == config.tokens.WRBTC) {
+            showMsg(`sending ${formatEther(amountIn)} rbtc to Settlement contract`);
+            await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                value: amountIn
             });
-
-        if (!approved) return;
+        } else {
+            showMsg('waiting approve token');
+            const approved = await approveToken(fromToken, account, config.contracts.settlement, amountIn)
+                .then(approveHash => {
+                    showMsg('approve tx', approveHash);
+                    return true;
+                })
+                .catch(err => {
+                    showMsg('reject approve');
+                });
+    
+            if (!approved) return;
+        }
 
         const order = new Order(
             account,

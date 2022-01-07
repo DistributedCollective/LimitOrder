@@ -20,6 +20,7 @@
     "deploy:main": "hardhat deploy --network mainnet",
     "prepublishOnly": "yarn run build",
     "start-relay": "node src/start.js --testnet",
+    "start-relay:local": "node src/start.js --local",
     "start-relay:main": "node src/start.js --mainnet",
     "build-client": "npx webpack",
     "approveSettlement:testnet": "node scripts/approval.js --testnet",
