@@ -1,13 +1,14 @@
 module.exports = {
     port: 3001,
-    chainId: 31,
+    chainId: 30,
+    orderBookChainId: 31,
     baseAPIUrl: 'http://localhost:3001',
     networkUrl: 'https://mainnet.sovryn.app/rpc',
     orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0x12072030A495bf0a89089c2b79b34b4a9F8dc94a',
-        orderBook: '0x1B75fb8f7Ecb7189E5676197ae7FD9eb11c2aeb2',
-        orderBookMargin: '0x0d2E884ed71236EF1b27c83Fa1A1caa625dFBA81',
+        settlement: '0x4E19834396816398469585C7C0F6c5fd5DBFDA8b',
+        orderBook: '0x8316F90a73e14a4e3B87263f0fde575219d3c210',
+        orderBookMargin: '0x142397a33b79c97f13dC709DFE93fca39A7ba25e',
         swap: '0x98ace08d2b759a265ae326f010496bcd63c15afc'
     },
     loanContracts: {

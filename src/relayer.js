@@ -12,8 +12,8 @@ class Relayer {
 
     async getAccount() {
         for (const relayer of this.relayers) {
-            console.log(this.pendingTxs[relayer.address], new Date());
             const bal = await relayer.getBalance();
+            // console.log(relayer.address, this.pendingTxs[relayer.address], new Date(), Number(bal));
             if (bal.gt(ethers.constants.Zero) && Object.keys(this.pendingTxs[relayer.address]||{}).length < 4) {
                 return relayer;
             }
