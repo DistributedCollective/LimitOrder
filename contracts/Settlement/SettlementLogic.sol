@@ -64,7 +64,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         WRBTC_ADDRESS = _WRBTC;
         orderBookAddress = _orderBookAddress;
         orderBookMarginAddress = _marginOrderBookAddress;
-        relayerFeePercent = 2; // Relayer fee percent
+        relayerFeePercent = 2 * 10**17; // Relayer fee percent = 0.2
     }
 
     // Fallback function to receive tokens
@@ -141,7 +141,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
 
         uint256 relayerFee = args.amountToFillIn.mul(relayerFeePercent).div(
-            1000
+            10**20
         );
         _checkRelayerFee(relayerFee, args.order.fromToken);
 
@@ -149,7 +149,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(
             path,
-            args.order.amountIn
+            args.amountToFillIn // There might be partial filling of orders
         );
 
         require(
@@ -190,6 +190,13 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 recipient
             );
 
+        // CEI Pattern
+        filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(
+            args.amountToFillIn
+        );
+
+        amountOut = targetTokenAmount;
+
         IERC20(path[0]).safeTransfer(msg.sender, relayerFee); //check this
 
         if (targetToken == WRBTC_ADDRESS) {
@@ -208,13 +215,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             targetTokenAmount,
             msg.sender
         );
-
-        // This line is free from reentrancy issues since UniswapV2Pair prevents from them
-        filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(
-            args.amountToFillIn
-        );
-
-        amountOut = targetTokenAmount;
 
         emit OrderFilled(
             hash,
@@ -437,7 +437,9 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     {
         uint256 _collateralTokenSent = order.collateralTokenSent;
         if (_collateralTokenSent > 0) {
-            relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(1000);
+            relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(
+                10**20
+            );
             actualCollateralAmount = _collateralTokenSent.sub(relayerFee);
         }
 
@@ -445,10 +447,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 _feeLoanAssetByCollateral;
         if (_loanTokenSent > 0) {
             relayerFeeOnLoanAsset = _loanTokenSent.mul(relayerFeePercent).div(
-                1000
+                10**20
             );
             actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
-            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress).loanTokenAddress();
+            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+                .loanTokenAddress();
             address[] memory _path = sovrynSwapNetwork.conversionPath(
                 loanTokenAsset,
                 order.collateralTokenAddress
@@ -541,7 +544,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        if (order.fromToken == WRBTC_ADDRESS && balanceOf[order.maker] >= order.amountIn) {
+        if (
+            order.fromToken == WRBTC_ADDRESS &&
+            balanceOf[order.maker] >= order.amountIn
+        ) {
             withdraw(order.amountIn);
         }
 
@@ -609,8 +615,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    function approveTokenLoan(address loanToken, address asset, uint256 amount) public onlyOwner
-    {
+    function approveTokenLoan(
+        address loanToken,
+        address asset,
+        uint256 amount
+    ) public onlyOwner {
         IERC20(asset).safeApprove(loanToken, amount);
     }
 }
