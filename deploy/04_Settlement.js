@@ -17,13 +17,16 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const sSwn = await ethers.getContract("TestSovrynSwap", deployer);
         sovrynSwapNetwork = sSwn.address;
         wrbtcAddress = WRBTC[chainId].address;
+        multisig = deployer;
     }
-    else if(network.name === "rsktestnet") {
+    else if (network.name === "rsktestnet") {
         sovrynSwapNetwork =  "0x61172B53423E205a399640e5283e51FE60EC2256";
         wrbtcAddress = "0x69FE5cEC81D5eF92600c1A0dB1F11986AB3758Ab";
+        multisig = "0x189ecD23E9e34CFC07bFC3b7f5711A23F43F8a57";
     } else if (network.name === "mainnet") {
         sovrynSwapNetwork = "0x98ace08d2b759a265ae326f010496bcd63c15afc";
         wrbtcAddress = "0x542fDA317318eBF1d3DEAf76E0b632741A7e677d";
+        multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
         orderBookChainId = 31;
     }
 
@@ -59,4 +62,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const settlement = new web3.eth.Contract(SettlementLogic.abi, deployProxy.address);
     tx = await settlement.methods.initialize(chainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
     console.log(tx.transactionHash);
+
+    // Transfer ownership
+    await settlementProxy.methods.setProxyOwner(multisig)
+    await settlement.methods.transferOwnership(multisig)
 };

@@ -3,6 +3,16 @@ const { network } = require("hardhat");
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const { deploy } = deployments;
+
+    if (network.name === "hardhat" || network.name === "localhost") {
+        multisig = deployer;
+    }
+    else if (network.name === "rsktestnet") {
+        multisig = "0x189ecD23E9e34CFC07bFC3b7f5711A23F43F8a57";
+    } else if (network.name === "mainnet") {
+        multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
+    }
+    
     if (network.name !== "mainnet") {
 
         const deployProxy = await deploy('OrderBookMarginProxy', {
@@ -24,5 +34,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const orderBookMargin = new web3.eth.Contract(OrderBookMarginLogic.abi, deployProxy.address);
         tx = await orderBookMargin.methods.initialize().send({from: deployer});
         console.log(tx.transactionHash);
+
+        // Transfer ownership
+        await orderBookMarginProxy.methods.setProxyOwner(multisig)
+        await orderBookMargin.methods.transferOwnership(multisig)
     }
 };

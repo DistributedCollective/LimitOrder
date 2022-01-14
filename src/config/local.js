@@ -12,8 +12,8 @@ module.exports = {
         swap: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707'
     },
     loanContracts: {
-        iXUSD: "0xAD523115cd35a8d4E60B3C0953E0E0ac10418309",
-        iRBTC: "0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134",
+        iXUSD: "0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc",
+        iRBTC: "0x4C4a2f8c81640e47606d3fd77B353E87Ba015584",
     },
     tokens: {
         SOV: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",

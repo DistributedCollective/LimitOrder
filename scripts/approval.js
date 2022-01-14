@@ -1,3 +1,4 @@
+const { network } = require("hardhat");
 const Web3 = require('web3');
 const path = require('path');
 const abis = require('../src/config/abis');
@@ -15,7 +16,10 @@ const ownerPk = process.env['PRIVATE_KEY'];
 web3.eth.accounts.wallet.add(ownerPk);
 
 let loanContracts = configs.loanContracts, tokens = configs.tokens;
-const ownerAdr = web3.eth.accounts.wallet[0].address;
+let ownerAdr = web3.eth.accounts.wallet[0].address;
+if (network.name === "hardhat" || network.name === "localhost") {
+    ownerAdr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // HardHat Account
+}
 
 async function approve(localLoanContracts, localTokens) {
     if (configs.chainId == 31337) {
