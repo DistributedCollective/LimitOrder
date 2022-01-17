@@ -408,7 +408,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             actualCollateralAmount,
             order.collateralTokenAddress,
             order.trader,
-            order.minReturn, // minimum position size in the collateral tokens
+            order.minEntryPrice, // minimum position size in the collateral tokens
             order.loanDataBytes /// Arbitrary order data.
         );
         (bool success, bytes memory result) = loanTokenAdr.call(data);

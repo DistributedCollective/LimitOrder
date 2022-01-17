@@ -185,7 +185,7 @@ async function createMarginOrder(pos, amountUSD, leverage) {
             collateralTokenSent,
             collateralToken,
         ).call();
-        const minReturn = ethers.BigNumber.from(String(collateral)).div(2);
+        const minEntryPrice = ethers.BigNumber.from(String(collateral)).div(2);
 
         const order = new MarginOrder(
             ethers.constants.HashZero,
@@ -195,7 +195,7 @@ async function createMarginOrder(pos, amountUSD, leverage) {
             collateralTokenSent,
             collateralToken,
             account, //trader,
-            minReturn,
+            minEntryPrice,
             ethers.constants.HashZero, //loanDataBytes,
             getDeadline(24),//deadline,
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), //createdTimestamp,
