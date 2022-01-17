@@ -21,6 +21,15 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     using Orders for Orders.Order;
     using MarginOrders for MarginOrders.Order;
 
+    //Events
+    event SetMinFee(address indexed sender, uint256 oldValue, uint256 newValue);
+
+    event SetRelayerFee(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
     /**
      * @notice Replace constructor with initialize function for Upgradable Contracts
      * This function will be called only once by the owner
@@ -64,7 +73,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         WRBTC_ADDRESS = _WRBTC;
         orderBookAddress = _orderBookAddress;
         orderBookMarginAddress = _marginOrderBookAddress;
-        relayerFeePercent = 2 * 10**17; // Relayer fee percent = 0.2
+        setRelayerFee(2 * 10**17); // Relayer fee percent = 0.2
     }
 
     // Fallback function to receive tokens
@@ -98,8 +107,24 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Sets minimum fee
-    function setMinFee(uint256 fee) public override onlyOwner {
-        minFee = fee;
+    function setMinFee(uint256 _minFee) external override onlyOwner {
+        uint256 oldValue = minFee;
+        minFee = _minFee;
+
+        emit SetMinFee(msg.sender, oldValue, minFee);
+    }
+
+    // Sets relayer fee
+    function setRelayerFee(uint256 _relayerFeePercent)
+        public
+        override
+        onlyOwner
+    {
+        require(_relayerFeePercent <= 10**20, "value too high");
+        uint256 oldValue = relayerFeePercent;
+        relayerFeePercent = _relayerFeePercent;
+
+        emit SetRelayerFee(msg.sender, oldValue, relayerFeePercent);
     }
 
     // Fills an order by
@@ -149,7 +174,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(
             path,
-            args.amountToFillIn // There might be partial filling of orders
+            actualAmountIn // There might be partial filling of orders
         );
 
         require(

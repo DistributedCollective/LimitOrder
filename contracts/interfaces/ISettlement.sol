@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity = 0.6.12;
+pragma solidity =0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "../libraries/Orders.sol";
@@ -12,11 +12,19 @@ interface ISettlement {
         address indexed maker,
         uint256 amountIn,
         uint256 amountOut,
-        address[] path  
+        address[] path
     );
     event OrderCanceled(bytes32 indexed hash, address indexed maker);
-    event FeeTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
-    event FeeSplitTransferred(bytes32 indexed hash, address indexed recipient, uint256 amount);
+    event FeeTransferred(
+        bytes32 indexed hash,
+        address indexed recipient,
+        uint256 amount
+    );
+    event FeeSplitTransferred(
+        bytes32 indexed hash,
+        address indexed recipient,
+        uint256 amount
+    );
     event MarginOrderFilled(
         bytes32 indexed hash,
         address indexed trader,
@@ -68,16 +76,46 @@ interface ISettlement {
         uint256 amount;
     }
 
-    function fillOrder(FillOrderArgs calldata args) external returns (uint256 amountOut);
-    function fillOrders(FillOrderArgs[] memory args) external returns (uint256[] memory amountsOut);
-    function fillMarginOrder(FillMarginOrderArgs calldata args) external returns (uint256 principalAmount, uint256 collateralAmount);
-    function fillMarginOrders(FillMarginOrderArgs[] memory args) external returns (uint256[] memory principalAmounts, uint256[] memory collateralAmounts);
+    function fillOrder(FillOrderArgs calldata args)
+        external
+        returns (uint256 amountOut);
+
+    function fillOrders(FillOrderArgs[] memory args)
+        external
+        returns (uint256[] memory amountsOut);
+
+    function fillMarginOrder(FillMarginOrderArgs calldata args)
+        external
+        returns (uint256 principalAmount, uint256 collateralAmount);
+
+    function fillMarginOrders(FillMarginOrderArgs[] memory args)
+        external
+        returns (
+            uint256[] memory principalAmounts,
+            uint256[] memory collateralAmounts
+        );
+
     function cancelOrder(Orders.Order memory order) external;
+
     function cancelMarginOrder(MarginOrders.Order memory order) external;
+
     function deposit(address to) external payable;
+
     function withdraw(uint256 amount) external;
-    function setMinFee(uint256 fee) external;
+
+    function setMinFee(uint256 _minFee) external;
+
+    function setRelayerFee(uint256 _relayerFeePercent) external;
+
     function allCanceledHashes() external view returns (bytes32[] memory);
-    function checkFilledAmountHashes(bytes32[] memory hashes) external view returns (FilledAmountCheck[] memory);
-    function checkCanceledHashes(bytes32[] memory hashes) external view returns (CanceledCheck[] memory);
+
+    function checkFilledAmountHashes(bytes32[] memory hashes)
+        external
+        view
+        returns (FilledAmountCheck[] memory);
+
+    function checkCanceledHashes(bytes32[] memory hashes)
+        external
+        view
+        returns (CanceledCheck[] memory);
 }
