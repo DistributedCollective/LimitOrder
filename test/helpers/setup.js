@@ -104,7 +104,7 @@ module.exports = async () => {
         return await settlement.cancelOrder(await order.toArgs());
     };
 
-    const fillOrder = async (signer, order, amountToFillIn, path, overrides = {}) => {
+    const fillOrder = async (signer, order, amountToFillIn, amountToFillOut, path, overrides = {}) => {
         const { abi: settlementABI } = await deployments.get("SettlementLogic");
         const { address: settlementAddress } = await deployments.get("SettlementProxy");
         const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
@@ -113,6 +113,7 @@ module.exports = async () => {
         return await settlement.fillOrders([[
             orderArgs,
             amountToFillIn,
+            amountToFillOut,
             path
         ]], {
             gasLimit: '1000000'

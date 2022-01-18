@@ -77,7 +77,7 @@ describe("Settlement", async () => {
         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[1]);
         const path= await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        const tx2 = await fillOrder(users[1], orderG, orderG.amountIn, path);
+        const tx2 = await fillOrder(users[1], orderG, orderG.amountIn, orderG.amountOutMin, path);
         const receipt2 = await tx2.wait();
         // console.log(receipt2);
         const event = receipt2.logs[receipt2.logs.length - 1];
@@ -201,7 +201,7 @@ describe("Settlement", async () => {
         const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
         const path = await sovrynSwapNetwork.conversionPath(fromToken, toToken);
-        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, orderG.amountOutMin, path);
         const receipt2 = await tx2.wait();
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
@@ -245,7 +245,7 @@ describe("Settlement", async () => {
         const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
         const path = await sovrynSwapNetwork.conversionPath(fromToken, toToken);
-        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, path);
+        const tx2 = await fillOrder(users[0], orderG, orderG.amountIn, orderG.amountOutMin, path);
         const receipt2 = await tx2.wait();
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
@@ -299,7 +299,7 @@ describe("Settlement", async () => {
         const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
         await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
-            fillOrder(users[0], order, order.amountIn, path)
+            fillOrder(users[0], order, order.amountIn, order.amountOutMin, path)
         );
         await settlement.setMinFee(parseEther('0'));
     });
@@ -360,14 +360,16 @@ describe("Settlement", async () => {
         const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
         const fillAmount1 = parseEther('45'), fillAmount2 = parseEther('55');
-        const tx1 = await fillOrder(users[0], order, fillAmount1, path);
+        const fillAmountMinOut1 = order.amountOutMin.mul(fillAmount1).div(order.amountIn);
+        const fillAmountMinOut2 = order.amountOutMin.mul(fillAmount2).div(order.amountIn);
+        const tx1 = await fillOrder(users[0], order, fillAmount1, fillAmountMinOut1, path);
         const receipt1 = await tx1.wait();
         const event = receipt1.logs[receipt1.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, order.hash());
         await helpers.expectToEqual(filled.amountIn, getActualFillAmount(fillAmount1));
         
-        const tx2 = await fillOrder(users[0], order, fillAmount2, path);
+        const tx2 = await fillOrder(users[0], order, fillAmount2, fillAmountMinOut2, path);
         const receipt2 = await tx2.wait();
         const event2 = receipt2.logs[receipt2.logs.length - 1];
         const filled2 = settlement.interface.decodeEventLog("OrderFilled", event2.data, event2.topics);

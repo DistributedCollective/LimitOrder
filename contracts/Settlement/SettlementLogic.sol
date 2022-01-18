@@ -169,7 +169,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
 
         require(
-            swapbackReturn >= args.order.amountOutMin,
+            swapbackReturn >= args.amountToFillOut,
             "insufficient-amount-out"
         );
 
@@ -199,12 +199,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             address sourceToken,
             address targetToken,
             uint256 targetTokenAmount
-        ) = swapInternal(
-                path,
-                actualAmountIn,
-                args.order.amountOutMin,
-                recipient
-            );
+        ) = swapInternal(path, actualAmountIn, args.amountToFillOut, recipient);
 
         // CEI Pattern
         filledAmountInOfHash[hash] = filledAmountInOfHash[hash].add(

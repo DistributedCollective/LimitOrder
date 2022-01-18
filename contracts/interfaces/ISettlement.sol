@@ -65,6 +65,7 @@ interface ISettlement {
     struct FillOrderArgs {
         Orders.Order order;
         uint256 amountToFillIn;
+        uint256 amountToFillOut;
         address[] path;
     }
 
