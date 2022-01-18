@@ -7,6 +7,12 @@ import "../libraries/Orders.sol";
 import "../libraries/MarginOrders.sol";
 
 interface ISettlement {
+    event SetMinFee(address indexed sender, uint256 oldValue, uint256 newValue);
+    event SetRelayerFee(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
     event OrderFilled(
         bytes32 indexed hash,
         address indexed maker,

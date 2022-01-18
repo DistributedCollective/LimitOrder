@@ -21,15 +21,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     using Orders for Orders.Order;
     using MarginOrders for MarginOrders.Order;
 
-    //Events
-    event SetMinFee(address indexed sender, uint256 oldValue, uint256 newValue);
-
-    event SetRelayerFee(
-        address indexed sender,
-        uint256 oldValue,
-        uint256 newValue
-    );
-
     /**
      * @notice Replace constructor with initialize function for Upgradable Contracts
      * This function will be called only once by the owner
