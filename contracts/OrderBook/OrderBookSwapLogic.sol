@@ -1,42 +1,34 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity =0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./interfaces/IERC20.sol";
-import "./libraries/Orders.sol";
-import "./libraries/EIP712.sol";
-import "./libraries/Bytes32Pagination.sol";
-import "./libraries/RSKAddrValidator.sol";
+import "./OrderBookSwapStorage.sol";
+import "../interfaces/IERC20.sol";
+import "../libraries/EIP712.sol";
+import "../libraries/Bytes32Pagination.sol";
+import "../libraries/RSKAddrValidator.sol";
 
-contract OrderBook {
+contract OrderBookSwapLogic is OrderBookSwapStorage {
     using Orders for Orders.Order;
     using Bytes32Pagination for bytes32[];
 
+    //Events
     event OrderCreated(bytes32 indexed hash, Orders.Order order);
 
-    // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable DOMAIN_SEPARATOR;
-
-    // Array of hashes of all orders
-    bytes32[] internal _allHashes;
-    // Address of order maker => hashes (orders)
-    mapping(address => bytes32[]) internal _hashesOfMaker;
-    // Address of fromToken => hashes (orders)
-    mapping(address => bytes32[]) internal _hashesOfFromToken;
-    // Address of toToken => hashes (orders)
-    mapping(address => bytes32[]) internal _hashesOfToToken;
-    // Hash of an order => the order and its data
-    mapping(bytes32 => Orders.Order) public orderOfHash;
-
-    constructor() public {
+    /**
+     * @notice Replace constructor with initialize function for Upgradable Contracts
+     * This function will be called only once by the owner
+     * */
+    function initialize() external onlyOwner initializer {
         uint256 chainId;
         assembly {
             chainId := chainid()
         }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256("OrderBook"),
                 keccak256("1"),
                 chainId,
@@ -45,18 +37,30 @@ contract OrderBook {
         );
     }
 
-    // Returns the number of orders of a maker
-    function numberOfHashesOfMaker(address maker) public view returns (uint256) {
+    // Return the number of orders from the address of a maker
+    function numberOfHashesOfMaker(address maker)
+        public
+        view
+        returns (uint256)
+    {
         return _hashesOfMaker[maker].length;
     }
 
     // Return the number of orders where fromToken is the origin token
-    function numberOfHashesOfFromToken(address fromToken) public view returns (uint256) {
+    function numberOfHashesOfFromToken(address fromToken)
+        public
+        view
+        returns (uint256)
+    {
         return _hashesOfFromToken[fromToken].length;
     }
 
     // Return the number of orders where toToken is the target token
-    function numberOfHashesOfToToken(address toToken) public view returns (uint256) {
+    function numberOfHashesOfToToken(address toToken)
+        public
+        view
+        returns (uint256)
+    {
         return _hashesOfToToken[toToken].length;
     }
 
@@ -93,7 +97,11 @@ contract OrderBook {
     }
 
     // Return an array of all hashes
-    function allHashes(uint256 page, uint256 limit) public view returns (bytes32[] memory) {
+    function allHashes(uint256 page, uint256 limit)
+        public
+        view
+        returns (bytes32[] memory)
+    {
         return _allHashes.paginate(page, limit);
     }
 
@@ -102,8 +110,17 @@ contract OrderBook {
         order.validate();
 
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(DOMAIN_SEPARATOR, hash, order.v, order.r, order.s);
-        require(RSKAddrValidator.safeEquals(signer, order.maker), "invalid-signature");
+        address signer = EIP712.recover(
+            DOMAIN_SEPARATOR,
+            hash,
+            order.v,
+            order.r,
+            order.s
+        );
+        require(
+            RSKAddrValidator.safeEquals(signer, order.maker),
+            "invalid-signature"
+        );
 
         require(orderOfHash[hash].maker == address(0), "order-exists");
         orderOfHash[hash] = order;
@@ -116,12 +133,18 @@ contract OrderBook {
         emit OrderCreated(hash, order);
     }
 
-    function getMaker(bytes32 hash) public view returns (address maker){
+    // Returns the address of maker for an order
+    function getMaker(bytes32 hash) public view returns (address maker) {
         Orders.Order memory order = orderOfHash[hash];
         maker = order.maker;
     }
 
-    function getOrders(address maker, uint256 offset, uint256 limit) public view returns (Orders.Order[] memory orders) {
+    //Returns all orders(specified by offset/start and limit/count) of a maker
+    function getOrders(
+        address maker,
+        uint256 offset,
+        uint256 limit
+    ) public view returns (Orders.Order[] memory orders) {
         orders = new Orders.Order[](limit);
         bytes32[] memory hashes = _hashesOfMaker[maker];
         for (uint256 i = 0; i < limit; i++) {

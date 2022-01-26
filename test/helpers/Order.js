@@ -1,4 +1,4 @@
-const { ethers, getChainId, deployments, getNamedAccounts } = require("hardhat");
+const { ethers, getChainId, } = require("hardhat");
 const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 class Order {
@@ -54,12 +54,7 @@ class Order {
     }
 
     async sign(overrides = {}) {
-        const { deployer } = await getNamedAccounts();
-        const { address } = await deployments.deterministic("OrderBook", {
-            from: deployer,
-            log: true,
-        });
-
+        const { address } = await deployments.get("OrderBookSwapProxy");
         const chainId = await getChainId();
         const domain = {
             name: "OrderBook",

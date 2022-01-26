@@ -2,16 +2,19 @@ const { _TypedDataEncoder } = require("@ethersproject/hash");
 const Web3 = require("web3");
 const ethers = require('ethers');
 const axios = require('axios');
-const config = require('../src/config');
+const abiDecoder = require('abi-decoder');
+const config = require('../src/config/testnet');
 const ABIs = require("../src/config/abis");
 const Order = require('../src/Order');
 const MarginOrder = require('../src/MarginOrder');
 const { formatEther } = require("@ethersproject/units");
 
-let web3, bal = 0, account, cancelOrderBtn, createMarginOrderBtn;
+let web3, bal = 0, account;
 $(document).ready(() => {
     if (typeof window.ethereum !== 'undefined') {
         connectWallet();
+        abiDecoder.addABI(ABIs.OrderBook);
+
         
         $('#sellSovXusdBtn').on('click', function () {
             createOrder('SOV', 'XUSD', ethers.utils.parseEther('10'), $(this));
@@ -61,12 +64,173 @@ $(document).ready(() => {
         $('#buySovBnbsBtn').on('click', function () {
             createOrder('BNBs', 'SOV', ethers.utils.parseEther('0.1'), $(this));
         });
-        
-        createMarginOrderBtn = $('#createMarginOrder');
-        createMarginOrderBtn.on('click', createMarginOrder);
 
-        cancelOrderBtn = $('#cancelOrder');
-        cancelOrderBtn.on('click', cancelOrder);
+
+        $('#sellXusdWrbtcBtn').on('click', function () {
+            createOrder('XUSD', 'WRBTC', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdWrbtcBtn').on('click', function () {
+            createOrder('WRBTC', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellXusdBproBtn').on('click', function () {
+            createOrder('XUSD', 'BRPO', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdBproBtn').on('click', function () {
+            createOrder('BPRO', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellXusdDocBtn').on('click', function () {
+            createOrder('XUSD', 'DOC', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdDocBtn').on('click', function () {
+            createOrder('DOC', 'XUSD', ethers.utils.parseEther('10'), $(this));
+        });
+
+        $('#sellXusdUsdtBtn').on('click', function () {
+            createOrder('XUSD', 'USDT', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdUsdtBtn').on('click', function () {
+            createOrder('USDT', 'XUSD', ethers.utils.parseEther('10'), $(this));
+        });
+
+        $('#sellXusdEthsBtn').on('click', function () {
+            createOrder('XUSD', 'ETHs', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdEthsBtn').on('click', function () {
+            createOrder('ETHs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellXusdBnbsBtn').on('click', function () {
+            createOrder('XUSD', 'BNBs', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyXusdBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+
+        $('#sellRbtcBproBtn').on('click', function () {
+            createOrder('WRBTC', 'BRPO', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyRbtcBproBtn').on('click', function () {
+            createOrder('BRPO', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        });
+        
+        $('#sellRbtcUsdtBtn').on('click', function () {
+            createOrder('WRBTC', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyRbtcUsdtBtn').on('click', function () {
+            createOrder('USDT', 'WRBTC', ethers.utils.parseEther('100'), $(this));
+        });
+        
+        $('#sellRbtcDocBtn').on('click', function () {
+            createOrder('WRBTC', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyRbtcDocBtn').on('click', function () {
+            createOrder('DOC', 'WRBTC', ethers.utils.parseEther('100'), $(this));
+        });
+
+        $('#sellRbtcEthsBtn').on('click', function () {
+            createOrder('WRBTC', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyRbtcEthsBtn').on('click', function () {
+            createOrder('ETHs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellRbtcBnbsBtn').on('click', function () {
+            createOrder('WRBTC', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyRbtcBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+
+        $('#sellBproDocBtn').on('click', function () {
+            createOrder('BPRO', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyBproDocBtn').on('click', function () {
+            createOrder('DOC', 'BPRO', ethers.utils.parseEther('100'), $(this));
+        });
+
+        $('#sellBproUsdtBtn').on('click', function () {
+            createOrder('BPRO', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyBproUsdtBtn').on('click', function () {
+            createOrder('USDT', 'BPRO', ethers.utils.parseEther('100'), $(this));
+        });
+
+        $('#sellBproEthsBtn').on('click', function () {
+            createOrder('BPRO', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyBproEthsBtn').on('click', function () {
+            createOrder('ETHs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellBproBnbsBtn').on('click', function () {
+            createOrder('BPRO', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyBproBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+
+        $('#sellDocUsdtBtn').on('click', function () {
+            createOrder('DOC', 'USDT', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyDocUsdtBtn').on('click', function () {
+            createOrder('USDT', 'DOC', ethers.utils.parseEther('10'), $(this));
+        });
+
+        $('#sellDocEthsBtn').on('click', function () {
+            createOrder('DOC', 'ETHs', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyDocEthsBtn').on('click', function () {
+            createOrder('ETHs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellDocBnbsBtn').on('click', function () {
+            createOrder('DOC', 'BNBs', ethers.utils.parseEther('10'), $(this));
+        });
+        $('#buyDocBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+
+        $('#sellUsdtEthsBtn').on('click', function () {
+            createOrder('USDT', 'ETHs', ethers.utils.parseEther('100'), $(this));
+        });
+        $('#buyUsdtEthsBtn').on('click', function () {
+            createOrder('ETHs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellUsdtBnbsBtn').on('click', function () {
+            createOrder('USDT', 'BNBs', ethers.utils.parseEther('100'), $(this));
+        });
+        $('#buyUsdtBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+        $('#sellEthsBnbsBtn').on('click', function () {
+            createOrder('ETHs', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        });
+        $('#buyEthsBnbsBtn').on('click', function () {
+            createOrder('BNBs', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        });
+
+
+        $('#longBTCx2').on('click', function () {
+            createMarginOrder('long', '100', $(this));
+        });
+        $('#shortBTCx2').on('click', function () {
+            createMarginOrder('short', '100', $(this));
+        });
+        
+        $('#cancelOrder').on('click', function () {
+            cancelOrder($(this));
+        });
+        $('#cancelMarginOrder').on('click', function () {
+            cancelMarginOrder($(this));
+        });
     } else {
         alert('Metamask is not found!');
     }
@@ -80,7 +244,7 @@ async function connectWallet() {
         const chainId = await web3.eth.getChainId();
 
         if (chainId != config.chainId) {
-            return alert('Wrong network');
+            // return alert('Wrong network');
         }
 
         account = accounts[0];
@@ -128,6 +292,24 @@ const getPriceAmm = async (fromToken, toToken, amount) => {
     return ethers.BigNumber.from(rate);
 }
 
+const waitTransaction = async (txHash) => {
+    let ntry = 0;
+    return new Promise((resolve, reject) => {
+
+        const wait = async () => {
+            ntry ++;
+            const receipt = await web3.eth.getTransactionReceipt(txHash);
+            if (receipt) return resolve(receipt);
+            
+            if (ntry > 90) return reject('exceed 90s for waiting transaction')
+            setTimeout(wait, 1000);
+        };
+
+        showMsg('waiting transaction receipt for tx ' + txHash);
+        wait();
+    });
+}
+
 async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
     const apiUrl = `${config.baseAPIUrl}/api/createOrder`;
     if (bal <= 0) {
@@ -147,17 +329,26 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         const minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn)).mul('8').div('10');
         showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency}`);
 
-        showMsg('waiting approve token');
-        const approved = await approveToken(fromToken, account, config.contracts.settlement, amountIn)
-            .then(approveHash => {
-                showMsg('approve tx', approveHash);
-                return true;
-            })
-            .catch(err => {
-                showMsg('reject approve');
+        if (fromToken == config.tokens.WRBTC) {
+            showMsg(`sending ${formatEther(amountIn)} rbtc to Settlement contract`);
+            await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                value: amountIn
             });
-
-        if (!approved) return;
+        } else {
+            showMsg('waiting approve token');
+            const approved = await approveToken(fromToken, account, config.contracts.settlement, amountIn)
+                .then(approveHash => {
+                    showMsg('approve tx', approveHash);
+                    return true;
+                })
+                .catch(err => {
+                    showMsg('reject approve');
+                });
+    
+            if (!approved) return;
+        }
 
         const order = new Order(
             account,
@@ -169,8 +360,10 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const chainId = config.chainId;
+        const chainId = config.orderBookChainId;
         const msg = order.messageHash(chainId, config.contracts.orderBook);
+        const hash = order.hash();
+        showMsg('order hash', hash);
         showMsg('order msg', msg);
 
         const signature = await signTypeOrderData(order);
@@ -200,65 +393,21 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         }, { json: true });
 
         showMsg('tx', JSON.stringify(data, null, 2));
-
-        btn.removeAttr('disabled');
-    } catch (e) {
-        showMsg(e);
-        console.log(e);
-        btn.removeAttr('disabled');
-    }
-}
-
-async function cancelOrder() {
-    try {
-        const orderHash = prompt('Enter order hash');
-        if (orderHash) {
-            clearMsg();
-            cancelOrderBtn.attr('disabled', 'disabled');
-            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}`, { json: true });
-
-            let order = (orders || []).find(o => o.hash == orderHash);
-
-            if (!order) return showMsg('Order hash is not found on your history');
-
-            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
-            const txData = await contract.methods.cancelOrder([
-                order.maker,
-                order.fromToken,
-                order.toToken,
-                ethers.BigNumber.from(order.amountIn.hex),
-                ethers.BigNumber.from(order.amountOutMin),
-                order.recipient,
-                ethers.BigNumber.from(order.deadline),
-                ethers.BigNumber.from(order.created),
-                order.v,
-                order.r,
-                order.s,
-            ]).encodeABI();
-            const tx = await web3.eth.sendTransaction({
-                from: account,
-                to: config.contracts.settlement,
-                data: txData,
-                gasLimit: 100000,
-                gasPrice: ethers.utils.parseUnits('10', 'gwei'),
-            }, (err, txHash) => {
-                err && console.log(err);
-                if (txHash) {
-                    showMsg('tx hash: ', txHash);
-                }
-            });
-
-            showMsg('receipt', JSON.stringify(tx, null, 2));
+        if (data && data.data && data.data.hash) {
+            const receipt = await waitTransaction(data.data.hash);
+            const logs = abiDecoder.decodeLogs(receipt.logs) || [];
+            showMsg('logs', JSON.stringify(logs, null, 2));
         }
+
+        btn.removeAttr('disabled');
     } catch (e) {
         showMsg(e);
         console.log(e);
-    } finally {
-        cancelOrderBtn.removeAttr('disabled');
+        btn.removeAttr('disabled');
     }
 }
 
-async function createMarginOrder() {
+async function createMarginOrder(pos, amountUSD, $btn) {
     if (bal <= 0) {
         alert('Insufficient balance');
         return;
@@ -267,22 +416,31 @@ async function createMarginOrder() {
     try {
 
         clearMsg();
-        createMarginOrderBtn.attr('disabled', 'disabled');
+        $btn.attr('disabled', 'disabled');
        
         const apiUrl = `${config.baseAPIUrl}/api/createMarginOrder`;
         const orderBookMargin = new web3.eth.Contract(ABIs.OrderBookMargin, config.contracts.orderBookMargin);
-        const loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iXUSD);
+        let loanToken, collateralToken,
+            loanTokenSent = ethers.utils.parseEther('0'),
+            collateralTokenSent = ethers.utils.parseEther('0');
         const leverageAmount = ethers.utils.parseEther('2');
-        const loanTokenSent = ethers.utils.parseEther('100');
-        const collateralTokenSent = ethers.utils.parseEther('0');
-        const collateralToken = config.tokens.WRBTC;
+
+        if (pos == 'long') {
+            loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iXUSD);
+            collateralToken = config.tokens.WRBTC;
+            loanTokenSent = ethers.utils.parseEther(amountUSD);
+        } else {
+            loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iRBTC);
+            collateralToken = config.tokens.XUSD;
+            collateralToken = ethers.utils.parseEther(amountUSD);
+        }
         const { collateral } = await loanToken.methods.getEstimatedMarginDetails(
             leverageAmount,
             loanTokenSent,
             collateralTokenSent,
             collateralToken,
         ).call();
-        const minReturn = ethers.BigNumber.from(String(collateral)).div(2);
+        const minEntryPrice = ethers.BigNumber.from(String(collateral)).div(2);
 
         const order = new MarginOrder(
             ethers.constants.HashZero,
@@ -292,7 +450,7 @@ async function createMarginOrder() {
             collateralTokenSent,
             collateralToken,
             account, //trader,
-            minReturn,
+            minEntryPrice,
             ethers.constants.HashZero, //loanDataBytes,
             getDeadline(24),//deadline,
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), //createdTimestamp,
@@ -321,7 +479,7 @@ async function createMarginOrder() {
                 });
         }
 
-        const chainId = config.chainId;
+        const chainId = config.orderBookChainId;
         const msg = order.messageHash(chainId, config.contracts.orderBookMargin);
         showMsg('order msg', msg);
 
@@ -339,7 +497,7 @@ async function createMarginOrder() {
             order.collateralTokenSent,
             order.collateralTokenAddress,
             order.trader,
-            order.minReturn,
+            order.minEntryPrice,
             order.loanDataBytes,
             order.deadline,
             order.createdTimestamp,
@@ -356,11 +514,114 @@ async function createMarginOrder() {
 
         showMsg('tx', JSON.stringify(data, null, 2));
 
-        createMarginOrderBtn.removeAttr('disabled');
+        $btn.removeAttr('disabled');
     } catch (e) {
         showMsg(e);
         console.log(e);
-        createMarginOrderBtn.removeAttr('disabled');
+        $btn.removeAttr('disabled');
+    }
+}
+
+
+
+async function cancelOrder($btn) {
+    try {
+        const orderHash = prompt('Enter order hash');
+        if (orderHash) {
+            clearMsg();
+            $btn.attr('disabled', 'disabled');
+            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}`, { json: true });
+
+            let order = (orders || []).find(o => o.hash == orderHash);
+
+            if (!order) return showMsg('Order hash is not found on your history');
+
+            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+            const txData = await contract.methods.cancelOrder([
+                order.maker,
+                order.fromToken,
+                order.toToken,
+                ethers.BigNumber.from(order.amountIn.hex),
+                ethers.BigNumber.from(order.amountOutMin),
+                order.recipient,
+                ethers.BigNumber.from(order.deadline),
+                ethers.BigNumber.from(order.created),
+                order.v,
+                order.r,
+                order.s,
+            ]).encodeABI();
+            const tx = await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                data: txData,
+                gasLimit: 500000,
+                gasPrice: await getGasPrice(),
+            }, (err, txHash) => {
+                err && console.log(err);
+                if (txHash) {
+                    showMsg('tx hash: ', txHash);
+                }
+            });
+
+            showMsg('receipt', JSON.stringify(tx, null, 2));
+        }
+    } catch (e) {
+        showMsg(e);
+        console.log(e);
+    } finally {
+        $btn.removeAttr('disabled');
+    }
+}
+
+async function cancelMarginOrder($btn) {
+    try {
+        const orderHash = prompt('Enter order hash');
+        if (orderHash) {
+            clearMsg();
+            $btn.attr('disabled', 'disabled');
+            const { data: { data: orders } } = await axios.get(`${config.baseAPIUrl}/api/orders/${account}?isMargin=1`, { json: true });
+
+            let order = (orders || []).find(o => o.hash == orderHash);
+
+            if (!order) return showMsg('Margin Order hash is not found on your history');
+
+            const contract = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+            const txData = await contract.methods.cancelMarginOrder([
+                order.loanId,
+                order.leverageAmount,
+                order.loanTokenAddress,
+                ethers.BigNumber.from(order.loanTokenSent),
+                ethers.BigNumber.from(order.collateralTokenSent),
+                order.collateralTokenAddress,
+                order.trader,
+                ethers.BigNumber.from(order.minEntryPrice),
+                order.loanDataBytes,
+                ethers.BigNumber.from(order.deadline),
+                ethers.BigNumber.from(order.createdTimestamp),
+                order.v,
+                order.r,
+                order.s,
+            ]).encodeABI();
+            const tx = await web3.eth.sendTransaction({
+                from: account,
+                to: config.contracts.settlement,
+                data: txData,
+                gasLimit: 500000,
+                gasPrice: await getGasPrice(),
+            }, (err, txHash) => {
+                err && console.log(err);
+                if (txHash) {
+                    showMsg('tx hash: ', txHash);
+                }
+            });
+
+            showMsg('receipt', JSON.stringify(tx, null, 2));
+        }
+    } catch (e) {
+        showMsg(e);
+        console.log(e);
+    } finally {
+        $btn.removeAttr('disabled');
     }
 }
 
@@ -374,7 +635,7 @@ function showMsg(...msg) {
 async function signTypeOrderData(order) {
     const msgParams = JSON.stringify({
         domain: {
-            chainId: config.chainId,
+            chainId: config.orderBookChainId,
             name: 'OrderBook',
             verifyingContract: config.contracts.orderBook,
             version: '1'
@@ -429,7 +690,7 @@ async function signTypeOrderData(order) {
 async function signTypeMarginOrderData(order) {
     const msgParams = JSON.stringify({
         domain: {
-            chainId: config.chainId,
+            chainId: config.orderBookChainId,
             name: 'OrderBookMargin',
             verifyingContract: config.contracts.orderBookMargin,
             version: '1'
@@ -443,7 +704,7 @@ async function signTypeMarginOrderData(order) {
             collateralTokenSent: web3.utils.toBN(order.collateralTokenSent).toString(),
             collateralTokenAddress: order.collateralTokenAddress,
             trader: order.trader,
-            minReturn: web3.utils.toBN(order.minReturn).toString(),
+            minEntryPrice: web3.utils.toBN(order.minEntryPrice).toString(),
             loanDataBytes: order.loanDataBytes,
             deadline: web3.utils.toBN(order.deadline).toString(),
             createdTimestamp: web3.utils.toBN(order.createdTimestamp).toString(),
@@ -464,7 +725,7 @@ async function signTypeMarginOrderData(order) {
                 { name: "collateralTokenSent", type: "uint256" },
                 { name: "collateralTokenAddress", type: "address" },
                 { name: "trader", type: "address" },
-                { name: "minReturn", type: "uint256" },
+                { name: "minEntryPrice", type: "uint256" },
                 { name: "loanDataBytes", type: "bytes32" },
                 { name: "deadline", type: "uint256" },
                 { name: "createdTimestamp", type: "uint256" },

@@ -1,41 +1,34 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity =0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./interfaces/IERC20.sol";
-import "./libraries/MarginOrders.sol";
-import "./libraries/EIP712.sol";
-import "./libraries/Bytes32Pagination.sol";
-import "./libraries/RSKAddrValidator.sol";
+import "./OrderBookMarginStorage.sol";
+import "../interfaces/IERC20.sol";
+import "../libraries/EIP712.sol";
+import "../libraries/Bytes32Pagination.sol";
+import "../libraries/RSKAddrValidator.sol";
 
-
-contract OrderBookMargin {
+contract OrderBookMarginLogic is OrderBookMarginStorage {
     using MarginOrders for MarginOrders.Order;
     using Bytes32Pagination for bytes32[];
 
+    //Events
     event MarginOrderCreated(bytes32 indexed hash, MarginOrders.Order order);
 
-    // solhint-disable-next-line var-name-mixedcase
-    bytes32 public immutable DOMAIN_SEPARATOR;
-
-    // Array of hashes of all orders
-    bytes32[] internal _allHashes;
-    // Address of order trader => hashes (orders)
-    mapping(address => bytes32[]) internal _hashesOfTrader;
-    // Address of collateralToken => hashes (orders)
-    mapping(address => bytes32[]) internal _hashesOfCollateralToken;
-    // Hash of an order => the order and its data
-    mapping(bytes32 => MarginOrders.Order) public orderOfHash;
-
-    constructor() public {
+    /**
+     * @notice Replace constructor with initialize function for Upgradable Contracts
+     * This function will be called only once by the owner
+     * */
+    function initialize() external onlyOwner initializer {
         uint256 chainId;
         assembly {
             chainId := chainid()
         }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256("OrderBookMargin"),
                 keccak256("1"),
                 chainId,
@@ -45,13 +38,20 @@ contract OrderBookMargin {
     }
 
     // Returns the number of orders of a trader
-    function numberOfHashesOfTrader(address trader) public view returns (uint256) {
+    function numberOfHashesOfTrader(address trader)
+        public
+        view
+        returns (uint256)
+    {
         return _hashesOfTrader[trader].length;
     }
 
-
     // Return the number of orders where collateralToken is the target token
-    function numberOfHashesOfCollateralToken(address collateralToken) public view returns (uint256) {
+    function numberOfHashesOfCollateralToken(address collateralToken)
+        public
+        view
+        returns (uint256)
+    {
         return _hashesOfCollateralToken[collateralToken].length;
     }
 
@@ -69,7 +69,6 @@ contract OrderBookMargin {
         return _hashesOfTrader[trader].paginate(page, limit);
     }
 
-
     // Returns an array of hashes of orders where collateralToken is the target token
     function hashesOfCollateralToken(
         address collateralToken,
@@ -80,7 +79,11 @@ contract OrderBookMargin {
     }
 
     // Return an array of all hashes
-    function allHashes(uint256 page, uint256 limit) public view returns (bytes32[] memory) {
+    function allHashes(uint256 page, uint256 limit)
+        public
+        view
+        returns (bytes32[] memory)
+    {
         return _allHashes.paginate(page, limit);
     }
 
@@ -89,8 +92,17 @@ contract OrderBookMargin {
         order.validate();
 
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(DOMAIN_SEPARATOR, hash, order.v, order.r, order.s);
-        require(RSKAddrValidator.safeEquals(signer, order.trader), "invalid-signature");
+        address signer = EIP712.recover(
+            DOMAIN_SEPARATOR,
+            hash,
+            order.v,
+            order.r,
+            order.s
+        );
+        require(
+            RSKAddrValidator.safeEquals(signer, order.trader),
+            "invalid-signature"
+        );
 
         require(orderOfHash[hash].trader == address(0), "order-exists");
         orderOfHash[hash] = order;
@@ -102,12 +114,18 @@ contract OrderBookMargin {
         emit MarginOrderCreated(hash, order);
     }
 
-    function getTrader(bytes32 hash) public view returns (address trader){
+    // Returns the address of maker for an order
+    function getTrader(bytes32 hash) public view returns (address trader) {
         MarginOrders.Order memory order = orderOfHash[hash];
         trader = order.trader;
     }
 
-    function getOrders(address trader, uint256 offset, uint256 limit) public view returns (MarginOrders.Order[] memory orders) {
+    //Returns all orders(specified by offset/start and limit/count) of a maker
+    function getOrders(
+        address trader,
+        uint256 offset,
+        uint256 limit
+    ) public view returns (MarginOrders.Order[] memory orders) {
         orders = new MarginOrders.Order[](limit);
         bytes32[] memory hashes = _hashesOfTrader[trader];
         for (uint256 i = 0; i < limit; i++) {

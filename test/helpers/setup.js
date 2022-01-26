@@ -67,7 +67,11 @@ module.exports = async () => {
     const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
     const createOrder = async (signer, fromToken, toToken, amountIn, amountOutMin, deadline, overrides = {}) => {
-        const settlement = await getContract("Settlement", signer);
+        // const settlement = await getContract("Settlement", signer);
+
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
 
         const fromERC20 = await ethers.getContractAt("TestToken", fromToken.address, signer);
         // console.log("allowance before")
@@ -86,31 +90,41 @@ module.exports = async () => {
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
 
-        const orderBook = await getContract("OrderBook", signer);
+        const { abi: orderBookABI } = await deployments.get("OrderBookSwapLogic");
+        const { address: orderBoookAddress } = await deployments.get("OrderBookSwapProxy");
+        const orderBook = await ethers.getContractAt(orderBookABI, orderBoookAddress);
         const tx = await orderBook.createOrder(await order.toArgs(overrides));
         return { order, tx };
     };
 
     const cancelOrder = async (signer, order, overrides = {}) => {
-        const settlement = await getContract("Settlement", signer);
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         return await settlement.cancelOrder(await order.toArgs());
     };
 
-    const fillOrder = async (signer, order, amountToFillIn, path, overrides = {}) => {
-        const settlement = await getContract("Settlement", signer);
+    const fillOrder = async (signer, order, amountToFillIn, amountToFillOut, path, overrides = {}) => {
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const orderArgs = await order.toArgs(overrides);
 
         return await settlement.fillOrders([[
             orderArgs,
             amountToFillIn,
+            amountToFillOut,
             path
         ]], {
             gasLimit: '1000000'
         });
     };
 
+
     const filledAmountIn = async (signer, order) => {
-        const settlement = await getContract("Settlement", signer);
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         return await settlement.filledAmountInOfHash(await order.hash());
     };
 

@@ -17,9 +17,14 @@
     "test:gas": "REPORT_GAS=true yarn test",
     "deploy:hardhat": "hardhat deploy",
     "deploy:rsktest": "hardhat deploy --network rsktestnet",
+    "deploy:main": "hardhat deploy --network mainnet",
     "prepublishOnly": "yarn run build",
-    "start-relay": "node src/start.js",
-    "build-client": "npx webpack"
+    "start-relay": "node src/start.js --testnet",
+    "start-relay:local": "node src/start.js --local",
+    "start-relay:main": "node src/start.js --mainnet",
+    "build-client": "npx webpack",
+    "approveSettlement:testnet": "node scripts/approval.js --testnet",
+    "approveSettlement:main": "node scripts/approval.js --mainnet"
   },
   "devDependencies": {
     "@ethersproject/hash": "^5.0.10",
@@ -59,6 +64,7 @@
     "@ethersproject/transactions": "^5.4.0",
     "@openzeppelin/test-helpers": "^0.5.10",
     "@sushiswap/core": "^1.2.1",
+    "abi-decoder": "^2.4.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",

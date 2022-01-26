@@ -9,15 +9,24 @@ interface ILoanTokenModules {
 	/// topic: 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
 	event Approval(address indexed owner, address indexed spender, uint256 value);
 
+	/// topic: 0x628e75c63c1873bcd3885f7aee9f58ee36f60dc789b2a6b3a978c4189bc548ba
+	event AllowanceUpdate(address indexed owner, address indexed spender, uint256 valueBefore, uint256 valueAfter);
+
 	/// topic: 0xb4c03061fb5b7fed76389d5af8f2e0ddb09f8c70d1333abbb62582835e10accb
 	event Mint(address indexed minter, uint256 tokenAmount, uint256 assetAmount, uint256 price);
 
 	/// topic: 0x743033787f4738ff4d6a7225ce2bd0977ee5f86b91a902a58f5e4d0b297b4644
 	event Burn(address indexed burner, uint256 tokenAmount, uint256 assetAmount, uint256 price);
 
+	/// topic: 0xc688ff9bd4a1c369dd44c5cf64efa9db6652fb6b280aa765cd43f17d256b816e
 	event FlashBorrow(address borrower, address target, address loanToken, uint256 loanAmount);
 
+	/// topic: 0x9bbd2de400810774339120e2f8a2b517ed748595e944529bba8ebabf314d0591
 	event SetTransactionLimits(address[] addresses, uint256[] limits);
+
+	event WithdrawRBTCTo(address indexed to, uint256 amount);
+
+	event ToggledFunctionPaused(string functionId, bool prevFlag, bool newFlag);
 
 	/** INTERFACE */
 
@@ -40,18 +49,6 @@ interface ILoanTokenModules {
 		uint256 maintenanceMargin;
 		/// @dev The maximum term for new loans (0 means there's no max term).
 		uint256 maxLoanTerm;
-	}
-
-	struct MarginTradeOrder {
-		bytes32 loanId; /// 0 if new loan
-		uint256 leverageAmount; /// Expected in x * 10**18 where x is the actual leverage (2, 3, 4, or 5).
-		uint256 loanTokenSent;
-		uint256 collateralTokenSent;
-		address collateralTokenAddress;
-		address trader;
-		uint256 minReturn; // minimum position size in the collateral tokens
-		bytes loanDataBytes; /// Arbitrary order data.
-		uint256 createdTimestamp;
 	}
 
 	function setAdmin(address _admin) external;
@@ -91,21 +88,8 @@ interface ILoanTokenModules {
 		uint256 collateralTokenSent,
 		address collateralTokenAddress,
 		address trader,
-		uint256 minReturn, // minimum position size in the collateral tokens
+		uint256 minEntryPrice, // Value of loan token in collateral.
 		bytes calldata loanDataBytes /// Arbitrary order data.
-	)
-		external
-		payable
-		returns (
-			uint256,
-			uint256 /// Returns new principal and new collateral added to trade.
-		);
-
-	function marginTradeBySig(
-		MarginTradeOrder calldata order,
-		uint8 v,
-		bytes32 r,
-		bytes32 s
 	)
 		external
 		payable
@@ -121,9 +105,9 @@ interface ILoanTokenModules {
 		uint256 collateralTokenSent,
 		address collateralTokenAddress,
 		address trader,
-		uint256 minReturn, /// Minimum position size in the collateral tokens.
-		address affiliateReferrer, /// The user was brought by the affiliate (referrer).
-		bytes calldata loanDataBytes /// Arbitrary order data.
+		uint256 minEntryPrice, // Value of loan token in collateral.
+		address affiliateReferrer, // The user was brought by the affiliate (referrer).
+		bytes calldata loanDataBytes // Arbitrary order data.
 	)
 		external
 		payable
@@ -169,6 +153,8 @@ interface ILoanTokenModules {
 
 	function setLiquidityMiningAddress(address LMAddress) external;
 
+	function getLiquidityMiningAddress() external view returns (address);
+
 	function getEstimatedMarginDetails(
 		uint256 leverageAmount,
 		uint256 loanTokenSent,
@@ -183,12 +169,22 @@ interface ILoanTokenModules {
 			uint256 interestRate
 		);
 
+	function getDepositAmountForBorrow(
+		uint256 borrowAmount,
+		uint256 initialLoanDuration, /// Duration in seconds.
+		address collateralTokenAddress /// address(0) means rBTC
+	) external view returns (uint256 depositAmount);
+
+	function getBorrowAmountForDeposit(
+		uint256 depositAmount,
+		uint256 initialLoanDuration, /// Duration in seconds.
+		address collateralTokenAddress /// address(0) means rBTC
+	) external view returns (uint256 borrowAmount);
+
 	function checkPriceDivergence(
-		uint256 leverageAmount,
 		uint256 loanTokenSent,
-		uint256 collateralTokenSent,
 		address collateralTokenAddress,
-		uint256 minReturn
+		uint256 maxEntryPrice
 	) external view;
 
 	function getMaxEscrowAmount(uint256 leverageAmount) external view returns (uint256 maxEscrowAmount);
@@ -201,11 +197,19 @@ interface ILoanTokenModules {
 
 	function tokenPrice() external view returns (uint256 price);
 
+	function avgBorrowInterestRate() external view returns (uint256);
+
+	function supplyInterestRate() external view returns (uint256);
+
+	function nextSupplyInterestRate(uint256 supplyAmount) external view returns (uint256);
+
 	function totalSupplyInterestRate(uint256 assetSupply) external view returns (uint256);
 
 	function loanTokenAddress() external view returns (address);
 
 	function getMarginBorrowAmountAndRate(uint256 leverageAmount, uint256 depositAmount) external view returns (uint256, uint256);
+
+	function withdrawRBTCTo(address payable _receiverAddress, uint256 _amount) external;
 
 	/** START LOAN TOKEN BASE */
 	function initialPrice() external view returns (uint256);

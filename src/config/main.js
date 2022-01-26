@@ -1,10 +1,30 @@
 module.exports = {
     port: 3001,
-    chainId: 31,
+    chainId: 30,
+    orderBookChainId: 31,
     baseAPIUrl: 'http://localhost:3001',
-    networkUrl: 'https://testnet.sovryn.app/rpc',
+    networkUrl: 'https://mainnet.sovryn.app/rpc',
+    orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0xEd73F86F06F419BF965CEa2d0cb852D9c87cAee5',
-        orderBook: '0xb30fCeE20313AAdb88A22fF06B1067170A7c481a'
+        settlement: '0x4E19834396816398469585C7C0F6c5fd5DBFDA8b',
+        orderBook: '0x8316F90a73e14a4e3B87263f0fde575219d3c210',
+        orderBookMargin: '0x142397a33b79c97f13dC709DFE93fca39A7ba25e',
+        swap: '0x98ace08d2b759a265ae326f010496bcd63c15afc'
+    },
+    loanContracts: {
+        iXUSD: "0x8f77ecf69711a4b346f23109c40416be3dc7f129",
+        iRBTC: "0xa9dcdc63eabb8a2b6f39d7ff9429d88340044a7a",
+        iSUSD: "0xd8d25f03ebba94e15df2ed4d6d38276b595593c1",
+        iUSDT: "0x849c47f9c259e9d62f289bf1b2729039698d8387",
+    },
+    tokens: {
+        SOV: "0xefc78fc7d48b64958315949279ba181c2114abbd",
+        XUSD: "0xb5999795be0ebb5bab23144aa5fd6a02d080299f",
+        WRBTC: "0x542fda317318ebf1d3deaf76e0b632741a7e677d",
+        BPRO: "0x440cd83c160de5c96ddb20246815ea44c7abbca8",
+        DOC: "0xe700691da7b9851f2f35f8b8182c69c53ccad9db",
+        USDT: "0xef213441a85df4d7acbdae0cf78004e1e486bb96",
+        ETHs: "0x1d931bf8656d795e50ef6d639562c5bd8ac2b78f",
+        BNBs: "0x6d9659bdf5b1a1da217f7bbaf7dbaf8190e2e71b",
     }
 };

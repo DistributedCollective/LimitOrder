@@ -29,7 +29,9 @@ describe("OrderBook", async () => {
 
     it("Should createOrder()", async () => {
         const { users, getDeadline, createOrder } = await helpers.setup();
-        const orderBook = await helpers.getContract("OrderBook");
+        const { abi } = await deployments.get("OrderBookSwapLogic");
+        const { address } = await deployments.get("OrderBookSwapProxy");
+        const orderBook = await ethers.getContractAt(abi, address);
 
         const { order } = await createOrder(
             users[0],
@@ -43,8 +45,6 @@ describe("OrderBook", async () => {
         orderG=order;
         
         const hash = await order.hash();
-        console.log("order created");
-        console.log(hash);
 
         await helpers.expectToEqual(1, orderBook.numberOfAllHashes());
         await helpers.expectToEqual(1, orderBook.numberOfHashesOfMaker(users[0].address));
@@ -60,10 +60,12 @@ describe("OrderBook", async () => {
     it("Should list all orders of trader", async () => {
         const { users } = await helpers.setup();
 
-        const orderBook = await helpers.getContract("OrderBook");
+        const { abi } = await deployments.get("OrderBookSwapLogic");
+        const { address } = await deployments.get("OrderBookSwapProxy");
+        const orderBook = await ethers.getContractAt(abi, address);
 
         const orders = await orderBook.getOrders(users[0].address, 0, 10);
-        // console.log(orders);
+
         await helpers.expectToEqual(orders.length, 10);
         await helpers.expectToEqual(orders.filter(o => o.maker != ethers.constants.AddressZero).length, 1);
     });
