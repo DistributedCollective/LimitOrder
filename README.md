@@ -52,13 +52,13 @@ PRIVATE_KEY=[your-private-key]
 PRIVATE_KEY_RELAYER=[your-private-key]
 ```
 3. yarn build
-4. Create a directory "secrets" and within a file account.js with the credentials of the relayer
+4. Create a directory "secrets" and within a file account.js with the credentials of the relayer(s)
 
 module.exports = {
-    relayer: {
+    relayers: [{
         adr: "",
         privateKey: ""
-    }
+    }]
 }
 
 ```
