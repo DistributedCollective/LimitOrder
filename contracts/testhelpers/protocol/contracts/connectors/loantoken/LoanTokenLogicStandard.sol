@@ -300,7 +300,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 	 * @param collateralTokenSent The amount of collateral tokens provided by the user.
 	 * @param collateralTokenAddress The token address of collateral.
 	 * @param trader The account that performs this trade.
-	 * @param minEntryPrice Value of loan token in collateral.
+	 * @param minReturn Minimum amount (position size) in the collateral tokens
 	 * @param loanDataBytes Additional loan data (not in use for token swaps).
 	 *
 	 * @return New principal and new collateral added to trade.
@@ -312,7 +312,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		uint256 collateralTokenSent,
 		address collateralTokenAddress,
 		address trader,
-		uint256 minEntryPrice, // value of loan token in collateral
+		uint256 minReturn, // minimum position size in the collateral tokens
 		bytes memory loanDataBytes /// Arbitrary order data.
 	)
 		public
@@ -324,6 +324,8 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		)
 	{
 		_checkPause();
+
+		checkPriceDivergence(leverageAmount, loanTokenSent, collateralTokenSent, collateralTokenAddress, minReturn);
 
 		if (collateralTokenAddress == address(0)) {
 			collateralTokenAddress = wrbtcTokenAddress;
@@ -365,7 +367,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 			sentAmounts[1] /// depositAmount
 		);
 
-		checkPriceDivergence(loanTokenSent.add(sentAmounts[1]), collateralTokenAddress, minEntryPrice);
+		require(_getAmountInRbtc(loanTokenAddress, sentAmounts[1]) > TINY_AMOUNT, "principal too small");
 
 		/// @dev Converting to initialMargin
 		leverageAmount = SafeMath.div(10**38, leverageAmount);
@@ -391,7 +393,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 	 * @param collateralTokenSent The amount of collateral tokens provided by the user.
 	 * @param collateralTokenAddress The token address of collateral.
 	 * @param trader The account that performs this trade.
-	 * @param minEntryPrice Value of loan token in collateral.
+	 * @param minReturn Minimum position size in the collateral tokens
 	 * @param affiliateReferrer The address of the referrer from affiliates program.
 	 * @param loanDataBytes Additional loan data (not in use for token swaps).
 	 *
@@ -404,7 +406,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		uint256 collateralTokenSent,
 		address collateralTokenAddress,
 		address trader,
-		uint256 minEntryPrice, /// Value of loan token in collateral
+		uint256 minReturn, /// Minimum position size in the collateral tokens.
 		address affiliateReferrer, /// The user was brought by the affiliate (referrer).
 		bytes calldata loanDataBytes /// Arbitrary order data.
 	)
@@ -425,7 +427,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 				collateralTokenSent,
 				collateralTokenAddress,
 				trader,
-				minEntryPrice,
+				minReturn,
 				loanDataBytes
 			);
 	}
@@ -877,23 +879,16 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		}
 	}
 
-	/**
-	 * @notice Check if the position is valid
-	 *
-	 * @param loanTokenSent The amount of deposit.
-	 * @param collateralTokenAddress The token address of collateral.
-	 * @param minEntryPrice Value of loan token in collateral
-	 * */
 	function checkPriceDivergence(
+		uint256 leverageAmount,
 		uint256 loanTokenSent,
+		uint256 collateralTokenSent,
 		address collateralTokenAddress,
-		uint256 minEntryPrice
+		uint256 minReturn
 	) public view {
-		/// @dev See how many collateralTokens we would get if exchanging this amount of loan tokens to collateral tokens.
-		uint256 collateralTokensReceived =
-			ProtocolLike(sovrynContractAddress).getSwapExpectedReturn(loanTokenAddress, collateralTokenAddress, loanTokenSent);
-		uint256 collateralTokenAmount = (collateralTokensReceived.mul(WEI_PRECISION)).div(loanTokenSent);
-		require(collateralTokenAmount >= minEntryPrice, "invalid position size");
+		(, uint256 estimatedCollateral, ) =
+			getEstimatedMarginDetails(leverageAmount, loanTokenSent, collateralTokenSent, collateralTokenAddress);
+		require(estimatedCollateral >= minReturn, "coll too low");
 	}
 
 	/* Internal functions */
@@ -1042,6 +1037,18 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 	}
 
 	/**
+	 * @dev returns amount of the asset converted to RBTC
+	 * @param asset the asset to be transferred
+	 * @param amount the amount to be transferred
+	 * @return amount in RBTC
+	 * */
+	function _getAmountInRbtc(address asset, uint256 amount) internal returns (uint256) {
+		(uint256 rbtcRate, uint256 rbtcPrecision) =
+			FeedsLike(ProtocolLike(sovrynContractAddress).priceFeeds()).queryRate(asset, wrbtcTokenAddress);
+		return amount.mul(rbtcRate).div(rbtcPrecision);
+	}
+
+	/*
 	 * @notice Compute interest rate and other loan parameters.
 	 *
 	 * @param borrowAmount The amount of tokens to borrow.
@@ -1387,7 +1394,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		uint256 utilRate = _utilizationRate(totalAssetBorrow().add(newBorrowAmount), assetSupply);
 
 		uint256 thisMinRate;
-		uint256 thisMaxRate;
+		uint256 thisRateAtKink;
 		uint256 thisBaseRate = baseRate;
 		uint256 thisRateMultiplier = rateMultiplier;
 		uint256 thisTargetLevel = targetLevel;
@@ -1406,17 +1413,19 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 			utilRate -= thisKinkLevel;
 			if (utilRate > thisMaxRange) utilRate = thisMaxRange;
 
-			thisMaxRate = thisRateMultiplier.add(thisBaseRate).mul(thisKinkLevel).div(WEI_PERCENT_PRECISION);
+			// Modified the rate calculation as it is slightly exaggerated around kink level
+			// thisRateAtKink = thisRateMultiplier.add(thisBaseRate).mul(thisKinkLevel).div(WEI_PERCENT_PRECISION);
+			thisRateAtKink = thisKinkLevel.mul(thisRateMultiplier).div(WEI_PERCENT_PRECISION).add(thisBaseRate);
 
-			nextRate = utilRate.mul(SafeMath.sub(thisMaxScaleRate, thisMaxRate)).div(thisMaxRange).add(thisMaxRate);
+			nextRate = utilRate.mul(SafeMath.sub(thisMaxScaleRate, thisRateAtKink)).div(thisMaxRange).add(thisRateAtKink);
 		} else {
 			nextRate = utilRate.mul(thisRateMultiplier).div(WEI_PERCENT_PRECISION).add(thisBaseRate);
 
 			thisMinRate = thisBaseRate;
-			thisMaxRate = thisRateMultiplier.add(thisBaseRate);
+			thisRateAtKink = thisRateMultiplier.add(thisBaseRate);
 
 			if (nextRate < thisMinRate) nextRate = thisMinRate;
-			else if (nextRate > thisMaxRate) nextRate = thisMaxRate;
+			else if (nextRate > thisRateAtKink) nextRate = thisRateAtKink;
 		}
 	}
 

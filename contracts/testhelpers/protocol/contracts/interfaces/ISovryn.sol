@@ -29,6 +29,9 @@ contract ISovryn is
 	AffiliatesEvents,
 	FeesEvents
 {
+	/// Triggered whenever interest is paid to lender.
+	event PayInterestTransfer(address indexed interestToken, address indexed lender, uint256 effectiveInterest);
+
 	////// Protocol //////
 
 	function replaceContract(address target) external;
@@ -295,12 +298,30 @@ contract ISovryn is
 		bytes32 loanId;
 		address loanToken;
 		address collateralToken;
-		address borrower;
 		uint256 principal;
 		uint256 collateral;
 		uint256 interestOwedPerDay;
 		uint256 interestDepositRemaining;
 		uint256 startRate; // collateralToLoanRate
+		uint256 startMargin;
+		uint256 maintenanceMargin;
+		uint256 currentMargin;
+		uint256 maxLoanTerm;
+		uint256 endTimestamp;
+		uint256 maxLiquidatable;
+		uint256 maxSeizable;
+	}
+
+	struct LoanReturnDataV2 {
+		bytes32 loanId;
+		address loanToken;
+		address collateralToken;
+		address borrower;
+		uint256 principal;
+		uint256 collateral;
+		uint256 interestOwedPerDay;
+		uint256 interestDepositRemaining;
+		uint256 startRate; /// collateralToLoanRate
 		uint256 startMargin;
 		uint256 maintenanceMargin;
 		uint256 currentMargin;
@@ -320,13 +341,30 @@ contract ISovryn is
 		bool unsafeOnly
 	) external view returns (LoanReturnData[] memory loansData);
 
+	function getUserLoansV2(
+		address user,
+		uint256 start,
+		uint256 count,
+		uint256 loanType,
+		bool isLender,
+		bool unsafeOnly
+	) external view returns (LoanReturnDataV2[] memory loansDataV2);
+
 	function getLoan(bytes32 loanId) external view returns (LoanReturnData memory loanData);
+
+	function getLoanV2(bytes32 loanId) external view returns (LoanReturnDataV2 memory loanDataV2);
 
 	function getActiveLoans(
 		uint256 start,
 		uint256 count,
 		bool unsafeOnly
 	) external view returns (LoanReturnData[] memory loansData);
+
+	function getActiveLoansV2(
+		uint256 start,
+		uint256 count,
+		bool unsafeOnly
+	) external view returns (LoanReturnDataV2[] memory loansDataV2);
 
 	////// Protocol Migration //////
 
@@ -418,4 +456,6 @@ contract ISovryn is
 	function getTradingRebateRewardsBasisPoint() external view returns (uint256);
 
 	function getDedicatedSOVRebate() external view returns (uint256);
+
+	function setRolloverFlexFeePercent(uint256 newRolloverFlexFeePercent) external;
 }
