@@ -67,7 +67,8 @@ module.exports = {
 
 ```sh
 1. yarn deploy:rsktest
-2. copy deployed address of the contracts "Settlement, OrderBook, OrderBookMargin" into the config file "src/config/testnet.js"
+2. Copy deployed address of the contracts "Settlement, OrderBook, OrderBookMargin" into the config file "src/config/testnet.js"
+3. Run approval script for loan contracts on Settlement: yarn approveSettlement:testnet
 3. yarn start-relay
 ```
 
@@ -75,5 +76,5 @@ module.exports = {
 ```
 1. yarn build-client
 2. yarn start-relay
-3. open "http://localhost:3001" on your browser
+3. Open "http://localhost:3001" on your browser
 ```

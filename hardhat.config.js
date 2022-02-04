@@ -105,7 +105,7 @@ module.exports = {
             network_id: 31,
             confirmations: 4,
             gasMultiplier: 1.25,
-            //timeout: 20000, // increase if needed; 20000 is the default value
+            timeout: 50000, // increase if needed; 20000 is the default value
             //allowUnlimitedContractSize, //EIP170 contrtact size restriction temporal testnet workaround
         },
         mainnet: {

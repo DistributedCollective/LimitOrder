@@ -366,6 +366,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		);
 
 		checkPriceDivergence(loanTokenSent.add(sentAmounts[1]), collateralTokenAddress, minEntryPrice);
+		require(_getAmountInRbtc(loanTokenAddress, sentAmounts[1]) > TINY_AMOUNT, "principal too small");
 
 		/// @dev Converting to initialMargin
 		leverageAmount = SafeMath.div(10**38, leverageAmount);
@@ -878,7 +879,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 	}
 
 	/**
-	 * @notice Check if the position is valid
+	 * @notice Check if entry price lies above a minimum
 	 *
 	 * @param loanTokenSent The amount of deposit.
 	 * @param collateralTokenAddress The token address of collateral.
@@ -893,7 +894,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		uint256 collateralTokensReceived =
 			ProtocolLike(sovrynContractAddress).getSwapExpectedReturn(loanTokenAddress, collateralTokenAddress, loanTokenSent);
 		uint256 collateralTokenAmount = (collateralTokensReceived.mul(WEI_PRECISION)).div(loanTokenSent);
-		require(collateralTokenAmount >= minEntryPrice, "invalid position size");
+		require(collateralTokenAmount >= minEntryPrice, "entry price above the minimum");
 	}
 
 	/* Internal functions */
@@ -1042,6 +1043,18 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 	}
 
 	/**
+	 * @dev returns amount of the asset converted to RBTC
+	 * @param asset the asset to be transferred
+	 * @param amount the amount to be transferred
+	 * @return amount in RBTC
+	 * */
+	function _getAmountInRbtc(address asset, uint256 amount) internal returns (uint256) {
+		(uint256 rbtcRate, uint256 rbtcPrecision) =
+			FeedsLike(ProtocolLike(sovrynContractAddress).priceFeeds()).queryRate(asset, wrbtcTokenAddress);
+		return amount.mul(rbtcRate).div(rbtcPrecision);
+	}
+
+	/*
 	 * @notice Compute interest rate and other loan parameters.
 	 *
 	 * @param borrowAmount The amount of tokens to borrow.
@@ -1387,7 +1400,7 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 		uint256 utilRate = _utilizationRate(totalAssetBorrow().add(newBorrowAmount), assetSupply);
 
 		uint256 thisMinRate;
-		uint256 thisMaxRate;
+		uint256 thisRateAtKink;
 		uint256 thisBaseRate = baseRate;
 		uint256 thisRateMultiplier = rateMultiplier;
 		uint256 thisTargetLevel = targetLevel;
@@ -1406,17 +1419,19 @@ contract LoanTokenLogicStandard is LoanTokenLogicStorage {
 			utilRate -= thisKinkLevel;
 			if (utilRate > thisMaxRange) utilRate = thisMaxRange;
 
-			thisMaxRate = thisRateMultiplier.add(thisBaseRate).mul(thisKinkLevel).div(WEI_PERCENT_PRECISION);
+			// Modified the rate calculation as it is slightly exaggerated around kink level
+			// thisRateAtKink = thisRateMultiplier.add(thisBaseRate).mul(thisKinkLevel).div(WEI_PERCENT_PRECISION);
+			thisRateAtKink = thisKinkLevel.mul(thisRateMultiplier).div(WEI_PERCENT_PRECISION).add(thisBaseRate);
 
-			nextRate = utilRate.mul(SafeMath.sub(thisMaxScaleRate, thisMaxRate)).div(thisMaxRange).add(thisMaxRate);
+			nextRate = utilRate.mul(SafeMath.sub(thisMaxScaleRate, thisRateAtKink)).div(thisMaxRange).add(thisRateAtKink);
 		} else {
 			nextRate = utilRate.mul(thisRateMultiplier).div(WEI_PERCENT_PRECISION).add(thisBaseRate);
 
 			thisMinRate = thisBaseRate;
-			thisMaxRate = thisRateMultiplier.add(thisBaseRate);
+			thisRateAtKink = thisRateMultiplier.add(thisBaseRate);
 
 			if (nextRate < thisMinRate) nextRate = thisMinRate;
-			else if (nextRate > thisMaxRate) nextRate = thisMaxRate;
+			else if (nextRate > thisRateAtKink) nextRate = thisRateAtKink;
 		}
 	}
 

@@ -27,7 +27,7 @@ $(document).ready(() => {
             createOrder('SOV', 'WRBTC', ethers.utils.parseEther('10'), $(this));
         });
         $('#buySovWrbtcCBtn').on('click', function () {
-            createOrder('WRBTC', 'SOV', ethers.utils.parseEther('0.005'), $(this));
+            createOrder('WRBTC', 'SOV', ethers.utils.parseEther('1'), $(this));
         });
         
         $('#sellSovBProBtn').on('click', function () {
@@ -219,10 +219,10 @@ $(document).ready(() => {
 
 
         $('#longBTCx2').on('click', function () {
-            createMarginOrder('long', '100', $(this));
+            createMarginOrder('long', '20', $(this));
         });
         $('#shortBTCx2').on('click', function () {
-            createMarginOrder('short', '100', $(this));
+            createMarginOrder('short', '20', $(this));
         });
         
         $('#cancelOrder').on('click', function () {
@@ -259,7 +259,7 @@ async function connectWallet() {
 const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
 const getTokenContract = (tokenAdr) => {
-    return new web3.eth.Contract(ABIs.ERC20, tokenAdr);;
+    return new web3.eth.Contract(ABIs.ERC20, tokenAdr);
 };
 
 const getGasPrice = async () => {
@@ -420,27 +420,28 @@ async function createMarginOrder(pos, amountUSD, $btn) {
        
         const apiUrl = `${config.baseAPIUrl}/api/createMarginOrder`;
         const orderBookMargin = new web3.eth.Contract(ABIs.OrderBookMargin, config.contracts.orderBookMargin);
-        let loanToken, collateralToken,
+        let loanToken, collateralToken, loanTokenAddress,
             loanTokenSent = ethers.utils.parseEther('0'),
             collateralTokenSent = ethers.utils.parseEther('0');
         const leverageAmount = ethers.utils.parseEther('2');
+        let collateralTokenSymbol;
 
         if (pos == 'long') {
+            loanTokenAddress = config.tokens.XUSD;
             loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iXUSD);
-            collateralToken = config.tokens.WRBTC;
             loanTokenSent = ethers.utils.parseEther(amountUSD);
+            collateralToken = config.tokens.WRBTC;
+            collateralTokenSymbol = 'RBTC';
         } else {
+            loanTokenAddress = config.tokens.WRBTC;
             loanToken = new web3.eth.Contract(ABIs.LoanToken, config.loanContracts.iRBTC);
             collateralToken = config.tokens.XUSD;
-            collateralToken = ethers.utils.parseEther(amountUSD);
+            collateralTokenSent = ethers.utils.parseEther(amountUSD);
+            collateralTokenSymbol = 'XUSD';
         }
-        const { collateral } = await loanToken.methods.getEstimatedMarginDetails(
-            leverageAmount,
-            loanTokenSent,
-            collateralTokenSent,
-            collateralToken,
-        ).call();
-        const minEntryPrice = ethers.BigNumber.from(String(collateral)).div(2);
+
+        const minEntryPrice = await getCurEntryPrice(loanTokenAddress, loanTokenSent, collateralToken, collateralTokenSent);
+        showMsg("Min entry price", ethers.utils.formatEther(minEntryPrice), collateralTokenSymbol);
 
         const order = new MarginOrder(
             ethers.constants.HashZero,
@@ -458,9 +459,8 @@ async function createMarginOrder(pos, amountUSD, $btn) {
 
         showMsg('waiting approve tokens');
         if (Number(order.loanTokenSent) > 0) {
-            const loanTokenAssetAddress = await loanToken.methods.loanTokenAddress().call();
-            const token = await getTokenContract(loanTokenAssetAddress).methods.symbol().call();
-            await approveToken(loanTokenAssetAddress, account, config.contracts.settlement, order.loanTokenSent)
+            const token = await getTokenContract(loanTokenAddress).methods.symbol().call();
+            await approveToken(loanTokenAddress, account, config.contracts.settlement, order.loanTokenSent)
                 .then(approveHash => {
                     showMsg(`approved ${Number(order.loanTokenSent)/1e18} ${token}, tx`, approveHash);
                 })
@@ -482,6 +482,7 @@ async function createMarginOrder(pos, amountUSD, $btn) {
         const chainId = config.orderBookChainId;
         const msg = order.messageHash(chainId, config.contracts.orderBookMargin);
         showMsg('order msg', msg);
+        showMsg('order hash', order.hash());
 
         const signature = await signTypeMarginOrderData(order);
 
@@ -522,7 +523,22 @@ async function createMarginOrder(pos, amountUSD, $btn) {
     }
 }
 
+async function getCurEntryPrice(loanTokenAddress, loanTokenSent, collateralTokenAddress, collateralTokenSent) {
+    const swapContract = new web3.eth.Contract(ABIs.SovrynSwap, config.contracts.swap);
+    let totalLoanDeposited = loanTokenSent;
 
+    if (collateralTokenSent.gt(ethers.constants.Zero)) {
+        path = await swapContract.methods.conversionPath(collateralTokenAddress, loanTokenAddress).call();
+        const amn = await swapContract.methods.rateByPath(path, collateralTokenSent).call();
+        totalLoanDeposited = ethers.BigNumber.from(amn).add(totalCollateral);
+    }
+
+    const pathLoan2Col = await swapContract.methods.conversionPath(loanTokenAddress, collateralTokenAddress).call();
+    let colAmn = await swapContract.methods.rateByPath(pathLoan2Col, totalLoanDeposited).call();
+    colAmn = ethers.BigNumber.from(colAmn);
+
+    return colAmn.mul(ethers.constants.WeiPerEther).div(totalLoanDeposited).mul(20).div(100); // 0.2 * cur price
+}
 
 async function cancelOrder($btn) {
     try {
