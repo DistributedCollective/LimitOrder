@@ -1,7 +1,5 @@
-node_modules
-deployments
-artifacts
-cache
+secrets
 .env
-public/dist
-secrets/
+artifacts
+deployments
+cache

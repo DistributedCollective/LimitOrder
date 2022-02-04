@@ -3,7 +3,7 @@ const { _TypedDataEncoder } = require("@ethersproject/hash");
 
 module.exports = class MarginOrder {
     static get ORDER_TYPEHASH() {
-        return "0xe30dcb91507ed7c8a9a2019b56e407eee8294529022e84f18b5420374e178404";
+        return "0x081065ed5fb223d1fbe21ab1bb041dfac552070112cff5e8d4be7dada1f96cd6";
     }
 
     constructor(
