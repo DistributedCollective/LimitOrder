@@ -64,6 +64,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     console.log(tx.transactionHash);
 
     // Transfer ownership
-    await settlementProxy.methods.setProxyOwner(multisig)
-    await settlement.methods.transferOwnership(multisig)
+    // tx = await settlementProxy.methods.setProxyOwner(multisig).send({from: deployer});
+    // console.log(tx.transactionHash);
+    // tx = await settlement.methods.transferOwnership(multisig).send({from: deployer});
+    // console.log(tx.transactionHash);
 };

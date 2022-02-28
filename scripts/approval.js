@@ -17,9 +17,9 @@ web3.eth.accounts.wallet.add(ownerPk);
 
 let loanContracts = configs.loanContracts, tokens = configs.tokens;
 let ownerAdr = web3.eth.accounts.wallet[0].address;
-if (network.name === "hardhat" || network.name === "localhost") {
-    ownerAdr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // HardHat Account
-}
+// if (network.name === "hardhat" || network.name === "localhost") {
+//     ownerAdr = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // HardHat Account
+// }
 
 async function approve(localLoanContracts, localTokens) {
     if (configs.chainId == 31337) {
@@ -67,6 +67,7 @@ async function approveToken(tokenSymbol, tokenAddress, settlmentAdr, spenderAddr
     console.log(`approving ${spenderAddress} to spend unlimited ${tokenSymbol} on behalf of ${settlmentAdr} (nonce ${nonce})`);
 
     numPendingTransactions++;
+    console.log("ownerAdr", ownerAdr);
     const txHash = await new Promise((resolve, reject) => {
         settlementContract.methods.approveTokenLoan(spenderAddress, tokenAddress, amount).send({
             nonce,
