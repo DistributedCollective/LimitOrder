@@ -36,7 +36,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         console.log(tx.transactionHash);
 
         // Transfer ownership
-        await orderBookProxy.methods.setProxyOwner(multisig)
-        await orderBook.methods.transferOwnership(multisig)
+        tx = await orderBookProxy.methods.setProxyOwner(multisig).send({from: deployer});
+        console.log(tx.transactionHash);
+        tx = await orderBook.methods.transferOwnership(multisig).send({from: deployer});
+        console.log(tx.transactionHash);
     }
 };
