@@ -7,8 +7,27 @@ import "../libraries/Orders.sol";
 import "../libraries/MarginOrders.sol";
 
 interface ISettlement {
-    event SetMinFee(address indexed sender, uint256 oldValue, uint256 newValue);
     event SetRelayerFee(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+    event SetSwapOrderGas(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+    event SetMarginOrderGas(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+    event SetMinSwapOrderSize(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+    event SetMinMarginOrderSize(
         address indexed sender,
         uint256 oldValue,
         uint256 newValue
@@ -24,7 +43,8 @@ interface ISettlement {
     event FeeTransferred(
         bytes32 indexed hash,
         address indexed recipient,
-        uint256 amount
+        uint256 amount,
+        address token
     );
     event FeeSplitTransferred(
         bytes32 indexed hash,
@@ -110,9 +130,15 @@ interface ISettlement {
 
     function withdraw(uint256 amount) external;
 
-    function setMinFee(uint256 _minFee) external;
-
     function setRelayerFee(uint256 _relayerFeePercent) external;
+
+    function setSwapOrderGas(uint256 _newGas) external;
+
+    function setMarginOrderGas(uint256 _newGas) external;
+
+    function setMinSwapOrderSize(uint256 _minSwapOrderSize) external;
+
+    function setMinMarginOrderSize(uint256 _minMarginOrderSize) external;
 
     function allCanceledHashes() external view returns (bytes32[] memory);
 
