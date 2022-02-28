@@ -64,7 +64,7 @@ describe("Margin Order", async () => {
             console.log("asset wrbtc", await loanTokenWRBTC.loanTokenAddress());
 
             const settlement = await getContract('Settlement');
-            await settlement.setMinFee(parseEther('0'));
+            await settlement.setMinMarginOrderSize(parseEther('0'));
             
         } else {
             SUSD = await getSUSD();
@@ -85,7 +85,7 @@ describe("Margin Order", async () => {
             await SUSD.transfer(loanTokenSUSD.address, parseEther("100000"));
 
             const settlement = await getContract('Settlement');
-            await settlement.setMinFee(parseEther('0'));
+            await settlement.setMinMarginOrderSize(parseEther('0'));
             
             console.log('iloanSUSD', loanTokenSUSD.address);
             console.log('iloanWRBTC', loanTokenWRBTC.address);
@@ -185,7 +185,7 @@ describe("Margin Order", async () => {
         const settlement = await getContract('Settlement')
         const orderArgs = await order.toArgs();
 
-        return await settlement.fillMarginOrder([orderArgs]);
+        return await settlement.connect(signer).fillMarginOrder([orderArgs]);
     };
 
     const createFillMarginOrder = async ({
@@ -246,7 +246,7 @@ describe("Margin Order", async () => {
         const orderBook = await getContract('OrderBookMargin')
         const trader = getAccount(0);
         const collateralToken = WRBTC.address;
-        const collateralAmount = parseEther("0.01");
+        const collateralAmount = parseEther("0.05");
 
         if (isLocalNetwork) {
             await set_demand_curve(loanTokenSUSD);
@@ -263,7 +263,7 @@ describe("Margin Order", async () => {
             parseEther("0"), // loan token sent
             collateralAmount, // collateral token sent
             collateralToken, // collateral token
-            parseEther("0.00002"), // min return
+            parseEther("0.00001"), // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -354,6 +354,7 @@ describe("Margin Order", async () => {
     it("Should relayer receive correct fee on loan SUSD", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
+        console.log(trader.address, relayer.address);
         const balances = {
             susd: {
                 before: formatEther((await SUSD.balanceOf(relayer.address)).toString())
@@ -377,7 +378,7 @@ describe("Margin Order", async () => {
         });
         await orderTx.wait();
         await filledTx.wait();
-        
+      
         balances.susd.after = formatEther((await SUSD.balanceOf(relayer.address)).toString());
         balances.rbtc.after = formatEther((await relayer.getBalance()).toString());
         balances.wrbtc.after = formatEther((await WRBTC.balanceOf(relayer.address)).toString());
@@ -479,20 +480,20 @@ describe("Margin Order", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
         const settlement = await getContract('Settlement');
-        const tx = await settlement.setMinFee(parseEther('0.1'));
+        const tx = await settlement.setMinMarginOrderSize(parseEther('25'));
         await tx.wait();
-        await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
+        await helpers.expectToBeReverted('Filling amount is too low', 
             createFillMarginOrder({
                 trader,
                 relayer,
                 loanToken: loanTokenWRBTC,
                 loanTokenSent: parseEther("0"),
                 collateralToken: SUSD,
-                collateralTokenSent: parseEther('1'),
+                collateralTokenSent: parseEther('20'),
                 leverageAmount: parseEther("2"),
                 minEntryPrice: parseEther("2"),
             })
         );
-        await settlement.setMinFee(parseEther('0'));
+        await settlement.setMinMarginOrderSize(parseEther('0'));
     });
 });
