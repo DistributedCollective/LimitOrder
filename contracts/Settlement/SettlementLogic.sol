@@ -136,7 +136,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMarginOrderGas(msg.sender, oldValue, marginOrderGas);
     }
 
-    // Set max gas for margin order
+    // Set min gas for margin order
     function setMinSwapOrderSize(uint256 _minSwapOrderSize)
         public
         override

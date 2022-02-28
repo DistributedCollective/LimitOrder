@@ -48,4 +48,16 @@ contract SettlementStorage is Initializable, Ownable {
 
     // Minimum Fee
     uint256 public minFee; //in wrbtc
+
+    // Maximum gas for filling a swap order
+    uint256 public swapOrderGas;
+
+    // Maximum gas for filling a margin order
+    uint256 public marginOrderGas;
+
+    // Minimum swap order size for partial filling
+    uint256 public minSwapOrderSize; //in wrbtc
+
+    // Minimum margin order size for partial filling
+    uint256 public minMarginOrderSize; //in wrbtc
 }
