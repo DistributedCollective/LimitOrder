@@ -6,9 +6,9 @@ module.exports = {
     networkUrl: 'https://mainnet.sovryn.app/rpc',
     orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0x4E19834396816398469585C7C0F6c5fd5DBFDA8b',
-        orderBook: '0x8316F90a73e14a4e3B87263f0fde575219d3c210',
-        orderBookMargin: '0x142397a33b79c97f13dC709DFE93fca39A7ba25e',
+        settlement: '0x438CD12C586d4E4Bbd6CbaD7f600Bb5945cf1516',
+        orderBook: '0x1B819cd8DC291c2788cF8a99Ba230ea074866Af1',
+        orderBookMargin: '0xbA37D9382cEa314404d01E123c2e30730409e649',
         swap: '0x98ace08d2b759a265ae326f010496bcd63c15afc'
     },
     loanContracts: {
