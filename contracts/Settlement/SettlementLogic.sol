@@ -65,6 +65,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         orderBookAddress = _orderBookAddress;
         orderBookMarginAddress = _marginOrderBookAddress;
         setRelayerFee(2 * 10**17); // Relayer fee percent = 0.2
+        setSwapOrderGas(800000);
+        setMarginOrderGas(1800000);
     }
 
     // Fallback function to receive tokens
@@ -97,14 +99,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit Withdrawal(receiver, amount);
     }
 
-    // Sets minimum fee
-    function setMinFee(uint256 _minFee) external override onlyOwner {
-        uint256 oldValue = minFee;
-        minFee = _minFee;
-
-        emit SetMinFee(msg.sender, oldValue, minFee);
-    }
-
     // Sets relayer fee
     function setRelayerFee(uint256 _relayerFeePercent)
         public
@@ -116,6 +110,54 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         relayerFeePercent = _relayerFeePercent;
 
         emit SetRelayerFee(msg.sender, oldValue, relayerFeePercent);
+    }
+
+    // Set max gas for swap order
+    function setSwapOrderGas(uint256 _newGas)
+        public
+        override
+        onlyOwner
+    {
+        uint256 oldValue = swapOrderGas;
+        swapOrderGas = _newGas;
+
+        emit SetSwapOrderGas(msg.sender, oldValue, swapOrderGas);
+    }
+
+    // Set max gas for margin order
+    function setMarginOrderGas(uint256 _newGas)
+        public
+        override
+        onlyOwner
+    {
+        uint256 oldValue = marginOrderGas;
+        marginOrderGas = _newGas;
+
+        emit SetMarginOrderGas(msg.sender, oldValue, marginOrderGas);
+    }
+
+    // Set max gas for margin order
+    function setMinSwapOrderSize(uint256 _minSwapOrderSize)
+        public
+        override
+        onlyOwner
+    {
+        uint256 oldValue = minSwapOrderSize;
+        minSwapOrderSize = _minSwapOrderSize;
+
+        emit SetMinSwapOrderSize(msg.sender, oldValue, minSwapOrderSize);
+    }
+
+    // Set max gas for margin order
+    function setMinMarginOrderSize(uint256 _minMarginOrderSize)
+        public
+        override
+        onlyOwner
+    {
+        uint256 oldValue = minMarginOrderSize;
+        minMarginOrderSize = _minMarginOrderSize;
+
+        emit SetMinMarginOrderSize(msg.sender, oldValue, minMarginOrderSize);
     }
 
     // Fills an order by
@@ -156,10 +198,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "invalid-signature"
         );
 
-        uint256 relayerFee = args.amountToFillIn.mul(relayerFeePercent).div(
-            10**20
-        );
-        _checkRelayerFee(relayerFee, args.order.fromToken);
+        (uint256 relayerFee) = _checkRelayerFee(args.order.fromToken, args.order.amountIn, args.amountToFillIn, true);
 
         uint256 actualAmountIn = args.amountToFillIn.sub(relayerFee);
 
@@ -225,6 +264,13 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             actualAmountIn,
             targetTokenAmount,
             msg.sender
+        );
+
+        emit FeeTransferred(
+            hash,
+            msg.sender,
+            relayerFee,
+            path[0]
         );
 
         emit OrderFilled(
@@ -328,11 +374,23 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         // Transfer fee for relayer
         if (relayerFee > 0) {
             collateralToken.safeTransfer(msg.sender, relayerFee);
+            emit FeeTransferred(
+                hash,
+                msg.sender,
+                relayerFee,
+                args.order.collateralTokenAddress
+            );
         }
         if (relayerFeeOnLoanAsset > 0) {
             IERC20(_loanTokenAsset).safeTransfer(
                 msg.sender,
                 relayerFeeOnLoanAsset
+            );
+            emit FeeTransferred(
+                hash,
+                msg.sender,
+                relayerFeeOnLoanAsset,
+                _loanTokenAsset
             );
         }
 
@@ -446,52 +504,87 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             uint256 actualLoanTokenAmount
         )
     {
-        uint256 _collateralTokenSent = order.collateralTokenSent;
-        if (_collateralTokenSent > 0) {
-            relayerFee = _collateralTokenSent.mul(relayerFeePercent).div(
-                10**20
-            );
-            actualCollateralAmount = _collateralTokenSent.sub(relayerFee);
-        }
+        uint256 _orderSizeInColl = order.collateralTokenSent;
+        uint256 _loanTokenSentInColl = 0;
+        address _loanTokenAsset;
 
-        uint256 _loanTokenSent = order.loanTokenSent;
-        uint256 _feeLoanAssetByCollateral;
-        if (_loanTokenSent > 0) {
-            relayerFeeOnLoanAsset = _loanTokenSent.mul(relayerFeePercent).div(
-                10**20
-            );
-            actualLoanTokenAmount = _loanTokenSent.sub(relayerFeeOnLoanAsset);
-            address loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+        if (order.loanTokenSent > 0) {
+            _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
                 .loanTokenAddress();
             address[] memory _path = sovrynSwapNetwork.conversionPath(
-                loanTokenAsset,
+                _loanTokenAsset,
                 order.collateralTokenAddress
             );
-            _feeLoanAssetByCollateral = sovrynSwapNetwork.rateByPath(
+            _loanTokenSentInColl = sovrynSwapNetwork.rateByPath(
                 _path,
-                relayerFeeOnLoanAsset
+                order.loanTokenSent
             );
+            _orderSizeInColl = _orderSizeInColl.add(_loanTokenSentInColl);
         }
 
-        _checkRelayerFee(
-            relayerFee + _feeLoanAssetByCollateral,
-            order.collateralTokenAddress
+        (uint256 _relayerFeeIncoll) = _checkRelayerFee(
+            order.collateralTokenAddress,
+            _orderSizeInColl,
+            _orderSizeInColl, //fill all order
+            false
         );
+
+        // relayerFee is fee pay for relayer of collateral
+        relayerFee = SafeMath.min256(_relayerFeeIncoll, order.collateralTokenSent);
+        actualCollateralAmount = order.collateralTokenSent.sub(relayerFee);
+      
+        // should also take fee of loan token
+        if (_relayerFeeIncoll > relayerFee) {
+            address[] memory _path = sovrynSwapNetwork.conversionPath(
+                order.collateralTokenAddress,
+                _loanTokenAsset
+            );
+            relayerFeeOnLoanAsset = sovrynSwapNetwork.rateByPath(
+                _path,
+                _relayerFeeIncoll.sub(relayerFee)
+            );
+            actualLoanTokenAmount = order.loanTokenSent.sub(relayerFeeOnLoanAsset);
+        }
     }
 
-    function _checkRelayerFee(uint256 fee, address fromToken) internal view {
-        uint256 feeInRbtc = fee;
+    function _checkRelayerFee(address fromToken, uint256 orderSize, uint256 amountToFill, bool isSpot)
+        internal
+        view
+        returns ( uint256 relayerFee )
+    {
+        uint256 estOrderFee = orderSize.mul(relayerFeePercent).div(10**20);
+        uint256 txGas = isSpot ? swapOrderGas : marginOrderGas;
+        uint256 estTxFee = tx.gasprice.mul(txGas);
+        uint256 minFeeAmount = estTxFee.mul(3).div(2);
+        uint256 minFeeAmountInToken = minFeeAmount;
+
         if (fromToken != WRBTC_ADDRESS) {
             address[] memory path = sovrynSwapNetwork.conversionPath(
-                fromToken,
-                WRBTC_ADDRESS
+                WRBTC_ADDRESS,
+                fromToken
             );
-            feeInRbtc = sovrynSwapNetwork.rateByPath(path, fee);
+            minFeeAmountInToken = sovrynSwapNetwork.rateByPath(path, minFeeAmount);
         }
-        require(
-            feeInRbtc > minFee,
-            "Order amount is too low to pay the relayer fee"
-        );
+
+        if (estOrderFee < minFeeAmountInToken) {
+            require(amountToFill == orderSize, "Order size too for partial filling");
+            require(orderSize > minFeeAmountInToken, "Order amount is too low to pay the relayer fee");
+
+            relayerFee = minFeeAmountInToken;
+        } else {
+            uint256 fillAmountInRBtc = amountToFill;
+            uint256 minFillingAmount = isSpot ? minSwapOrderSize : minMarginOrderSize;
+            if (fromToken != WRBTC_ADDRESS) {
+                address[] memory pathToRbtc = sovrynSwapNetwork.conversionPath(
+                    fromToken,
+                    WRBTC_ADDRESS
+                );
+                fillAmountInRBtc = sovrynSwapNetwork.rateByPath(pathToRbtc, amountToFill);
+            }
+
+            require(fillAmountInRBtc >= minFillingAmount, "Filling amount is too low");
+            relayerFee = amountToFill.mul(relayerFeePercent).div(10**20);
+        }
     }
 
     // internal functions
