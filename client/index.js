@@ -15,10 +15,10 @@ $(document).ready(() => {
         connectWallet();
         abiDecoder.addABI(ABIs.OrderBook);
 
-        
         $('#sellSovXusdBtn').on('click', function () {
             createOrder('SOV', 'XUSD', ethers.utils.parseEther('10'), $(this));
         });
+
         $('#buySovXusdbtn').on('click', function () {
             createOrder('XUSD', 'SOV', ethers.utils.parseEther('10'), $(this));
         });
@@ -310,7 +310,36 @@ const waitTransaction = async (txHash) => {
     });
 }
 
-async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
+/**
+ * Get fee for swap order on [toToken]
+ */
+const getSwapOrderFeeOut = async (amountIn, fromToken, toToken) => {
+    const swapContract = new web3.eth.Contract(ABIs.SovrynSwap, config.contracts.swap);
+    const settlement = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+    const orderSize = ethers.BigNumber.from(String(amountIn));
+    let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
+    let minSwapOrderSize = await settlement.methods.minSwapOrderSize().call();
+    console.log('minSwapOrderSize', Number(minSwapOrderSize));
+    minSwapOrderSize = 800000;
+
+    const gasPrice = await getGasPrice();
+    const gasFee = ethers.BigNumber.from(gasPrice).mul(minSwapOrderSize);
+    const minFeeAmount = gasFee.mul(3).div(2); // tx fee + 50%
+    let minFeeInToken = minFeeAmount;
+    if (fromToken != config.tokens.WRBTC) {
+        const rbtcPath = await swapContract.methods.conversionPath(config.tokens.WRBTC, fromToken).call();
+        minFeeInToken = await swapContract.methods.rateByPath(rbtcPath, minFeeAmount).call();
+    }
+
+    if (orderFee.lt(minFeeInToken)) orderFee = minFeeInToken;
+
+    const path = await swapContract.methods.conversionPath(fromToken, toToken).call();
+    const feeOnToToken = await swapContract.methods.rateByPath(path, orderFee).call();
+
+    return feeOnToToken;
+}
+
+async function createOrder(fromCurrency, toCurrency, amountIn, btn, priceBuffer = 1) {
     const apiUrl = `${config.baseAPIUrl}/api/createOrder`;
     if (bal <= 0) {
         alert('Insufficient balance');
@@ -325,9 +354,13 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         const toToken = config.tokens[toCurrency];
         if (!fromToken || !toToken) return showMsg(`Token not found for currency ${fromCurrency}, ${toCurrency}`);
 
-        //minAmountOut = 0.8 * amountIn
-        const minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn)).mul('8').div('10');
-        showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency}`);
+        let minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn));
+        minAmountOut = minAmountOut.mul((priceBuffer * 1000).toFixed(0)).div('1000');
+        const price = Number(minAmountOut)/Number(amountIn);
+        const feeOut = await getSwapOrderFeeOut(amountIn, fromToken, toToken);
+        minAmountOut = minAmountOut.sub(feeOut);
+        showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency} at price ${price}`);
+        showMsg(`Fee out: ~${formatEther(feeOut)} ${toCurrency}`);
 
         if (fromToken == config.tokens.WRBTC) {
             showMsg(`sending ${formatEther(amountIn)} rbtc to Settlement contract`);
