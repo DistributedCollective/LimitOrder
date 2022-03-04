@@ -219,7 +219,7 @@ $(document).ready(() => {
 
 
         $('#longBTCx2').on('click', function () {
-            createMarginOrder('long', '20', $(this));
+            createMarginOrder('long', '200', $(this));
         });
         $('#shortBTCx2').on('click', function () {
             createMarginOrder('short', '20', $(this));
@@ -318,12 +318,11 @@ const getSwapOrderFeeOut = async (amountIn, fromToken, toToken) => {
     const settlement = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
     const orderSize = ethers.BigNumber.from(String(amountIn));
     let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
-    let minSwapOrderSize = await settlement.methods.minSwapOrderSize().call();
-    console.log('minSwapOrderSize', Number(minSwapOrderSize));
-    minSwapOrderSize = 800000;
+    let swapOrderGas = await settlement.methods.swapOrderGas().call();
+    console.log('swapOrderGas', Number(swapOrderGas));
 
     const gasPrice = await getGasPrice();
-    const gasFee = ethers.BigNumber.from(gasPrice).mul(minSwapOrderSize);
+    const gasFee = ethers.BigNumber.from(gasPrice).mul(swapOrderGas);
     const minFeeAmount = gasFee.mul(3).div(2); // tx fee + 50%
     let minFeeInToken = minFeeAmount;
     if (fromToken != config.tokens.WRBTC) {
@@ -563,7 +562,7 @@ async function getCurEntryPrice(loanTokenAddress, loanTokenSent, collateralToken
     if (collateralTokenSent.gt(ethers.constants.Zero)) {
         path = await swapContract.methods.conversionPath(collateralTokenAddress, loanTokenAddress).call();
         const amn = await swapContract.methods.rateByPath(path, collateralTokenSent).call();
-        totalLoanDeposited = ethers.BigNumber.from(amn).add(totalCollateral);
+        totalLoanDeposited = ethers.BigNumber.from(amn).add(totalLoanDeposited);
     }
 
     const pathLoan2Col = await swapContract.methods.conversionPath(loanTokenAddress, collateralTokenAddress).call();

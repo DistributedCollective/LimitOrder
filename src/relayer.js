@@ -32,7 +32,7 @@ class Relayer {
             if (!relayer) throw "No wallet has enough fund or available";
 
             this.pendingTxs[relayer.address] = this.pendingTxs[relayer.address] || {};
-            nonce = await relayer.getTransactionCount('pending');
+            nonce = await relayer.getTransactionCount('latest');
             nonce += Object.keys(this.pendingTxs[relayer.address]).length;
 
             this.pendingTxs[relayer.address][nonce] = data;
@@ -42,7 +42,11 @@ class Relayer {
                 nonce
             });
 
-            delete this.pendingTxs[relayer.address][nonce];
+            new Promise(async (resolve) => {
+                await tx.wait();
+                delete this.pendingTxs[relayer.address][nonce];
+                resolve();
+            });
 
             if (tx) {
                 return tx;

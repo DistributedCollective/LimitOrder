@@ -46,9 +46,6 @@ contract SettlementStorage is Initializable, Ownable {
     // Relayer Fee Percent
     uint256 public relayerFeePercent;
 
-    // Minimum Fee
-    uint256 public minFee; //in wrbtc
-
     // Maximum gas for filling a swap order
     uint256 public swapOrderGas;
 
