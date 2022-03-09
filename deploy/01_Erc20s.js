@@ -1,6 +1,8 @@
+const { formatEther } = require("ethers/lib/utils");
 const { ethers, network } = require("hardhat");
 const { replaceInFile } = require("replace-in-file");
 const { parseEther } = ethers.utils;
+const { BN } = require("@openzeppelin/test-helpers");
 
 const replaceTokenAddress = async (name, address) => {
     address = await ethers.utils.getAddress(address);
@@ -33,7 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         await replaceTokenAddress("XUSD", xusdToken.address);
         console.log("usd: ",xusdToken.address)
         
-        sovToken = await TestToken.deploy('SOV', 'SOV', 18, parseEther('1000'))
+        const sovToken = await TestToken.deploy('SOV', 'SOV', 18, parseEther('1000'))
         await sovToken.deployed();
         await replaceTokenAddress("SOV", sovToken.address);
         console.log("sov: ", sovToken.address)  
@@ -43,6 +45,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             from: deployer,
             log: true,
         });
+        const priceFeeds = await ethers.getContract("PriceFeedsLocal", deployer);
+
+        const wei = web3.utils.toWei;
+        const oneEth = new BN(wei("1", "ether"));
+        await priceFeeds.setRates(wrbtcToken.address, protocolToken.address, oneEth.toString());
+        await priceFeeds.setRates(wrbtcToken.address, xusdToken.address, new BN(10).pow(new BN(22)).toString());
+        await priceFeeds.setRates(protocolToken.address, xusdToken.address, new BN(10).pow(new BN(22)).toString());
+        await priceFeeds.setRates(sovToken.address, xusdToken.address, new BN(10).pow(new BN(18)).toString());
 
         const artifact = await deployments.getArtifact("TestSovrynSwap");
         const contract = {
@@ -57,6 +67,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             log: true,
         });
 
+        const swap = await ethers.getContract("TestSovrynSwap", deployer);
+        const path = await swap.conversionPath(wrbtcToken.address, xusdToken.address);
+        const rbtcRate = await swap.rateByPath(path, parseEther('1'));
+        console.log('rbtc rate', formatEther(rbtcRate));
     }
 
 };

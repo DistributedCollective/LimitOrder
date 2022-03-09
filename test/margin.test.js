@@ -21,6 +21,7 @@ const {
 	getSovryn,
 } = require("./Utils/initializer.js");
 const { approve } = require('../scripts/approval');
+const TOKENS = require('../test/tokens');
 
 const ILoanTokenModules = artifacts.require("ILoanTokenModules");
 const TestToken = artifacts.require("TestToken");
@@ -67,9 +68,9 @@ describe("Margin Order", async () => {
             await settlement.setMinMarginOrderSize(parseEther('0'));
             
         } else {
-            SUSD = await getSUSD();
             RBTC = await getRBTC();
-            WRBTC = await getWRBTC();
+            SUSD = await getSUSD();
+            WRBTC = await TestWrbtc.at(TOKENS.WRBTC['31337'].address);
             BZRX = await getBZRX();
             priceFeeds = await getPriceFeeds(WRBTC, SUSD, RBTC, sovryn, BZRX);
 
@@ -144,21 +145,29 @@ describe("Margin Order", async () => {
         const checkAllowance = async (token, owner, spender) => {
             const allowance = await token.allowance(owner, spender);
             console.log(`Allowance of ${token.address} ${await token.symbol()}, owner ${owner}, spender ${spender}: ${Number(allowance)}`);
-        }
+        };
+        const prepareOrderAsset = async (assetAddress, amount) => {
+            if (assetAddress.toLowerCase() == WRBTC.address.toLowerCase()) {
+                await settlement.deposit(signer.address, {
+                    value: amount
+                });
+                console.log('WRBTC.address', WRBTC.address)
+                console.log('WRBTC on settlement', await settlement.WRBTC_ADDRESS())
+                console.log('Deposited', formatEther(amount), 'rbtc to settlement');
+            } else {
+                const token = await ethers.getContractAt("TestToken", assetAddress, signer);
+                const allowance = await token.allowance(signer.address, settlement.address);
+                const _tx = await token.approve(settlement.address, amount.add(allowance));
+                await _tx.wait();
+                await checkAllowance(token, signer.address, settlement.address);
+            }
+        };
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
-            const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
-            const allowance = await loanTokenAsset.allowance(signer.address, settlement.address);
-            const _tx = await loanTokenAsset.approve(settlement.address, loanTokenSent.add(allowance));
-            await _tx.wait();
-            await checkAllowance(loanTokenAsset, settlement.address, loanToken.address)
+            await prepareOrderAsset(loanTokenAssetAddress, loanTokenSent);
         }
         if (Number(collateralTokenSent) > 0) {
-            const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
-            const allowance = await collateralToken.allowance(signer.address, settlement.address);
-            const _tx = await collateralToken.approve(settlement.address, collateralTokenSent.add(allowance));
-            await _tx.wait();
-            await checkAllowance(collateralToken, settlement.address, loanToken.address)
+            await prepareOrderAsset(collateralTokenAddress, collateralTokenSent);
         }
 
         const order = new MarginOrder(

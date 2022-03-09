@@ -136,7 +136,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMarginOrderGas(msg.sender, oldValue, marginOrderGas);
     }
 
-    // Set min gas for margin order
+    // Set max gas for margin order
     function setMinSwapOrderSize(uint256 _minSwapOrderSize)
         public
         override
@@ -212,21 +212,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "insufficient-amount-out"
         );
 
-        IWrbtcERC20 wrbtc = IWrbtcERC20(WRBTC_ADDRESS);
-        if (path[0] == WRBTC_ADDRESS) {
-            require(
-                balanceOf[args.order.maker] >= args.amountToFillIn,
-                "insufficient-balance"
-            );
-            wrbtc.deposit{value: args.amountToFillIn}();
-            balanceOf[args.order.maker] -= args.amountToFillIn;
-        } else {
-            IERC20(path[0]).safeTransferFrom(
-                args.order.maker,
-                address(this),
-                args.amountToFillIn
-            );
-        }
+        _depositOrderAsset(args.order.maker, path[0], args.amountToFillIn);
 
         address recipient = args.order.recipient;
         if (path[path.length - 1] == WRBTC_ADDRESS) {
@@ -251,7 +237,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         if (targetToken == WRBTC_ADDRESS) {
             //unwrap rbtc then transfer to recipient of order
-            wrbtc.withdraw(targetTokenAmount);
+            IWrbtcERC20(WRBTC_ADDRESS).withdraw(targetTokenAmount);
             (bool success, ) = args.order.recipient.call{
                 value: targetTokenAmount
             }("");
@@ -340,19 +326,13 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress)
             .loanTokenAddress();
+
         if (args.order.collateralTokenSent > 0) {
-            collateralToken.safeTransferFrom(
-                trader,
-                address(this),
-                args.order.collateralTokenSent
-            );
+            _depositOrderAsset(trader, args.order.collateralTokenAddress, args.order.collateralTokenSent);
         }
+
         if (args.order.loanTokenSent > 0) {
-            IERC20(_loanTokenAsset).safeTransferFrom(
-                trader,
-                address(this),
-                args.order.loanTokenSent
-            );
+            _depositOrderAsset(trader, _loanTokenAsset, args.order.loanTokenSent);
         }
 
         (principalAmount, collateralAmount) = _marginTrade(
@@ -587,6 +567,30 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
+    function _depositOrderAsset(address owner, address assetAddress, uint256 amount) internal {
+        if (assetAddress == WRBTC_ADDRESS) {
+            IWrbtcERC20 wrbtc = IWrbtcERC20(WRBTC_ADDRESS);
+            require(
+                balanceOf[owner] >= amount,
+                "insufficient-balance"
+            );
+            wrbtc.deposit{value: amount}();
+            balanceOf[owner] -= amount;
+        } else {
+            IERC20(assetAddress).safeTransferFrom(
+                owner,
+                address(this),
+                amount
+            );
+        }
+    }
+
+    function _checkWithdrawalOnCancel(address owner, address token, uint256 amount) internal {
+        if (token == WRBTC_ADDRESS && balanceOf[owner] >= amount) {
+            withdraw(amount);
+        }
+    }
+
     // internal functions
     // Checks the amount returned from the token swap
     function swapInternal(
@@ -648,12 +652,13 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        if (
-            order.fromToken == WRBTC_ADDRESS &&
-            balanceOf[order.maker] >= order.amountIn
-        ) {
-            withdraw(order.amountIn);
-        }
+        _checkWithdrawalOnCancel(order.maker, order.fromToken, order.amountIn);
+        // if (
+        //     order.fromToken == WRBTC_ADDRESS &&
+        //     balanceOf[order.maker] >= order.amountIn
+        // ) {
+        //     withdraw(order.amountIn);
+        // }
 
         emit OrderCanceled(hash, order.maker);
     }
@@ -675,6 +680,16 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "invalid-signature"
         );
         require(msg.sender == order.trader, "not-called-by-maker");
+        
+        if (order.collateralTokenSent > 0) {
+            _checkWithdrawalOnCancel(order.trader, order.collateralTokenAddress, order.collateralTokenSent);
+        }
+
+        if (order.loanTokenSent > 0) {
+            address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+                .loanTokenAddress();
+            _checkWithdrawalOnCancel(order.trader, _loanTokenAsset, order.loanTokenSent);
+        }
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
