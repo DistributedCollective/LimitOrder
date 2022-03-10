@@ -59,13 +59,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     console.log(tx.transactionHash);
     
     const SettlementLogic = await deployments.get('SettlementLogic');
-    const settlement = new web3.eth.Contract(SettlementLogic.abi, deployProxy.address);
-    tx = await settlement.methods.initialize(orderBookChainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
+    const settlement = new web3.eth.Contract(SettlementLogic.abi, deployLogic.address);
+    tx = await settlement.methods.initialize(chainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
     console.log(tx.transactionHash);
 
     // Transfer ownership
-    // tx = await settlementProxy.methods.setProxyOwner(multisig).send({from: deployer});
-    // console.log(tx.transactionHash);
-    // tx = await settlement.methods.transferOwnership(multisig).send({from: deployer});
-    // console.log(tx.transactionHash);
+    await settlementProxy.methods.setProxyOwner(multisig)
+    await settlement.methods.transferOwnership(multisig)
 };

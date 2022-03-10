@@ -11,8 +11,7 @@ import "../interfaces/IWrbtcERC20.sol";
 import "../libraries/Orders.sol";
 import "../libraries/MarginOrders.sol";
 import "../libraries/EIP712.sol";
-import "../OrderBook/OrderBookSwapLogic.sol";
-import "../OrderBookMargin/OrderBookMarginLogic.sol";
+import "../libraries/RSKAddrValidator.sol";
 import "../interfaces/ISettlement.sol";
 
 contract SettlementLogic is ISettlement, SettlementStorage {
