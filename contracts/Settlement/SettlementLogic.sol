@@ -66,6 +66,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         setRelayerFee(2 * 10**17); // Relayer fee percent = 0.2
         setSwapOrderGas(800000);
         setMarginOrderGas(1800000);
+        setMinSwapOrderSize(100);
+        setMinMarginOrderSize(100);
     }
 
     // Fallback function to receive tokens
@@ -112,11 +114,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set max gas for swap order
-    function setSwapOrderGas(uint256 _newGas)
-        public
-        override
-        onlyOwner
-    {
+    function setSwapOrderGas(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = swapOrderGas;
         swapOrderGas = _newGas;
 
@@ -124,18 +122,14 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set max gas for margin order
-    function setMarginOrderGas(uint256 _newGas)
-        public
-        override
-        onlyOwner
-    {
+    function setMarginOrderGas(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = marginOrderGas;
         marginOrderGas = _newGas;
 
         emit SetMarginOrderGas(msg.sender, oldValue, marginOrderGas);
     }
 
-    // Set max gas for margin order
+    // Set min swap order size
     function setMinSwapOrderSize(uint256 _minSwapOrderSize)
         public
         override
@@ -147,7 +141,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMinSwapOrderSize(msg.sender, oldValue, minSwapOrderSize);
     }
 
-    // Set max gas for margin order
+    // Set min margin order size
     function setMinMarginOrderSize(uint256 _minMarginOrderSize)
         public
         override
@@ -197,7 +191,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "invalid-signature"
         );
 
-        (uint256 relayerFee) = _checkRelayerFee(args.order.fromToken, args.order.amountIn, args.amountToFillIn, true);
+        uint256 relayerFee = _checkRelayerFee(
+            args.order.fromToken,
+            args.order.amountIn,
+            args.amountToFillIn,
+            true
+        );
 
         uint256 actualAmountIn = args.amountToFillIn.sub(relayerFee);
 
@@ -251,12 +250,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             msg.sender
         );
 
-        emit FeeTransferred(
-            hash,
-            msg.sender,
-            relayerFee,
-            path[0]
-        );
+        emit FeeTransferred(hash, msg.sender, relayerFee, path[0]);
 
         emit OrderFilled(
             hash,
@@ -327,11 +321,19 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             .loanTokenAddress();
 
         if (args.order.collateralTokenSent > 0) {
-            _depositOrderAsset(trader, args.order.collateralTokenAddress, args.order.collateralTokenSent);
+            _depositOrderAsset(
+                trader,
+                args.order.collateralTokenAddress,
+                args.order.collateralTokenSent
+            );
         }
 
         if (args.order.loanTokenSent > 0) {
-            _depositOrderAsset(trader, _loanTokenAsset, args.order.loanTokenSent);
+            _depositOrderAsset(
+                trader,
+                _loanTokenAsset,
+                args.order.loanTokenSent
+            );
         }
 
         (principalAmount, collateralAmount) = _marginTrade(
@@ -484,7 +486,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         )
     {
         uint256 _orderSizeInColl = order.collateralTokenSent;
-        uint256 _loanTokenSentInColl = 0;
+        uint256 _loanTokenSentInColl;
         address _loanTokenAsset;
 
         if (order.loanTokenSent > 0) {
@@ -501,7 +503,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             _orderSizeInColl = _orderSizeInColl.add(_loanTokenSentInColl);
         }
 
-        (uint256 _relayerFeeIncoll) = _checkRelayerFee(
+        uint256 _relayerFeeIncoll = _checkRelayerFee(
             order.collateralTokenAddress,
             _orderSizeInColl,
             _orderSizeInColl, //fill all order
@@ -509,9 +511,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
 
         // relayerFee is fee pay for relayer of collateral
-        relayerFee = SafeMath.min256(_relayerFeeIncoll, order.collateralTokenSent);
+        relayerFee = SafeMath.min256(
+            _relayerFeeIncoll,
+            order.collateralTokenSent
+        );
         actualCollateralAmount = order.collateralTokenSent.sub(relayerFee);
-      
+
         // should also take fee of loan token
         if (_relayerFeeIncoll > relayerFee) {
             address[] memory _path = sovrynSwapNetwork.conversionPath(
@@ -522,15 +527,18 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 _path,
                 _relayerFeeIncoll.sub(relayerFee)
             );
-            actualLoanTokenAmount = order.loanTokenSent.sub(relayerFeeOnLoanAsset);
+            actualLoanTokenAmount = order.loanTokenSent.sub(
+                relayerFeeOnLoanAsset
+            );
         }
     }
 
-    function _checkRelayerFee(address fromToken, uint256 orderSize, uint256 amountToFill, bool isSpot)
-        internal
-        view
-        returns ( uint256 relayerFee )
-    {
+    function _checkRelayerFee(
+        address fromToken,
+        uint256 orderSize,
+        uint256 amountToFill,
+        bool isSpot
+    ) internal view returns (uint256 relayerFee) {
         uint256 estOrderFee = orderSize.mul(relayerFeePercent).div(10**20);
         uint256 txGas = isSpot ? swapOrderGas : marginOrderGas;
         uint256 estTxFee = tx.gasprice.mul(txGas);
@@ -542,49 +550,67 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 WRBTC_ADDRESS,
                 fromToken
             );
-            minFeeAmountInToken = sovrynSwapNetwork.rateByPath(path, minFeeAmount);
+            minFeeAmountInToken = sovrynSwapNetwork.rateByPath(
+                path,
+                minFeeAmount
+            );
         }
 
         if (estOrderFee < minFeeAmountInToken) {
-            require(amountToFill == orderSize, "Order size too for partial filling");
-            require(orderSize > minFeeAmountInToken, "Order amount is too low to pay the relayer fee");
+            require(
+                amountToFill == orderSize,
+                "Order size too low for partial filling"
+            );
+            require(
+                orderSize > minFeeAmountInToken,
+                "Order amount is too low to pay the relayer fee"
+            );
 
             relayerFee = minFeeAmountInToken;
         } else {
             uint256 fillAmountInRBtc = amountToFill;
-            uint256 minFillingAmount = isSpot ? minSwapOrderSize : minMarginOrderSize;
+            uint256 minFillingAmount = isSpot
+                ? minSwapOrderSize
+                : minMarginOrderSize;
             if (fromToken != WRBTC_ADDRESS) {
                 address[] memory pathToRbtc = sovrynSwapNetwork.conversionPath(
                     fromToken,
                     WRBTC_ADDRESS
                 );
-                fillAmountInRBtc = sovrynSwapNetwork.rateByPath(pathToRbtc, amountToFill);
+                fillAmountInRBtc = sovrynSwapNetwork.rateByPath(
+                    pathToRbtc,
+                    amountToFill
+                );
             }
 
-            require(fillAmountInRBtc >= minFillingAmount, "Filling amount is too low");
+            require(
+                fillAmountInRBtc >= minFillingAmount,
+                "Filling amount is too low"
+            );
             relayerFee = amountToFill.mul(relayerFeePercent).div(10**20);
         }
     }
 
-    function _depositOrderAsset(address owner, address assetAddress, uint256 amount) internal {
+    function _depositOrderAsset(
+        address owner,
+        address assetAddress,
+        uint256 amount
+    ) internal {
         if (assetAddress == WRBTC_ADDRESS) {
             IWrbtcERC20 wrbtc = IWrbtcERC20(WRBTC_ADDRESS);
-            require(
-                balanceOf[owner] >= amount,
-                "insufficient-balance"
-            );
-            wrbtc.deposit{value: amount}();
+            require(balanceOf[owner] >= amount, "insufficient-balance");
             balanceOf[owner] -= amount;
+            wrbtc.deposit{value: amount}();
         } else {
-            IERC20(assetAddress).safeTransferFrom(
-                owner,
-                address(this),
-                amount
-            );
+            IERC20(assetAddress).safeTransferFrom(owner, address(this), amount);
         }
     }
 
-    function _checkWithdrawalOnCancel(address owner, address token, uint256 amount) internal {
+    function _checkWithdrawalOnCancel(
+        address owner,
+        address token,
+        uint256 amount
+    ) internal {
         if (token == WRBTC_ADDRESS && balanceOf[owner] >= amount) {
             withdraw(amount);
         }
@@ -679,15 +705,23 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "invalid-signature"
         );
         require(msg.sender == order.trader, "not-called-by-maker");
-        
+
         if (order.collateralTokenSent > 0) {
-            _checkWithdrawalOnCancel(order.trader, order.collateralTokenAddress, order.collateralTokenSent);
+            _checkWithdrawalOnCancel(
+                order.trader,
+                order.collateralTokenAddress,
+                order.collateralTokenSent
+            );
         }
 
         if (order.loanTokenSent > 0) {
             address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
                 .loanTokenAddress();
-            _checkWithdrawalOnCancel(order.trader, _loanTokenAsset, order.loanTokenSent);
+            _checkWithdrawalOnCancel(
+                order.trader,
+                _loanTokenAsset,
+                order.loanTokenSent
+            );
         }
 
         canceledOfHash[hash] = true;
