@@ -27,18 +27,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     
         const OrderBookMarginProxy = await deployments.get('OrderBookMarginProxy');
         const orderBookMarginProxy = new web3.eth.Contract(OrderBookMarginProxy.abi, deployProxy.address);
-        let tx = await orderBookMarginProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
-        console.log(tx.transactionHash);
-        
-        const OrderBookMarginLogic = await deployments.get('OrderBookMarginLogic');
-        const orderBookMargin = new web3.eth.Contract(OrderBookMarginLogic.abi, deployProxy.address);
-        tx = await orderBookMargin.methods.initialize().send({from: deployer});
-        console.log(tx.transactionHash);
+        const oldImplement = await orderBookMarginProxy.methods.getImplementation().call();
 
-        // Transfer ownership
-        tx = await orderBookMarginProxy.methods.setProxyOwner(multisig).send({from: deployer});
-        console.log(tx.transactionHash);
-        tx = await orderBookMargin.methods.transferOwnership(multisig).send({from: deployer});
-        console.log(tx.transactionHash);
+        console.log('OrderBookMarginProxy implementation', oldImplement);
+
+        if (oldImplement && oldImplement.toLowerCase() != deployLogic.address.toLowerCase()) {
+            let tx = await orderBookMarginProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
+            console.log(tx.transactionHash);
+
+            const proxyNotInititalized = oldImplement == ethers.constants.AddressZero;
+            const OrderBookMarginLogic = await deployments.get('OrderBookMarginLogic');
+            const orderBookMargin = new web3.eth.Contract(OrderBookMarginLogic.abi, proxyNotInititalized ? deployProxy.address : deployLogic.address);
+            tx = await orderBookMargin.methods.initialize().send({from: deployer});
+            console.log(tx.transactionHash);
+    
+            // Transfer ownership
+            await orderBookMargin.methods.transferOwnership(multisig)
+        }
+        
+        await orderBookMarginProxy.methods.setProxyOwner(multisig)
     }
 };

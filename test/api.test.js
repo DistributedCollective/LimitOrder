@@ -14,6 +14,7 @@ const { abi: settlementAbi } = require('../deployments/localhost/SettlementLogic
 const { ERC20: ERC20Abi } = require("../src/config/abis");
 const Order = require('../src/Order');
 const helpers = require("./helpers");
+const relayer = require('../src/relayer');
 
 const getDeadline = hoursFromNow => ethers.BigNumber.from(Math.floor(Date.now() / 1000 + hoursFromNow * 3600));
 
@@ -148,12 +149,33 @@ async function createMultiOrders(nr) {
     }
 }
 
+async function testRelayer() {
+    relayer.init(provider);
+    const tokenAdr = config.tokens.XUSD;
+    const token = new web3.eth.Contract(ERC20Abi, tokenAdr, trader);
+
+    const nrTest = 7;
+    for (let i = 0; i < nrTest; i++) {
+        const txData = token.methods.approve(config.contracts.settlement, ethers.utils.parseEther((Math.random() + 1).toFixed(2))).encodeABI();
+        relayer.sendTx({
+            data: txData,
+            to: tokenAdr,
+            gasLimit: 100000
+        }).then(tx => {
+            tx && console.log('send tx', tx.hash, 'nonce', tx.nonce);
+        }).catch(console.log);
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
+}
+
 (async function start () {
     // createOrder();
-    await createMultiOrders(4);
+    // await createMultiOrders(4);
 
     
     // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
     // await listAllOpenLimitOrders();
     // listAllOpenMarginOrders();
+
+    testRelayer();
 })();

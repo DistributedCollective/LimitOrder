@@ -27,18 +27,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     
         const OrderBookSwapProxy = await deployments.get('OrderBookSwapProxy');
         const orderBookProxy = new web3.eth.Contract(OrderBookSwapProxy.abi, deployProxy.address);
-        let tx = await orderBookProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
-        console.log(tx.transactionHash);
-        
-        const OrderBookSwapLogic = await deployments.get('OrderBookSwapLogic');
-        const orderBook = new web3.eth.Contract(OrderBookSwapLogic.abi, deployProxy.address);
-        tx = await orderBook.methods.initialize().send({from: deployer});
-        console.log(tx.transactionHash);
+        const oldImplement = await orderBookProxy.methods.getImplementation().call();
 
-        // Transfer ownership
-        tx = await orderBookProxy.methods.setProxyOwner(multisig).send({from: deployer});
-        console.log(tx.transactionHash);
-        tx = await orderBook.methods.transferOwnership(multisig).send({from: deployer});
-        console.log(tx.transactionHash);
+        console.log('OrderBookSwapProxy implementation', oldImplement);
+
+        if (oldImplement && oldImplement.toLowerCase() != deployLogic.address.toLowerCase()) {
+            let tx = await orderBookProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
+            console.log(tx.transactionHash);
+            
+            const proxyNotInititalized = oldImplement == ethers.constants.AddressZero;
+            const OrderBookSwapLogic = await deployments.get('OrderBookSwapLogic');
+            const orderBook = new web3.eth.Contract(OrderBookSwapLogic.abi, proxyNotInititalized ? deployProxy.address : deployLogic.address);
+            tx = await orderBook.methods.initialize().send({from: deployer});
+            console.log(tx.transactionHash);
+
+            // Transfer ownership
+            await orderBook.methods.transferOwnership(multisig)
+        }
+
+        await orderBookProxy.methods.setProxyOwner(multisig)
     }
 };

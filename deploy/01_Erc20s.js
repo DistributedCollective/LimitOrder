@@ -30,12 +30,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const protocolToken = await TestToken.deploy('PROTOCOL', 'PROTOCOL', 18, parseEther('1000'));
         await protocolToken.deployed();
 
-        const xusdToken = await TestToken.deploy('XUSD', 'XUSD', 18, parseEther('1000'))
+        const xusdToken = await TestToken.deploy('XUSD', 'XUSD', 18, parseEther('10000000'))
         await xusdToken.deployed();
         await replaceTokenAddress("XUSD", xusdToken.address);
         console.log("usd: ",xusdToken.address)
         
-        const sovToken = await TestToken.deploy('SOV', 'SOV', 18, parseEther('1000'))
+        const sovToken = await TestToken.deploy('SOV', 'SOV', 18, parseEther('10000000'))
         await sovToken.deployed();
         await replaceTokenAddress("SOV", sovToken.address);
         console.log("sov: ", sovToken.address)  
@@ -50,8 +50,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const wei = web3.utils.toWei;
         const oneEth = new BN(wei("1", "ether"));
         await priceFeeds.setRates(wrbtcToken.address, protocolToken.address, oneEth.toString());
-        await priceFeeds.setRates(wrbtcToken.address, xusdToken.address, new BN(10).pow(new BN(22)).toString());
-        await priceFeeds.setRates(protocolToken.address, xusdToken.address, new BN(10).pow(new BN(22)).toString());
+        await priceFeeds.setRates(wrbtcToken.address, xusdToken.address, new BN(10).pow(new BN(21)).toString());
+        await priceFeeds.setRates(protocolToken.address, xusdToken.address, new BN(10).pow(new BN(21)).toString());
         await priceFeeds.setRates(sovToken.address, xusdToken.address, new BN(10).pow(new BN(18)).toString());
 
         const artifact = await deployments.getArtifact("TestSovrynSwap");

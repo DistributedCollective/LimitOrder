@@ -151,15 +151,15 @@ describe("Margin Order", async () => {
                 await settlement.deposit(signer.address, {
                     value: amount
                 });
-                console.log('WRBTC.address', WRBTC.address)
-                console.log('WRBTC on settlement', await settlement.WRBTC_ADDRESS())
-                console.log('Deposited', formatEther(amount), 'rbtc to settlement');
+                // console.log('WRBTC.address', WRBTC.address)
+                // console.log('WRBTC on settlement', await settlement.WRBTC_ADDRESS())
+                // console.log('Deposited', formatEther(amount), 'rbtc to settlement');
             } else {
                 const token = await ethers.getContractAt("TestToken", assetAddress, signer);
                 const allowance = await token.allowance(signer.address, settlement.address);
                 const _tx = await token.approve(settlement.address, amount.add(allowance));
                 await _tx.wait();
-                await checkAllowance(token, signer.address, settlement.address);
+                // await checkAllowance(token, signer.address, settlement.address);
             }
         };
         if (Number(loanTokenSent) > 0) {

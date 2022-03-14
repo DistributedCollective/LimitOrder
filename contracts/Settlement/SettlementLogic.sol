@@ -539,7 +539,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 amountToFill,
         bool isSpot
     ) internal view returns (uint256 relayerFee) {
-        uint256 estOrderFee = orderSize.mul(relayerFeePercent).div(10**20);
+        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20);
         uint256 txGas = isSpot ? swapOrderGas : marginOrderGas;
         uint256 estTxFee = tx.gasprice.mul(txGas);
         uint256 minFeeAmount = estTxFee.mul(3).div(2);
@@ -557,10 +557,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
 
         if (estOrderFee < minFeeAmountInToken) {
-            require(
-                amountToFill == orderSize,
-                "Order size too low for partial filling"
-            );
+            require(amountToFill > minFeeAmountInToken, "Order amount is too low to pay the relayer fee");
             require(
                 orderSize > minFeeAmountInToken,
                 "Order amount is too low to pay the relayer fee"

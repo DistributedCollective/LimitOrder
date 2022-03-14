@@ -1,5 +1,7 @@
-const { network, getChainId, ethers } = require("hardhat");
-const {WRBTC} = require('../test/tokens');
+const { network, getChainId, ethers, web3 } = require("hardhat");
+const {WRBTC, XUSD} = require('../test/tokens');
+const swapAbi = require('../src/config/abis/SovrynSwap.json');
+const { formatEther } = require("ethers/lib/utils");
 
 const INIT_CODE_HASH = "e18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303";
 
@@ -8,7 +10,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy } = deployments;
 
     let sovrynSwapNetwork;
-    let wrbtcAddress;
+    let wrbtcAddress, xusdAddress;
     const chainId = network.name === "mainnet" ? 30 : await getChainId();
     let orderBookChainId = chainId;
     let orderBookAdr, orderBookMarginAdr;
@@ -17,16 +19,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const sSwn = await ethers.getContract("TestSovrynSwap", deployer);
         sovrynSwapNetwork = sSwn.address;
         wrbtcAddress = WRBTC[chainId].address;
+        xusdAddress = XUSD[chainId].address;
         multisig = deployer;
     }
     else if (network.name === "rsktestnet") {
         sovrynSwapNetwork =  "0x61172B53423E205a399640e5283e51FE60EC2256";
         wrbtcAddress = "0x69FE5cEC81D5eF92600c1A0dB1F11986AB3758Ab";
         multisig = "0x189ecD23E9e34CFC07bFC3b7f5711A23F43F8a57";
+        xusdAddress = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1";
     } else if (network.name === "mainnet") {
         sovrynSwapNetwork = "0x98ace08d2b759a265ae326f010496bcd63c15afc";
         wrbtcAddress = "0x542fDA317318eBF1d3DEAf76E0b632741A7e677d";
         multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
+        xusdAddress = "0xb5999795be0ebb5bab23144aa5fd6a02d080299f";
         orderBookChainId = 31;
     }
 
@@ -55,15 +60,33 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const SettlementProxy = await deployments.get('SettlementProxy');
     const settlementProxy = new web3.eth.Contract(SettlementProxy.abi, deployProxy.address);
-    let tx = await settlementProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
-    console.log(tx.transactionHash);
-    
-    const SettlementLogic = await deployments.get('SettlementLogic');
-    const settlement = new web3.eth.Contract(SettlementLogic.abi, deployLogic.address);
-    tx = await settlement.methods.initialize(chainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
-    console.log(tx.transactionHash);
+    const oldImplement = await settlementProxy.methods.getImplementation().call();
 
-    // Transfer ownership
+    console.log('SettlementProxy implementation', oldImplement);
+
+    if (oldImplement && oldImplement.toLowerCase() != deployLogic.address.toLowerCase()) {
+        let tx = await settlementProxy.methods.setImplementation(deployLogic.address).send({from: deployer});
+        console.log(tx.transactionHash);
+        const proxyNotInititalized = oldImplement == ethers.constants.AddressZero;
+
+        const SettlementLogic = await deployments.get('SettlementLogic');
+        const settlement = new web3.eth.Contract(SettlementLogic.abi, proxyNotInititalized ? deployProxy.address : deployLogic.address);
+        tx = await settlement.methods.initialize(chainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
+        console.log(tx.transactionHash);
+
+        const swapContract = new web3.eth.Contract(swapAbi, sovrynSwapNetwork);
+        const xusdWrbtcPath = await swapContract.methods.conversionPath(xusdAddress, wrbtcAddress).call();
+        const amn = ethers.utils.parseEther('0.001');
+        const rbtcPrice = await swapContract.methods.rateByPath(xusdWrbtcPath, amn).call();
+        const minSwapOrderSize = ethers.utils.parseEther('100').mul(rbtcPrice).div(amn); //min 100$ for margin order
+        const minMarginOrderSize = ethers.utils.parseEther('400').mul(rbtcPrice).div(amn); //min 400$ for margin order
+    
+        await settlement.methods.setMinSwapOrderSize(minSwapOrderSize);
+        await settlement.methods.setMinMarginOrderSize(minMarginOrderSize);
+
+        // Transfer ownership
+        await settlement.methods.transferOwnership(multisig)
+    }
+
     await settlementProxy.methods.setProxyOwner(multisig)
-    await settlement.methods.transferOwnership(multisig)
 };
