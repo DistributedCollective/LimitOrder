@@ -1,7 +1,7 @@
 const { network, getChainId, ethers, web3 } = require("hardhat");
 const {WRBTC, XUSD} = require('../test/tokens');
 const swapAbi = require('../src/config/abis/SovrynSwap.json');
-const { formatEther } = require("ethers/lib/utils");
+const { replaceInFile } = require("replace-in-file");
 
 const INIT_CODE_HASH = "e18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303";
 
@@ -88,5 +88,23 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         await settlement.methods.transferOwnership(multisig)
     }
 
-    await settlementProxy.methods.setProxyOwner(multisig)
+    await settlementProxy.methods.setProxyOwner(multisig);
+
+    if (network.name === "hardhat" || network.name === "localhost") {
+        await replaceInFile({
+            files: 'src/config/local.js',
+            from: new RegExp('settlement: "0x([0-9a-fA-F]{40})"'),
+            to: 'settlement: "' + deployProxy.address + '"',
+        });
+        await replaceInFile({
+            files: 'src/config/local.js',
+            from: new RegExp('orderBook: "0x([0-9a-fA-F]{40})"'),
+            to: 'orderBook: "' + orderBookAdr + '"',
+        });
+        await replaceInFile({
+            files: 'src/config/local.js',
+            from: new RegExp('orderBookMargin: "0x([0-9a-fA-F]{40})"'),
+            to: 'orderBookMargin: "' + orderBookMarginAdr + '"',
+        });
+    }
 };
