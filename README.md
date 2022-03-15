@@ -4,7 +4,7 @@ This repository contains solidity contracts to enable **limit orders** for Sovry
 
 ## Overview
 
-Typically AMMs only settle orders with market price, which represents a significant limitation compared to orderbook driven exchanges. Sovryn addresses this critical AMM pain point with the release of the limit order feature.
+Typically AMMs only settle orders with market price, which represents a significant limitation compared to orderbook driven exchanges. SushiSwap addresses this critical AMM pain point with the release of the limit order feature.
 
 Contracts in this repo help you submit a limit order with a lower price than what it is now. Later, when the price gets lower enough to meet the requirement of your order, it gets settled.
 
@@ -67,8 +67,7 @@ module.exports = {
 
 ```sh
 1. yarn deploy:rsktest
-2. Copy deployed address of the contracts "Settlement, OrderBook, OrderBookMargin" into the config file "src/config/testnet.js"
-3. Run approval script for loan contracts on Settlement: yarn approveSettlement:testnet
+2. Copy deployed address of the contracts "SettlementProxy, OrderBookProxy, OrderBookMarginProxy" into the config file "src/config/testnet.js"
 3. yarn start-relay
 ```
 
@@ -78,3 +77,22 @@ module.exports = {
 2. yarn start-relay
 3. Open "http://localhost:3001" on your browser
 ```
+
+## Relayer Fee calculations
+
+### Swap Order
+1. `relayerFee` = max(`minSwapOrderTxFee`, 2% of `amountIn`)
+2. `minReturn` = (`amountIn` - `relayerFee`) * `limitPrice`
+
+### Margin Order
+1. `totalRelayerFee` = max(`minMarginOrderFee`, 2% of total(convertToCollateral(`loanTokenSent`), `collateralTokenSent`) )
+2. `relayerFeeInCollateral` = min(`totalRelayerFee`, `collateralTokenSent`)
+3. `relayerFeeInLoanToken` = convertToLoanToken(totalRelayerFee - relayerFeeInCollateral)
+4. `principal` = loanToken.getEstimatedMarginDetails(
+        `leverageAmount`,
+        `loanTokenSent` - `relayerFeeInLoanToken`,
+        `collateralTokenSent` - `relayerFeeInCollateral`,
+        `collateralTokenAddress`
+    );
+5. positionSize = loanTokenSent + principal
+6. minEntryPrice = convertToCollateral(positionSize) / positionSize
