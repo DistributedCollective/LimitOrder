@@ -20,7 +20,6 @@ const {
 	getPriceFeeds,
 	getSovryn,
 } = require("./Utils/initializer.js");
-const { approve } = require('../scripts/approval');
 const TOKENS = require('../test/tokens');
 
 const ILoanTokenModules = artifacts.require("ILoanTokenModules");
@@ -99,16 +98,6 @@ describe("Margin Order", async () => {
                 files: 'src/config/local.js',
                 from: new RegExp('iRBTC: "0x([0-9a-fA-F]{40})"'),
                 to: 'iRBTC: "' + loanTokenWRBTC.address + '"',
-            });
-
-            await approve({
-                iXUSD: loanTokenSUSD.address,
-                iRBTC: loanTokenWRBTC.address
-            }, {
-                SOV: SOV.address,
-                XUSD: SUSD.address,
-                WRBTC: WRBTC.address,
-                RBTC: RBTC.address,
             });
         }
         const adr = accounts[0].address;

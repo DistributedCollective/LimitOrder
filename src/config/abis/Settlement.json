@@ -149,6 +149,12 @@
                 "internalType": "address",
                 "name": "collateralTokenAddress",
                 "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "filledPrice",
+                "type": "uint256"
             }
         ],
         "name": "MarginOrderFilled",
@@ -254,6 +260,12 @@
                 "internalType": "address[]",
                 "name": "path",
                 "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "filledPrice",
+                "type": "uint256"
             }
         ],
         "name": "OrderFilled",
@@ -276,31 +288,6 @@
             }
         ],
         "name": "OwnershipTransferred",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "sender",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "oldValue",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "newValue",
-                "type": "uint256"
-            }
-        ],
-        "name": "SetMarginOrderGas",
         "type": "event"
     },
     {
@@ -350,6 +337,31 @@
                 "type": "uint256"
             }
         ],
+        "name": "SetMinMarginOrderTxFee",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
         "name": "SetMinSwapOrderSize",
         "type": "event"
     },
@@ -375,7 +387,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "SetRelayerFee",
+        "name": "SetMinSwapOrderTxFee",
         "type": "event"
     },
     {
@@ -400,7 +412,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "SetSwapOrderGas",
+        "name": "SetRelayerFee",
         "type": "event"
     },
     {
@@ -1284,19 +1296,6 @@
     },
     {
         "inputs": [],
-        "name": "marginOrderGas",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "minMarginOrderSize",
         "outputs": [
             {
@@ -1310,7 +1309,33 @@
     },
     {
         "inputs": [],
+        "name": "minMarginOrderTxFee",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "minSwapOrderSize",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "minSwapOrderTxFee",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -1377,11 +1402,11 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_newGas",
+                "name": "_minMarginOrderSize",
                 "type": "uint256"
             }
         ],
-        "name": "setMarginOrderGas",
+        "name": "setMinMarginOrderSize",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1390,11 +1415,11 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_minMarginOrderSize",
+                "name": "_newGas",
                 "type": "uint256"
             }
         ],
-        "name": "setMinMarginOrderSize",
+        "name": "setMinMarginOrderTxFee",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1416,11 +1441,11 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_relayerFeePercent",
+                "name": "_newGas",
                 "type": "uint256"
             }
         ],
-        "name": "setRelayerFee",
+        "name": "setMinSwapOrderTxFee",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1429,11 +1454,11 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "_newGas",
+                "name": "_relayerFeePercent",
                 "type": "uint256"
             }
         ],
-        "name": "setSwapOrderGas",
+        "name": "setRelayerFee",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1446,19 +1471,6 @@
                 "internalType": "contract ISovrynSwapNetwork",
                 "name": "",
                 "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "swapOrderGas",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
             }
         ],
         "stateMutability": "view",

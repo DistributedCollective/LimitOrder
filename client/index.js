@@ -318,12 +318,9 @@ const getSwapOrderFeeOut = async (amountIn, fromToken, toToken) => {
     const settlement = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
     const orderSize = ethers.BigNumber.from(String(amountIn));
     let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
-    let swapOrderGas = await settlement.methods.swapOrderGas().call();
-    console.log('swapOrderGas', Number(swapOrderGas));
+    let minFeeAmount = await settlement.methods.minSwapOrderTxFee().call();
+    console.log('minFeeAmount', Number(minFeeAmount));
 
-    const gasPrice = await getGasPrice();
-    const gasFee = ethers.BigNumber.from(gasPrice).mul(swapOrderGas);
-    const minFeeAmount = gasFee.mul(3).div(2); // tx fee + 50%
     let minFeeInToken = minFeeAmount;
     if (fromToken != config.tokens.WRBTC) {
         const rbtcPath = await swapContract.methods.conversionPath(config.tokens.WRBTC, fromToken).call();
@@ -360,6 +357,10 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn, priceBuffer 
         minAmountOut = minAmountOut.sub(feeOut);
         showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency} at price ${price}`);
         showMsg(`Fee out: ~${formatEther(feeOut)} ${toCurrency}`);
+
+        if (minAmountOut.lt(0)) {
+            return alert("Amount is less than relayer fee");
+        }
 
         if (fromToken == config.tokens.WRBTC) {
             showMsg(`sending ${formatEther(amountIn)} rbtc to Settlement contract`);

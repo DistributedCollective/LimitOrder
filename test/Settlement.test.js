@@ -31,8 +31,6 @@ describe("Settlement", async () => {
                 value: parseEther("10")
             });
 
-            const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
-            await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));
             const { abi: settlementABI } = await deployments.get("SettlementLogic");
             const { address: settlementAddress } = await deployments.get("SettlementProxy");
             const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
@@ -40,12 +38,14 @@ describe("Settlement", async () => {
         }
     });
 
-    async function getActualFillAmount(order, tx, fillAmount) {
+    async function getActualFillAmount(order, fillAmount) {
         fillAmount = fillAmount || order.amountIn;
+        const { abi: settlementABI } = await deployments.get("SettlementLogic");
+        const { address: settlementAddress } = await deployments.get("SettlementProxy");
+        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
         const orderSize = ethers.BigNumber.from(String(fillAmount));
         let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
-        const gasFee = tx.gasPrice.mul(800000);
-        let minFeeAmount = gasFee.mul(3).div(2); // tx fee + 50%
+        let minFeeAmount = await settlement.minSwapOrderTxFee();
 
         if (order.fromToken.address.toLowerCase() != WrbtcAdr.toLowerCase()) {
             const { users } = await helpers.setup();
@@ -94,7 +94,7 @@ describe("Settlement", async () => {
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG, tx2));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
     });
 
     it("Should deposit()", async() => {
@@ -217,7 +217,7 @@ describe("Settlement", async () => {
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         console.log("Order filled: %sWRBTC -> %sXUSD", formatEther(filled.amountIn.toString()), formatUnits(filled.amountOut.toString(), 18));
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG, tx2));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
     });
 
     it("Should createOrder() XUSD-RBTC", async () => {
@@ -260,7 +260,7 @@ describe("Settlement", async () => {
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         console.log("Order filled: %sXUSD -> %sRBTC", formatUnits(filled.amountIn.toString(), 18), formatEther(filled.amountOut.toString()));
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG, tx2));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
     });
 
     it("Should cancelOrder()", async () => {
@@ -375,13 +375,13 @@ describe("Settlement", async () => {
         const event = receipt1.logs[receipt1.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, order.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(order, tx1, fillAmount1));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(order, fillAmount1));
         
         const tx2 = await fillOrder(users[0], order, fillAmount2, fillAmountMinOut2, path);
         const receipt2 = await tx2.wait();
         const event2 = receipt2.logs[receipt2.logs.length - 1];
         const filled2 = settlement.interface.decodeEventLog("OrderFilled", event2.data, event2.topics);
         await helpers.expectToEqual(filled2.hash, order.hash());
-        await helpers.expectToEqual(filled2.amountIn, getActualFillAmount(order, tx2, fillAmount2));
+        await helpers.expectToEqual(filled2.amountIn, getActualFillAmount(order, fillAmount2));
     });
 });
