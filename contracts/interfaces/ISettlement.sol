@@ -12,12 +12,12 @@ interface ISettlement {
         uint256 oldValue,
         uint256 newValue
     );
-    event SetSwapOrderGas(
+    event SetMinSwapOrderTxFee(
         address indexed sender,
         uint256 oldValue,
         uint256 newValue
     );
-    event SetMarginOrderGas(
+    event SetMinMarginOrderTxFee(
         address indexed sender,
         uint256 oldValue,
         uint256 newValue
@@ -37,7 +37,8 @@ interface ISettlement {
         address indexed maker,
         uint256 amountIn,
         uint256 amountOut,
-        address[] path
+        address[] path,
+        uint256 filledPrice
     );
     event OrderCanceled(bytes32 indexed hash, address indexed maker);
     event FeeTransferred(
@@ -60,7 +61,8 @@ interface ISettlement {
         address loanTokenAddress,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address collateralTokenAddress
+        address collateralTokenAddress,
+        uint256 filledPrice
     );
     event MarginOrderCanceled(bytes32 indexed hash, address indexed trader);
     event Swap(
@@ -132,9 +134,9 @@ interface ISettlement {
 
     function setRelayerFee(uint256 _relayerFeePercent) external;
 
-    function setSwapOrderGas(uint256 _newGas) external;
+    function setMinSwapOrderTxFee(uint256 _newGas) external;
 
-    function setMarginOrderGas(uint256 _newGas) external;
+    function setMinMarginOrderTxFee(uint256 _newGas) external;
 
     function setMinSwapOrderSize(uint256 _minSwapOrderSize) external;
 

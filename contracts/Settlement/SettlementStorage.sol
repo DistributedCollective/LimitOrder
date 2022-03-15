@@ -35,6 +35,8 @@ contract SettlementStorage is Initializable, Ownable {
     address public RBTC_ADDRESS;
     address public WRBTC_ADDRESS;
 
+    uint256 public UNLIMITED_ALLOWANCE = (2**256) - 1;
+
     ISovrynSwapNetwork public sovrynSwapNetwork;
 
     // Address of OrderBook proxy
@@ -46,11 +48,11 @@ contract SettlementStorage is Initializable, Ownable {
     // Relayer Fee Percent
     uint256 public relayerFeePercent;
 
-    // Maximum gas for filling a swap order
-    uint256 public swapOrderGas;
+    // Minimum tx fee for filling a swap order
+    uint256 public minSwapOrderTxFee;
 
-    // Maximum gas for filling a margin order
-    uint256 public marginOrderGas;
+    // Minimum tx fee for filling a margin order
+    uint256 public minMarginOrderTxFee;
 
     // Minimum swap order size for partial filling
     uint256 public minSwapOrderSize; //in wrbtc
