@@ -81,11 +81,11 @@ module.exports = {
 ## Relayer Fee calculations
 
 ### Swap Order
-1. `relayerFee` = max(`minSwapOrderTxFee`, 2% of `amountIn`)
+1. `relayerFee` = max(`minSwapOrderTxFee`, 0.2% of `amountIn`)
 2. `minReturn` = (`amountIn` - `relayerFee`) * `limitPrice`
 
 ### Margin Order
-1. `totalRelayerFee` = max(`minMarginOrderFee`, 2% of total(convertToCollateral(`loanTokenSent`), `collateralTokenSent`) )
+1. `totalRelayerFee` = max(`minMarginOrderFee`, 0.2% of total(convertToCollateral(`loanTokenSent`), `collateralTokenSent`) )
 2. `relayerFeeInCollateral` = min(`totalRelayerFee`, `collateralTokenSent`)
 3. `relayerFeeInLoanToken` = convertToLoanToken(totalRelayerFee - relayerFeeInCollateral)
 4. `principal` = loanToken.getEstimatedMarginDetails(
