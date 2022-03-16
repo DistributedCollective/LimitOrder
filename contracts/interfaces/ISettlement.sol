@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import "../libraries/Orders.sol";
 import "../libraries/MarginOrders.sol";
+import "./IPriceFeeds.sol";
 
 interface ISettlement {
     event SetRelayerFee(
@@ -31,6 +32,11 @@ interface ISettlement {
         address indexed sender,
         uint256 oldValue,
         uint256 newValue
+    );
+    event SetPriceFeeds(
+        address indexed sender,
+        address oldValue,
+        address newValue
     );
     event OrderFilled(
         bytes32 indexed hash,
@@ -141,6 +147,8 @@ interface ISettlement {
     function setMinSwapOrderSize(uint256 _minSwapOrderSize) external;
 
     function setMinMarginOrderSize(uint256 _minMarginOrderSize) external;
+
+    function setPriceFeeds(IPriceFeeds _priceFeeds) external;
 
     function allCanceledHashes() external view returns (bytes32[] memory);
 

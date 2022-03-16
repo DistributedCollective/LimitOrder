@@ -13,6 +13,7 @@ import "../libraries/MarginOrders.sol";
 import "../libraries/EIP712.sol";
 import "../libraries/RSKAddrValidator.sol";
 import "../interfaces/ISettlement.sol";
+import "../interfaces/IPriceFeeds.sol";
 
 contract SettlementLogic is ISettlement, SettlementStorage {
     using SafeMath for uint256;
@@ -34,6 +35,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address _orderBookAddress,
         address _marginOrderBookAddress,
         ISovrynSwapNetwork _sovrynSwapNetwork,
+        IPriceFeeds _priceFeeds,
         address _WRBTC
     ) external onlyOwner initializer {
         DOMAIN_SEPARATOR1 = keccak256(
@@ -67,11 +69,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         // min fee = tx fee + 50% 
         uint256 _minSwapOrderTxFee = tx.gasprice.mul(800000).mul(3).div(2);
-        uint256 _minMarginOrderTxFee = tx.gasprice.mul(800000).mul(3).div(2);
+        uint256 _minMarginOrderTxFee = tx.gasprice.mul(1800000).mul(3).div(2);
         setMinSwapOrderTxFee(_minSwapOrderTxFee);
         setMinMarginOrderTxFee(_minMarginOrderTxFee);
         setMinSwapOrderSize(100);
         setMinMarginOrderSize(100);
+        setPriceFeeds(_priceFeeds);
     }
 
     // Fallback function to receive tokens
@@ -163,6 +166,18 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         minMarginOrderSize = _minMarginOrderSize;
 
         emit SetMinMarginOrderSize(msg.sender, oldValue, minMarginOrderSize);
+    }
+
+    // Set price feeds contract
+    function setPriceFeeds(IPriceFeeds _priceFeeds)
+        public
+        override
+        onlyOwner
+    {
+        address oldValue = address(priceFeeds);
+        priceFeeds = _priceFeeds;
+
+        emit SetPriceFeeds(msg.sender, oldValue, address(priceFeeds));
     }
 
     // Fills an order by
@@ -513,52 +528,51 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             uint256 actualLoanTokenAmount
         )
     {
-        uint256 _orderSizeInColl = order.collateralTokenSent;
-        uint256 _loanTokenSentInColl;
-        address _loanTokenAsset;
+        address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+            .loanTokenAddress();
 
-        if (order.loanTokenSent > 0) {
-            _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
-                .loanTokenAddress();
-            address[] memory _path = sovrynSwapNetwork.conversionPath(
-                _loanTokenAsset,
-                order.collateralTokenAddress
-            );
-            _loanTokenSentInColl = sovrynSwapNetwork.rateByPath(
-                _path,
-                order.loanTokenSent
-            );
-            _orderSizeInColl = _orderSizeInColl.add(_loanTokenSentInColl);
-        }
+        if (order.loanTokenSent > 0 && order.collateralTokenSent > 0) {
 
-        uint256 _relayerFeeIncoll = _checkRelayerFee(
-            order.collateralTokenAddress,
-            _orderSizeInColl,
-            _orderSizeInColl, //fill all order
-            false
-        );
+            (uint256 _rate, uint256 _precision) = priceFeeds.queryRate(_loanTokenAsset, order.collateralTokenAddress);
 
-        // relayerFee is fee pay for relayer of collateral
-        relayerFee = SafeMath.min256(
-            _relayerFeeIncoll,
-            order.collateralTokenSent
-        );
-        actualCollateralAmount = order.collateralTokenSent.sub(relayerFee);
+            uint256 _convertedLoanTokenSent = order.loanTokenSent.mul(_rate).div(_precision);
 
-        // should also take fee of loan token
-        if (_relayerFeeIncoll > relayerFee) {
-            address[] memory _path = sovrynSwapNetwork.conversionPath(
+            uint256 _orderSizeInColl = order.collateralTokenSent + _convertedLoanTokenSent;
+
+            relayerFee = _checkRelayerFee(
                 order.collateralTokenAddress,
-                _loanTokenAsset
+                _orderSizeInColl,
+                _orderSizeInColl,
+                false
             );
-            relayerFeeOnLoanAsset = sovrynSwapNetwork.rateByPath(
-                _path,
-                _relayerFeeIncoll.sub(relayerFee)
+
+            if (relayerFee > order.collateralTokenSent) {
+                uint256 _outstandingFee = relayerFee - order.collateralTokenSent;
+                relayerFee = order.collateralTokenSent;
+                relayerFeeOnLoanAsset = _outstandingFee.mul(_precision).div(_rate);
+            }
+        } else if (order.loanTokenSent > 0) {
+            relayerFeeOnLoanAsset = _checkRelayerFee(
+                _loanTokenAsset,
+                order.loanTokenSent,
+                order.loanTokenSent,
+                false
             );
-            actualLoanTokenAmount = order.loanTokenSent.sub(
-                relayerFeeOnLoanAsset
+        } else if (order.collateralTokenSent > 0) {
+            relayerFee = _checkRelayerFee(
+                order.collateralTokenAddress,
+                order.collateralTokenSent,
+                order.collateralTokenSent,
+                false
             );
+        } else {
+            revert("Invalid loanTokenSent and collateralTokenSent");
         }
+
+        actualCollateralAmount = order.collateralTokenSent.sub(relayerFee);
+        actualLoanTokenAmount = order.loanTokenSent.sub(
+            relayerFeeOnLoanAsset
+        );
     }
 
     function _checkRelayerFee(

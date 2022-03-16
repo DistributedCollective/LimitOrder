@@ -401,6 +401,31 @@
             },
             {
                 "indexed": false,
+                "internalType": "address",
+                "name": "oldValue",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newValue",
+                "type": "address"
+            }
+        ],
+        "name": "SetPriceFeeds",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "oldValue",
                 "type": "uint256"
@@ -505,6 +530,19 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "UNLIMITED_ALLOWANCE",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -1271,6 +1309,11 @@
                 "type": "address"
             },
             {
+                "internalType": "contract IPriceFeeds",
+                "name": "_priceFeeds",
+                "type": "address"
+            },
+            {
                 "internalType": "address",
                 "name": "_WRBTC",
                 "type": "address"
@@ -1387,6 +1430,19 @@
     },
     {
         "inputs": [],
+        "name": "priceFeeds",
+        "outputs": [
+            {
+                "internalType": "contract IPriceFeeds",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "relayerFeePercent",
         "outputs": [
             {
@@ -1446,6 +1502,19 @@
             }
         ],
         "name": "setMinSwapOrderTxFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "contract IPriceFeeds",
+                "name": "_priceFeeds",
+                "type": "address"
+            }
+        ],
+        "name": "setPriceFeeds",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

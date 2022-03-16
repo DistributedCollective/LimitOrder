@@ -14,10 +14,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const chainId = network.name === "mainnet" ? 30 : await getChainId();
     let orderBookChainId = chainId;
     let orderBookAdr, orderBookMarginAdr;
+    let priceFeedAdr;
   
     if (network.name === "hardhat" || network.name === "localhost") {
         const sSwn = await ethers.getContract("TestSovrynSwap", deployer);
+        const priceFeeds = await ethers.getContract("PriceFeedsLocal", deployer);
         sovrynSwapNetwork = sSwn.address;
+        priceFeedAdr = priceFeeds.address;
         wrbtcAddress = WRBTC[chainId].address;
         xusdAddress = XUSD[chainId].address;
         multisig = deployer;
@@ -27,11 +30,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         wrbtcAddress = "0x69FE5cEC81D5eF92600c1A0dB1F11986AB3758Ab";
         multisig = "0x189ecD23E9e34CFC07bFC3b7f5711A23F43F8a57";
         xusdAddress = "0x74858FE37d391f81F89472e1D8BC8Ef9CF67B3b1";
+        priceFeedAdr = "0x7f38c422b99075f63C9c919ECD200DF8d2Cf5BD4";
     } else if (network.name === "mainnet") {
         sovrynSwapNetwork = "0x98ace08d2b759a265ae326f010496bcd63c15afc";
         wrbtcAddress = "0x542fDA317318eBF1d3DEAf76E0b632741A7e677d";
         multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
         xusdAddress = "0xb5999795be0ebb5bab23144aa5fd6a02d080299f";
+        priceFeedAdr = "0x437AC62769f386b2d238409B7f0a7596d36506e4";
         orderBookChainId = 31;
     }
 
@@ -71,7 +76,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
         const SettlementLogic = await deployments.get('SettlementLogic');
         const settlement = new web3.eth.Contract(SettlementLogic.abi, proxyNotInititalized ? deployProxy.address : deployLogic.address);
-        tx = await settlement.methods.initialize(chainId, orderBookAdr, orderBookMarginAdr, sovrynSwapNetwork, wrbtcAddress).send({from: deployer});
+        tx = await settlement.methods.initialize(
+            chainId,
+            orderBookAdr,
+            orderBookMarginAdr,
+            sovrynSwapNetwork,
+            priceFeedAdr,
+            wrbtcAddress
+        ).send({from: deployer});
         console.log(tx.transactionHash);
 
         const swapContract = new web3.eth.Contract(swapAbi, sovrynSwapNetwork);

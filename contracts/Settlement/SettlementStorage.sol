@@ -5,6 +5,7 @@ import "../proxy/Initializable.sol";
 import "../proxy/Ownable.sol";
 import "../libraries/Orders.sol";
 import "../interfaces/ISovrynSwapNetwork.sol";
+import "../interfaces/IPriceFeeds.sol";
 
 /**
  * @title Settlement Storage contract.
@@ -38,6 +39,8 @@ contract SettlementStorage is Initializable, Ownable {
     uint256 public UNLIMITED_ALLOWANCE = (2**256) - 1;
 
     ISovrynSwapNetwork public sovrynSwapNetwork;
+
+    IPriceFeeds public priceFeeds;
 
     // Address of OrderBook proxy
     address public orderBookAddress;
