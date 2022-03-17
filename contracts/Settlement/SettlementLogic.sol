@@ -67,7 +67,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         orderBookMarginAddress = _marginOrderBookAddress;
         setRelayerFee(2 * 10**17); // Relayer fee percent = 0.2
 
-        // min fee = tx fee + 50% 
+        // min fee = tx fee + 50%
         uint256 _minSwapOrderTxFee = tx.gasprice.mul(800000).mul(3).div(2);
         uint256 _minMarginOrderTxFee = tx.gasprice.mul(1800000).mul(3).div(2);
         setMinSwapOrderTxFee(_minSwapOrderTxFee);
@@ -121,11 +121,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set minimum tx fee for swap order
-    function setMinSwapOrderTxFee(uint256 _newGas)
-        public
-        override
-        onlyOwner
-    {
+    function setMinSwapOrderTxFee(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = minSwapOrderTxFee;
         minSwapOrderTxFee = _newGas;
 
@@ -133,11 +129,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set minimum tx fee for margin order
-    function setMinMarginOrderTxFee(uint256 _newGas)
-        public
-        override
-        onlyOwner
-    {
+    function setMinMarginOrderTxFee(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = minMarginOrderTxFee;
         minMarginOrderTxFee = _newGas;
 
@@ -169,11 +161,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set price feeds contract
-    function setPriceFeeds(IPriceFeeds _priceFeeds)
-        public
-        override
-        onlyOwner
-    {
+    function setPriceFeeds(IPriceFeeds _priceFeeds) public override onlyOwner {
         address oldValue = address(priceFeeds);
         priceFeeds = _priceFeeds;
 
@@ -413,7 +401,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         MarginOrders.Order memory order = args.order;
 
-        uint256 _filledPrice = _getPrice(principalAmount, _loanTokenAsset, order.collateralTokenAddress);
+        uint256 _filledPrice = _getPrice(
+            principalAmount,
+            _loanTokenAsset,
+            order.collateralTokenAddress
+        );
 
         emit MarginOrderFilled(
             hash,
@@ -486,11 +478,19 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address loanTokenAdr = order.loanTokenAddress;
 
         if (actualLoanTokenAmount > 0) {
-            _checkAllowance(loanTokenAsset, loanTokenAdr, actualLoanTokenAmount);
+            _checkAllowance(
+                loanTokenAsset,
+                loanTokenAdr,
+                actualLoanTokenAmount
+            );
         }
 
         if (actualCollateralAmount > 0) {
-            _checkAllowance(order.collateralTokenAddress, loanTokenAdr, actualCollateralAmount);
+            _checkAllowance(
+                order.collateralTokenAddress,
+                loanTokenAdr,
+                actualCollateralAmount
+            );
         }
 
         bytes memory data = abi.encodeWithSignature(
@@ -532,12 +532,18 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             .loanTokenAddress();
 
         if (order.loanTokenSent > 0 && order.collateralTokenSent > 0) {
+            (uint256 _rate, uint256 _precision) = priceFeeds.queryRate(
+                _loanTokenAsset,
+                order.collateralTokenAddress
+            );
 
-            (uint256 _rate, uint256 _precision) = priceFeeds.queryRate(_loanTokenAsset, order.collateralTokenAddress);
+            uint256 _convertedLoanTokenSent = order
+                .loanTokenSent
+                .mul(_rate)
+                .div(_precision);
 
-            uint256 _convertedLoanTokenSent = order.loanTokenSent.mul(_rate).div(_precision);
-
-            uint256 _orderSizeInColl = order.collateralTokenSent + _convertedLoanTokenSent;
+            uint256 _orderSizeInColl = order.collateralTokenSent +
+                _convertedLoanTokenSent;
 
             relayerFee = _checkRelayerFee(
                 order.collateralTokenAddress,
@@ -547,9 +553,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             );
 
             if (relayerFee > order.collateralTokenSent) {
-                uint256 _outstandingFee = relayerFee - order.collateralTokenSent;
+                uint256 _outstandingFee = relayerFee -
+                    order.collateralTokenSent;
                 relayerFee = order.collateralTokenSent;
-                relayerFeeOnLoanAsset = _outstandingFee.mul(_precision).div(_rate);
+                relayerFeeOnLoanAsset = _outstandingFee.mul(_precision).div(
+                    _rate
+                );
             }
         } else if (order.loanTokenSent > 0) {
             relayerFeeOnLoanAsset = _checkRelayerFee(
@@ -570,9 +579,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
 
         actualCollateralAmount = order.collateralTokenSent.sub(relayerFee);
-        actualLoanTokenAmount = order.loanTokenSent.sub(
-            relayerFeeOnLoanAsset
-        );
+        actualLoanTokenAmount = order.loanTokenSent.sub(relayerFeeOnLoanAsset);
     }
 
     function _checkRelayerFee(
@@ -597,7 +604,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
 
         if (estOrderFee < minFeeAmountInToken) {
-            require(amountToFill > minFeeAmountInToken, "Order amount is too low to pay the relayer fee");
+            require(
+                amountToFill > minFeeAmountInToken,
+                "Order amount is too low to pay the relayer fee"
+            );
             require(
                 orderSize > minFeeAmountInToken,
                 "Order amount is too low to pay the relayer fee"
@@ -653,7 +663,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    function _getPrice(uint256 amount, address fromToken, address toToken) internal returns (uint256 price) {
+    function _getPrice(
+        uint256 amount,
+        address fromToken,
+        address toToken
+    ) internal view returns (uint256 price) {
         address[] memory _path = sovrynSwapNetwork.conversionPath(
             fromToken,
             toToken
@@ -664,7 +678,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
     // Checks allowance of settlement contract for spending token,
     // if allowance < needed, approve unlimited amount
-    function _checkAllowance(address tokenAdr, address spender, uint256 amount) internal {
+    function _checkAllowance(
+        address tokenAdr,
+        address spender,
+        uint256 amount
+    ) internal {
         IERC20 token = IERC20(tokenAdr);
         uint256 allowance = token.allowance(address(this), spender);
         if (allowance < amount) {

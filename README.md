@@ -4,7 +4,7 @@ This repository contains solidity contracts to enable **limit orders** for Sovry
 
 ## Overview
 
-Typically AMMs only settle orders with market price, which represents a significant limitation compared to orderbook driven exchanges. SushiSwap addresses this critical AMM pain point with the release of the limit order feature.
+Typically AMMs only settle orders with market price, which represents a significant limitation compared to orderbook driven exchanges. Sovryn addresses this critical AMM pain point with the release of the limit order feature.
 
 Contracts in this repo help you submit a limit order with a lower price than what it is now. Later, when the price gets lower enough to meet the requirement of your order, it gets settled.
 
