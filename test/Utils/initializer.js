@@ -84,8 +84,8 @@ const getPriceFeeds = async (WRBTC, SUSD, RBTC, sovryn, BZRX) => {
 	const feeds = await PriceFeedsLocal.new(WRBTC.address, BZRX.address);
 
 	await feeds.setRates(WRBTC.address, RBTC.address, oneEth.toString());
-	await feeds.setRates(WRBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
-	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
+	await feeds.setRates(WRBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
+	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
 	return feeds;
 };
 
@@ -94,7 +94,7 @@ const getPriceFeedsRBTC = async (WRBTC, SUSD, RBTC, sovryn, BZRX) => {
 
 	await feeds.setRates(WRBTC.address, RBTC.address, oneEth.toString());
 	await feeds.setRates(WRBTC.address, SUSD.address, oneEth.toString());
-	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
+	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
 	return feeds;
 };
 
