@@ -36,7 +36,7 @@ contract SettlementStorage is Initializable, Ownable {
     address public RBTC_ADDRESS;
     address public WRBTC_ADDRESS;
 
-    uint256 public UNLIMITED_ALLOWANCE = (2**256) - 1;
+    uint256 public constant UNLIMITED_ALLOWANCE = (2**256) - 1;
 
     ISovrynSwapNetwork public sovrynSwapNetwork;
 
