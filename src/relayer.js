@@ -74,14 +74,22 @@ class Relayer {
                 nonce
             });
 
-            new Promise(async (resolve) => {
-                await tx.wait();
-                delete this.pendingTxs[relayer.address][nonce];
-                console.log('tx %s, nonce %s confirmed', tx.hash, nonce);
-                resolve();
-            });
-
+            
             if (tx) {
+                console.log('sending tx %s, nonce %s', tx.hash, nonce);
+                new Promise(async (resolve) => {
+                    try {
+                        await tx.wait();
+                        delete this.pendingTxs[relayer.address][nonce];
+                        console.log('tx %s, nonce %s confirmed', tx.hash, nonce);
+                        resolve();
+                    } catch (e) {
+                        delete this.pendingTxs[relayer.address][nonce];
+                        console.log('tx failed %s, nonce %s', tx.hash, nonce);
+                        console.error(e);
+                    }
+                });
+
                 return tx;
             } else {
                 throw "Failed to send tx: " + JSON.stringify(data);
