@@ -34,8 +34,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 orderBookChainId,
         address _orderBookAddress,
         address _marginOrderBookAddress,
-        ISovrynSwapNetwork _sovrynSwapNetwork,
-        IPriceFeeds _priceFeeds,
+        address _sovrynSwapNetwork,
+        address _priceFeeds,
         address _WRBTC
     ) external onlyOwner initializer {
         DOMAIN_SEPARATOR1 = keccak256(
@@ -161,11 +161,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set price feeds contract
-    function setPriceFeeds(IPriceFeeds _priceFeeds) public override onlyOwner {
-        address oldValue = address(priceFeeds);
+    function setPriceFeeds(address _priceFeeds) public override onlyOwner {
+        address oldValue = priceFeeds;
         priceFeeds = _priceFeeds;
 
-        emit SetPriceFeeds(msg.sender, oldValue, address(priceFeeds));
+        emit SetPriceFeeds(msg.sender, oldValue, priceFeeds);
     }
 
     // Fills an order by
@@ -215,10 +215,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         uint256 actualAmountIn = args.amountToFillIn.sub(relayerFee);
 
-        uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(
-            path,
-            actualAmountIn // There might be partial filling of orders
-        );
+        uint256 swapbackReturn = ISovrynSwapNetwork(sovrynSwapNetwork)
+            .rateByPath(
+                path,
+                actualAmountIn // There might be partial filling of orders
+            );
 
         require(
             swapbackReturn >= args.amountToFillOut,
@@ -532,7 +533,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             .loanTokenAddress();
 
         if (order.loanTokenSent > 0 && order.collateralTokenSent > 0) {
-            (uint256 _rate, uint256 _precision) = priceFeeds.queryRate(
+            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds).queryRate(
                 _loanTokenAsset,
                 order.collateralTokenAddress
             );
@@ -593,14 +594,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 minFeeAmountInToken = minFeeAmount;
 
         if (fromToken != WRBTC_ADDRESS) {
-            address[] memory path = sovrynSwapNetwork.conversionPath(
-                WRBTC_ADDRESS,
-                fromToken
-            );
-            minFeeAmountInToken = sovrynSwapNetwork.rateByPath(
-                path,
-                minFeeAmount
-            );
+            address[] memory path = ISovrynSwapNetwork(sovrynSwapNetwork)
+                .conversionPath(WRBTC_ADDRESS, fromToken);
+            minFeeAmountInToken = ISovrynSwapNetwork(sovrynSwapNetwork)
+                .rateByPath(path, minFeeAmount);
         }
 
         if (estOrderFee < minFeeAmountInToken) {
@@ -620,14 +617,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 ? minSwapOrderSize
                 : minMarginOrderSize;
             if (fromToken != WRBTC_ADDRESS) {
-                address[] memory pathToRbtc = sovrynSwapNetwork.conversionPath(
-                    fromToken,
-                    WRBTC_ADDRESS
-                );
-                fillAmountInRBtc = sovrynSwapNetwork.rateByPath(
-                    pathToRbtc,
-                    amountToFill
-                );
+                address[] memory pathToRbtc = ISovrynSwapNetwork(
+                    sovrynSwapNetwork
+                ).conversionPath(fromToken, WRBTC_ADDRESS);
+                fillAmountInRBtc = ISovrynSwapNetwork(sovrynSwapNetwork)
+                    .rateByPath(pathToRbtc, amountToFill);
             }
 
             require(
@@ -668,11 +662,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address fromToken,
         address toToken
     ) internal view returns (uint256 price) {
-        address[] memory _path = sovrynSwapNetwork.conversionPath(
-            fromToken,
-            toToken
+        address[] memory _path = ISovrynSwapNetwork(sovrynSwapNetwork)
+            .conversionPath(fromToken, toToken);
+        uint256 toAmount = ISovrynSwapNetwork(sovrynSwapNetwork).rateByPath(
+            _path,
+            amount
         );
-        uint256 toAmount = sovrynSwapNetwork.rateByPath(_path, amount);
         price = toAmount.mul(10**18).div(amount);
     }
 
@@ -717,16 +712,16 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "Limit: sourceToken and targetToken cannot be the same"
         );
 
-        _checkAllowance(sourceToken, address(sovrynSwapNetwork), _amount);
+        _checkAllowance(sourceToken, sovrynSwapNetwork, _amount);
 
-        targetTokenAmount = sovrynSwapNetwork.convertByPath(
-            _conversionPath,
-            _amount,
-            _minReturn, // minReturn
-            _receiver, // beneficiary
-            address(0), // affiliateAccount
-            0 // affiliateFee
-        );
+        targetTokenAmount = ISovrynSwapNetwork(sovrynSwapNetwork).convertByPath(
+                _conversionPath,
+                _amount,
+                _minReturn, // minReturn
+                _receiver, // beneficiary
+                address(0), // affiliateAccount
+                0 // affiliateFee
+            );
     }
 
     // Cancels an order, has to been called by order maker

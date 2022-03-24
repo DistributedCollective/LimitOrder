@@ -148,7 +148,7 @@ interface ISettlement {
 
     function setMinMarginOrderSize(uint256 _minMarginOrderSize) external;
 
-    function setPriceFeeds(IPriceFeeds _priceFeeds) external;
+    function setPriceFeeds(address _priceFeeds) external;
 
     function allCanceledHashes() external view returns (bytes32[] memory);
 

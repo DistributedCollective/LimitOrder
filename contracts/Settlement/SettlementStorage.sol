@@ -38,9 +38,9 @@ contract SettlementStorage is Initializable, Ownable {
 
     uint256 public constant UNLIMITED_ALLOWANCE = (2**256) - 1;
 
-    ISovrynSwapNetwork public sovrynSwapNetwork;
+    address public sovrynSwapNetwork;
 
-    IPriceFeeds public priceFeeds;
+    address public priceFeeds;
 
     // Address of OrderBook proxy
     address public orderBookAddress;
