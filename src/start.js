@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const Tx = require("@ethersproject/transactions");
 const { keccak256 } = require("@ethersproject/keccak256");
 const Web3 = require('web3');
+const cors = require('cors');
 
 const config = require('./config');
 console.log(config);
@@ -31,6 +32,7 @@ const web3 = new Web3(config.orderBookNetwork);
 
 relayer.init(orderBookProvider);
 
+app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/public', express.static(path.resolve(__dirname, '../public')));
