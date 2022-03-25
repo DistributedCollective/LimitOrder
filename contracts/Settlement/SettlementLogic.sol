@@ -533,10 +533,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             .loanTokenAddress();
 
         if (order.loanTokenSent > 0 && order.collateralTokenSent > 0) {
-            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds).queryRate(
-                _loanTokenAsset,
-                order.collateralTokenAddress
-            );
+            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds)
+                .queryRate(_loanTokenAsset, order.collateralTokenAddress);
 
             uint256 _convertedLoanTokenSent = order
                 .loanTokenSent
@@ -727,17 +725,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     // Cancels an order, has to been called by order maker
     function cancelOrder(Orders.Order memory order) public override {
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(
-            DOMAIN_SEPARATOR1,
-            hash,
-            order.v,
-            order.r,
-            order.s
-        );
-        require(
-            RSKAddrValidator.safeEquals(signer, order.maker),
-            "invalid-signature"
-        );
         require(msg.sender == order.maker, "not-called-by-maker");
 
         canceledOfHash[hash] = true;
@@ -753,17 +740,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         override
     {
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(
-            DOMAIN_SEPARATOR2,
-            hash,
-            order.v,
-            order.r,
-            order.s
-        );
-        require(
-            RSKAddrValidator.safeEquals(signer, order.trader),
-            "invalid-signature"
-        );
         require(msg.sender == order.trader, "not-called-by-maker");
 
         if (order.collateralTokenSent > 0) {
