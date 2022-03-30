@@ -587,46 +587,42 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 amountToFill,
         bool isSpot
     ) internal view returns (uint256 relayerFee) {
-        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20);
-        uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee;
+        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20); // 0.2% of amount to fill
+        uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee; // Checks for the minimum fee
         uint256 minFeeAmountInToken = minFeeAmount;
+        uint256 fillAmountInRBtc = amountToFill; // Partial Order possible - in tokens
 
+        // Converts rBTC to tokens to calculate the equivalent minimum fee
         if (fromToken != WRBTC_ADDRESS) {
-            address[] memory path = ISovrynSwapNetwork(sovrynSwapNetwork)
-                .conversionPath(WRBTC_ADDRESS, fromToken);
-            minFeeAmountInToken = ISovrynSwapNetwork(sovrynSwapNetwork)
-                .rateByPath(path, minFeeAmount);
+            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds)
+                .queryRate(WRBTC_ADDRESS, fromToken);
+            minFeeAmountInToken = minFeeAmount.mul(_rate).div(_precision); // rBTC -> Token
+            fillAmountInRBtc = amountToFill.mul(_precision).div(_rate); // Token -> rBTC
         }
 
+        // If 0.2% of order(spot/margin) is less than minimum fee(spot/margin) -> pay minimum fee.
         if (estOrderFee < minFeeAmountInToken) {
             require(
                 amountToFill > minFeeAmountInToken,
                 "Order amount is too low to pay the relayer fee"
             );
             require(
-                orderSize > minFeeAmountInToken,
-                "Order amount is too low to pay the relayer fee"
+                orderSize == amountToFill,
+                "the entire order must be filled" // Partial filling not allowed in this case
             );
-
-            relayerFee = minFeeAmountInToken;
+            relayerFee = minFeeAmountInToken; // Minimum fee(Spot/Margin)
         } else {
-            uint256 fillAmountInRBtc = amountToFill;
-            uint256 minFillingAmount = isSpot
+            // 0.2% of order is greater than minimum fee
+            uint256 minFillingAmount = isSpot // Checks minimum order size for spot/margin
                 ? minSwapOrderSize
                 : minMarginOrderSize;
-            if (fromToken != WRBTC_ADDRESS) {
-                address[] memory pathToRbtc = ISovrynSwapNetwork(
-                    sovrynSwapNetwork
-                ).conversionPath(fromToken, WRBTC_ADDRESS);
-                fillAmountInRBtc = ISovrynSwapNetwork(sovrynSwapNetwork)
-                    .rateByPath(pathToRbtc, amountToFill);
-            }
 
+            // Relayer can only fill partial orders greater than a certain minimum size
             require(
                 fillAmountInRBtc >= minFillingAmount,
                 "Filling amount is too low"
             );
-            relayerFee = estOrderFee;
+            relayerFee = estOrderFee; // 0.2% of orders(spot/margin)
         }
     }
 
