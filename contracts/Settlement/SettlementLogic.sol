@@ -679,7 +679,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         IERC20 token = IERC20(tokenAdr);
         uint256 allowance = token.allowance(address(this), spender);
         if (allowance < amount) {
-            token.safeApprove(spender, UNLIMITED_ALLOWANCE);
+            token.approve(spender, UNLIMITED_ALLOWANCE);
         }
     }
 
@@ -808,6 +808,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address asset,
         uint256 amount
     ) public onlyOwner {
-        IERC20(asset).safeApprove(loanToken, amount);
+        IERC20(asset).approve(loanToken, amount);
     }
 }
