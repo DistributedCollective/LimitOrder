@@ -645,12 +645,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    function _checkWithdrawalOnCancel(
-        address owner,
-        address token,
-        uint256 amount
-    ) internal {
-        if (token == WRBTC_ADDRESS && balanceOf[owner] >= amount) {
+    function _checkWithdrawalOnCancel(address token, uint256 amount) internal {
+        if (token == WRBTC_ADDRESS && balanceOf[msg.sender] >= amount) {
             withdraw(amount);
         }
     }
@@ -730,7 +726,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        _checkWithdrawalOnCancel(order.maker, order.fromToken, order.amountIn);
+        _checkWithdrawalOnCancel(order.fromToken, order.amountIn);
 
         emit OrderCanceled(hash, order.maker);
     }
@@ -744,7 +740,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         if (order.collateralTokenSent > 0) {
             _checkWithdrawalOnCancel(
-                order.trader,
                 order.collateralTokenAddress,
                 order.collateralTokenSent
             );
@@ -753,11 +748,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         if (order.loanTokenSent > 0) {
             address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
                 .loanTokenAddress();
-            _checkWithdrawalOnCancel(
-                order.trader,
-                _loanTokenAsset,
-                order.loanTokenSent
-            );
+            _checkWithdrawalOnCancel(_loanTokenAsset, order.loanTokenSent);
         }
 
         canceledOfHash[hash] = true;
