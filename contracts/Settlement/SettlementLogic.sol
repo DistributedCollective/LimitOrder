@@ -34,8 +34,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 orderBookChainId,
         address _orderBookAddress,
         address _marginOrderBookAddress,
-        ISovrynSwapNetwork _sovrynSwapNetwork,
-        IPriceFeeds _priceFeeds,
+        address _sovrynSwapNetwork,
+        address _priceFeeds,
         address _WRBTC
     ) external onlyOwner initializer {
         DOMAIN_SEPARATOR1 = keccak256(
@@ -161,11 +161,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     }
 
     // Set price feeds contract
-    function setPriceFeeds(IPriceFeeds _priceFeeds) public override onlyOwner {
-        address oldValue = address(priceFeeds);
+    function setPriceFeeds(address _priceFeeds) public override onlyOwner {
+        address oldValue = priceFeeds;
         priceFeeds = _priceFeeds;
 
-        emit SetPriceFeeds(msg.sender, oldValue, address(priceFeeds));
+        emit SetPriceFeeds(msg.sender, oldValue, priceFeeds);
     }
 
     // Fills an order by
@@ -215,10 +215,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         uint256 actualAmountIn = args.amountToFillIn.sub(relayerFee);
 
-        uint256 swapbackReturn = sovrynSwapNetwork.rateByPath(
-            path,
-            actualAmountIn // There might be partial filling of orders
-        );
+        uint256 swapbackReturn = ISovrynSwapNetwork(sovrynSwapNetwork)
+            .rateByPath(
+                path,
+                actualAmountIn // There might be partial filling of orders
+            );
 
         require(
             swapbackReturn >= args.amountToFillOut,
@@ -532,10 +533,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             .loanTokenAddress();
 
         if (order.loanTokenSent > 0 && order.collateralTokenSent > 0) {
-            (uint256 _rate, uint256 _precision) = priceFeeds.queryRate(
-                _loanTokenAsset,
-                order.collateralTokenAddress
-            );
+            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds)
+                .queryRate(_loanTokenAsset, order.collateralTokenAddress);
 
             uint256 _convertedLoanTokenSent = order
                 .loanTokenSent
@@ -588,53 +587,42 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 amountToFill,
         bool isSpot
     ) internal view returns (uint256 relayerFee) {
-        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20);
-        uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee;
+        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20); // 0.2% of amount to fill
+        uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee; // Checks for the minimum fee
         uint256 minFeeAmountInToken = minFeeAmount;
+        uint256 fillAmountInRBtc = amountToFill; // Partial Order possible - in tokens
 
+        // Converts rBTC to tokens to calculate the equivalent minimum fee
         if (fromToken != WRBTC_ADDRESS) {
-            address[] memory path = sovrynSwapNetwork.conversionPath(
-                WRBTC_ADDRESS,
-                fromToken
-            );
-            minFeeAmountInToken = sovrynSwapNetwork.rateByPath(
-                path,
-                minFeeAmount
-            );
+            (uint256 _rate, uint256 _precision) = IPriceFeeds(priceFeeds)
+                .queryRate(WRBTC_ADDRESS, fromToken);
+            minFeeAmountInToken = minFeeAmount.mul(_rate).div(_precision); // rBTC -> Token
+            fillAmountInRBtc = amountToFill.mul(_precision).div(_rate); // Token -> rBTC
         }
 
+        // If 0.2% of order(spot/margin) is less than minimum fee(spot/margin) -> pay minimum fee.
         if (estOrderFee < minFeeAmountInToken) {
             require(
                 amountToFill > minFeeAmountInToken,
                 "Order amount is too low to pay the relayer fee"
             );
             require(
-                orderSize > minFeeAmountInToken,
-                "Order amount is too low to pay the relayer fee"
+                orderSize == amountToFill,
+                "the entire order must be filled" // Partial filling not allowed in this case
             );
-
-            relayerFee = minFeeAmountInToken;
+            relayerFee = minFeeAmountInToken; // Minimum fee(Spot/Margin)
         } else {
-            uint256 fillAmountInRBtc = amountToFill;
-            uint256 minFillingAmount = isSpot
+            // 0.2% of order is greater than minimum fee
+            uint256 minFillingAmount = isSpot // Checks minimum order size for spot/margin
                 ? minSwapOrderSize
                 : minMarginOrderSize;
-            if (fromToken != WRBTC_ADDRESS) {
-                address[] memory pathToRbtc = sovrynSwapNetwork.conversionPath(
-                    fromToken,
-                    WRBTC_ADDRESS
-                );
-                fillAmountInRBtc = sovrynSwapNetwork.rateByPath(
-                    pathToRbtc,
-                    amountToFill
-                );
-            }
 
+            // Relayer can only fill partial orders greater than a certain minimum size
             require(
                 fillAmountInRBtc >= minFillingAmount,
                 "Filling amount is too low"
             );
-            relayerFee = estOrderFee;
+            relayerFee = estOrderFee; // 0.2% of orders(spot/margin)
         }
     }
 
@@ -653,12 +641,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    function _checkWithdrawalOnCancel(
-        address owner,
-        address token,
-        uint256 amount
-    ) internal {
-        if (token == WRBTC_ADDRESS && balanceOf[owner] >= amount) {
+    function _checkWithdrawalOnCancel(address token, uint256 amount) internal {
+        if (token == WRBTC_ADDRESS && balanceOf[msg.sender] >= amount) {
             withdraw(amount);
         }
     }
@@ -668,11 +652,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address fromToken,
         address toToken
     ) internal view returns (uint256 price) {
-        address[] memory _path = sovrynSwapNetwork.conversionPath(
-            fromToken,
-            toToken
+        address[] memory _path = ISovrynSwapNetwork(sovrynSwapNetwork)
+            .conversionPath(fromToken, toToken);
+        uint256 toAmount = ISovrynSwapNetwork(sovrynSwapNetwork).rateByPath(
+            _path,
+            amount
         );
-        uint256 toAmount = sovrynSwapNetwork.rateByPath(_path, amount);
         price = toAmount.mul(10**18).div(amount);
     }
 
@@ -686,7 +671,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         IERC20 token = IERC20(tokenAdr);
         uint256 allowance = token.allowance(address(this), spender);
         if (allowance < amount) {
-            token.safeApprove(spender, UNLIMITED_ALLOWANCE);
+            token.approve(spender, UNLIMITED_ALLOWANCE);
         }
     }
 
@@ -717,38 +702,27 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "Limit: sourceToken and targetToken cannot be the same"
         );
 
-        _checkAllowance(sourceToken, address(sovrynSwapNetwork), _amount);
+        _checkAllowance(sourceToken, sovrynSwapNetwork, _amount);
 
-        targetTokenAmount = sovrynSwapNetwork.convertByPath(
-            _conversionPath,
-            _amount,
-            _minReturn, // minReturn
-            _receiver, // beneficiary
-            address(0), // affiliateAccount
-            0 // affiliateFee
-        );
+        targetTokenAmount = ISovrynSwapNetwork(sovrynSwapNetwork).convertByPath(
+                _conversionPath,
+                _amount,
+                _minReturn, // minReturn
+                _receiver, // beneficiary
+                address(0), // affiliateAccount
+                0 // affiliateFee
+            );
     }
 
     // Cancels an order, has to been called by order maker
     function cancelOrder(Orders.Order memory order) public override {
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(
-            DOMAIN_SEPARATOR1,
-            hash,
-            order.v,
-            order.r,
-            order.s
-        );
-        require(
-            RSKAddrValidator.safeEquals(signer, order.maker),
-            "invalid-signature"
-        );
         require(msg.sender == order.maker, "not-called-by-maker");
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        _checkWithdrawalOnCancel(order.maker, order.fromToken, order.amountIn);
+        _checkWithdrawalOnCancel(order.fromToken, order.amountIn);
 
         emit OrderCanceled(hash, order.maker);
     }
@@ -758,22 +732,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         override
     {
         bytes32 hash = order.hash();
-        address signer = EIP712.recover(
-            DOMAIN_SEPARATOR2,
-            hash,
-            order.v,
-            order.r,
-            order.s
-        );
-        require(
-            RSKAddrValidator.safeEquals(signer, order.trader),
-            "invalid-signature"
-        );
         require(msg.sender == order.trader, "not-called-by-maker");
 
         if (order.collateralTokenSent > 0) {
             _checkWithdrawalOnCancel(
-                order.trader,
                 order.collateralTokenAddress,
                 order.collateralTokenSent
             );
@@ -782,11 +744,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         if (order.loanTokenSent > 0) {
             address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
                 .loanTokenAddress();
-            _checkWithdrawalOnCancel(
-                order.trader,
-                _loanTokenAsset,
-                order.loanTokenSent
-            );
+            _checkWithdrawalOnCancel(_loanTokenAsset, order.loanTokenSent);
         }
 
         canceledOfHash[hash] = true;
@@ -837,6 +795,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         address asset,
         uint256 amount
     ) public onlyOwner {
-        IERC20(asset).safeApprove(loanToken, amount);
+        IERC20(asset).approve(loanToken, amount);
     }
 }
