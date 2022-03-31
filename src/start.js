@@ -13,12 +13,15 @@ const {
     OrderBookMargin: orderBookMarginABI,
     Settlement: settlementABI
 } = require('./config/abis');
-// const { relayer: relayerAcc } = require('../secrets/account');
 const Order = require('./Order');
 const MarginOrder = require('./MarginOrder');
 const relayer = require('./relayer');
+const txStore = require('./TxStore');
 
 const app = express();
+var cors = require('cors');
+app.use(cors())
+
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.networkUrl);
 const orderBookProvider = new ethers.providers.JsonRpcProvider(config.orderBookNetwork);
@@ -30,6 +33,7 @@ const settlementContract = new ethers.Contract(config.contracts.settlement, sett
 const web3 = new Web3(config.orderBookNetwork);
 
 relayer.init(orderBookProvider);
+txStore.init(orderBookProvider);
 
 app.use(bodyParser.json());
 
@@ -110,7 +114,8 @@ app.post('/api/createOrder', async (req, res) => {
             return res.status(200).json({ error: 'Invalid signature' });
         }
 
-        console.log("Creating limit order hash", order.hash());
+        const hash = order.hash();
+        console.log("Creating limit order hash", hash);
         console.log('order msg', orderMsg);
         
         const tx = await relayer.sendTx({
@@ -118,11 +123,13 @@ app.post('/api/createOrder', async (req, res) => {
             data: data,
             gasLimit: 600000,
         });
-        
+
+        await txStore.addOrderHash(hash, tx.hash);
+
         res.status(200).json({
             success: true,
             data: tx
-        })
+        });
     } catch (e) {
         console.log(e);
         res.status(500).json({error: e});
@@ -176,13 +183,16 @@ app.post('/api/createMarginOrder', async (req, res) => {
             return res.status(200).json({ error: 'Invalid signature' });
         }
 
-        console.log("Creating margin order hash", order.hash());
+        const hash = order.hash();
+        console.log("Creating margin order hash", hash);
 
         const tx = await relayer.sendTx({
             to: config.contracts.orderBookMargin,
             data: data,
             gasLimit: 600000,
         });
+
+        await txStore.addOrderHash(hash, tx.hash);
 
         res.status(200).json({
             success: true,
@@ -283,12 +293,13 @@ app.get('/api/orders/:adr', async (req, res) => {
 
         const filledData = await settlementContract.checkFilledAmountHashes(orderHashes);
 
-        orders.map(order => {
+        for (const order of orders) {
             const canceled = (canceledData || []).find(item => order.hash == item.hash);
             const filled = (filledData || []).find(item => order.hash == item.hash);
             order.canceled = (canceled || {}).canceled || false;
             order.filled = (filled || {}).amount || false;
-        });
+            order.transactionHash = txStore.getTx(order.hash);
+        }
 
         return res.status(200).json({
             success: true,

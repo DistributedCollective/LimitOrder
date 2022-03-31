@@ -4,7 +4,6 @@ const { _TypedDataEncoder } = require("@ethersproject/hash");
 const { keccak256 } = require("@ethersproject/keccak256");
 const Tx = require("@ethersproject/transactions");
 const Web3 = require('web3');
-const { getAccountsPrivateKeys } = require("./Utils/hardhat_utils");
 
 const config = require('../src/config');
 const { SOV, XUSD } = require('./tokens');
@@ -174,8 +173,8 @@ async function testRelayer() {
 
     
     // cancelOrder("0x8b2a3f654e3ff9c191bc2e23b8801ebc92d169a28d186721745263422e209c2d");
-    // await listAllOpenLimitOrders();
+    await listAllOpenLimitOrders();
     // listAllOpenMarginOrders();
 
-    testRelayer();
+    // testRelayer();
 })();
