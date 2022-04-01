@@ -402,12 +402,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         MarginOrders.Order memory order = args.order;
 
-        uint256 _filledPrice = _getPrice(
-            principalAmount,
-            _loanTokenAsset,
-            order.collateralTokenAddress
-        );
-
         emit MarginOrderFilled(
             hash,
             order.trader,
@@ -417,8 +411,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             order.loanTokenAddress,
             order.loanTokenSent,
             order.collateralTokenSent,
-            order.collateralTokenAddress,
-            _filledPrice
+            order.collateralTokenAddress
         );
     }
 
@@ -645,20 +638,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         if (token == WRBTC_ADDRESS && balanceOf[msg.sender] >= amount) {
             withdraw(amount);
         }
-    }
-
-    function _getPrice(
-        uint256 amount,
-        address fromToken,
-        address toToken
-    ) internal view returns (uint256 price) {
-        address[] memory _path = ISovrynSwapNetwork(sovrynSwapNetwork)
-            .conversionPath(fromToken, toToken);
-        uint256 toAmount = ISovrynSwapNetwork(sovrynSwapNetwork).rateByPath(
-            _path,
-            amount
-        );
-        price = toAmount.mul(10**18).div(amount);
     }
 
     // Checks allowance of settlement contract for spending token,

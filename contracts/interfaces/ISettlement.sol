@@ -67,8 +67,7 @@ interface ISettlement {
         address loanTokenAddress,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address collateralTokenAddress,
-        uint256 filledPrice
+        address collateralTokenAddress
     );
     event MarginOrderCanceled(bytes32 indexed hash, address indexed trader);
     event Swap(
