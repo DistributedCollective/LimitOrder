@@ -236,7 +236,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             "invalid-signature"
         );
 
-        uint256 relayerFee = _checkRelayerFee(
+        uint256 relayerFee = _checkAndGetRelayerFee(
             args.order.fromToken,
             args.order.amountIn,
             args.amountToFillIn,
@@ -652,7 +652,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             uint256 _orderSizeInColl = order.collateralTokenSent +
                 _convertedLoanTokenSent;
 
-            relayerFee = _checkRelayerFee(
+            relayerFee = _checkAndGetRelayerFee(
                 order.collateralTokenAddress,
                 _orderSizeInColl,
                 _orderSizeInColl,
@@ -668,14 +668,14 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 );
             }
         } else if (order.loanTokenSent > 0) {
-            relayerFeeOnLoanAsset = _checkRelayerFee(
+            relayerFeeOnLoanAsset = _checkAndGetRelayerFee(
                 _loanTokenAsset,
                 order.loanTokenSent,
                 order.loanTokenSent,
                 false
             );
         } else if (order.collateralTokenSent > 0) {
-            relayerFee = _checkRelayerFee(
+            relayerFee = _checkAndGetRelayerFee(
                 order.collateralTokenAddress,
                 order.collateralTokenSent,
                 order.collateralTokenSent,
@@ -698,7 +698,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
      * @param isSpot True - Spot, False - Margin.
      * @return relayerFee Relayer fee.
      * */
-    function _checkRelayerFee(
+    function _checkAndGetRelayerFee(
         address fromToken,
         uint256 orderSize,
         uint256 amountToFill,
