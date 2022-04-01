@@ -76,15 +76,19 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         setPriceFeeds(_priceFeeds);
     }
 
-    // Fallback function to receive tokens
-    // TODO: Check for vulnerabilites if any
+    /**
+     * @notice Fallback function to receive tokens.
+     * */
     receive() external payable {
         if (msg.sender != WRBTC_ADDRESS) {
             deposit(msg.sender);
         }
     }
 
-    // User deposits a balance to the contract
+    /**
+     * @notice User deposits a balance to the contract.
+     * @param to Receiver of the funds.
+     * */
     function deposit(address to) public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "deposit-amount-required");
@@ -96,7 +100,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit Deposit(to, amount);
     }
 
-    // Withdraw user balance
+    /**
+     * @notice Withdraw user balance.
+     * @param amount Amount to be withdrawn.
+     * */
     function withdraw(uint256 amount) public override {
         address payable receiver = msg.sender;
         require(balanceOf[receiver] >= amount, "insufficient-balance");
@@ -106,7 +113,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit Withdrawal(receiver, amount);
     }
 
-    // Sets relayer fee
+    /**
+     * @notice Sets relayer fee.
+     * @param _relayerFeePercent Relayer fee percentage.
+     * */
     function setRelayerFee(uint256 _relayerFeePercent)
         public
         override
@@ -119,7 +129,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetRelayerFee(msg.sender, oldValue, relayerFeePercent);
     }
 
-    // Set minimum tx fee for swap order
+    /**
+     * @notice Set minimum tx fee for swap order.
+     * @param _newGas New minimum txn gas price for spot limit orders.
+     * */
     function setMinSwapOrderTxFee(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = minSwapOrderTxFee;
         minSwapOrderTxFee = _newGas;
@@ -127,7 +140,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMinSwapOrderTxFee(msg.sender, oldValue, minSwapOrderTxFee);
     }
 
-    // Set minimum tx fee for margin order
+    /**
+     * @notice Set minimum tx fee for margin order.
+     * @param _newGas New minimum txn gas price for margin limit orders.
+     * */
     function setMinMarginOrderTxFee(uint256 _newGas) public override onlyOwner {
         uint256 oldValue = minMarginOrderTxFee;
         minMarginOrderTxFee = _newGas;
@@ -135,7 +151,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMinMarginOrderTxFee(msg.sender, oldValue, minMarginOrderTxFee);
     }
 
-    // Set min swap order size
+    /**
+     * @notice Set min swap order size.
+     * @param _minSwapOrderSize New minimum spot limit order size.
+     * @dev Initially set to 100$ in mainnet.
+     * */
     function setMinSwapOrderSize(uint256 _minSwapOrderSize)
         public
         override
@@ -147,7 +167,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMinSwapOrderSize(msg.sender, oldValue, minSwapOrderSize);
     }
 
-    // Set min margin order size
+    /**
+     * @notice Set min margin order size.
+     * @param _minMarginOrderSize New minimum margin limit order size.
+     * @dev Initially set to 200$ in mainnet.
+     * */
     function setMinMarginOrderSize(uint256 _minMarginOrderSize)
         public
         override
@@ -159,7 +183,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetMinMarginOrderSize(msg.sender, oldValue, minMarginOrderSize);
     }
 
-    // Set price feeds contract
+    /**
+     * @notice Set price feeds contract.
+     * @param _priceFeeds New address of price feeds oracle.
+     * */
     function setPriceFeeds(address _priceFeeds) public override onlyOwner {
         address oldValue = priceFeeds;
         priceFeeds = _priceFeeds;
@@ -167,10 +194,14 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         emit SetPriceFeeds(msg.sender, oldValue, priceFeeds);
     }
 
-    // Fills an order by
-    // swapping an exact amount of tokens for another token through the path passed as an argument
-    // Returns the amount of the final token
-    // Requires args.amountToFillIn to have already been approved to this
+    /**
+     * @notice Fills spot limit orders.
+     * @param args FillOrderArgs struct.
+     * @dev Fills an order by
+     * swapping an exact amount of tokens for another token through the path passed as an argument.
+     * Returns the amount of the final token.
+     * Requires args.amountToFillIn to have already been approved to this.
+     * */
     function fillOrder(FillOrderArgs memory args)
         public
         override
@@ -279,7 +310,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
-    // Fills multiple orders passed as an array
+    /**
+     * @notice Fills multiple spot limit orders passed as an array.
+     * @param args Array of FillOrderArgs struct.
+     * @dev Useful for batch processing of spot limit orders.
+     * */
     function fillOrders(FillOrderArgs[] memory args)
         public
         override
@@ -298,7 +333,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filled, "no-order-filled");
     }
 
-    // Fills a margin order
+    /**
+     * @notice Fills a limit margin order.
+     * @param args Array of FillOrderArgs struct.
+     * @dev This function is called by the relayer.
+     * */
     function fillMarginOrder(FillMarginOrderArgs memory args)
         public
         override
@@ -414,7 +453,11 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
-    // Fills multiple margin orders passed as an array
+    /**
+     * @notice Fills multiple margin limit orders passed as an array.
+     * @param args Array of FillMarginOrderArgs struct.
+     * @dev Useful for batch processing of margin limit orders.
+     * */
     function fillMarginOrders(FillMarginOrderArgs[] memory args)
         public
         override
@@ -438,7 +481,58 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filled, "no-order-filled");
     }
 
-    // Checks if an order is canceled / already fully filled
+    /**
+     * @notice Cancels a spot limit order, has to be called by order maker.
+     * @param order The spot limit order details.
+     * */
+    function cancelOrder(Orders.Order memory order) public override {
+        bytes32 hash = order.hash();
+        require(msg.sender == order.maker, "not-called-by-maker");
+
+        canceledOfHash[hash] = true;
+        canceledHashes.push(hash);
+
+        _checkWithdrawalOnCancel(order.fromToken, order.amountIn);
+
+        emit OrderCanceled(hash, order.maker);
+    }
+
+    /**
+     * @notice Cancels a margin limit order, has to be called by order trader.
+     * @param order The margin limit order details.
+     * */
+    function cancelMarginOrder(MarginOrders.Order memory order)
+        public
+        override
+    {
+        bytes32 hash = order.hash();
+        require(msg.sender == order.trader, "not-called-by-maker");
+
+        if (order.collateralTokenSent > 0) {
+            _checkWithdrawalOnCancel(
+                order.collateralTokenAddress,
+                order.collateralTokenSent
+            );
+        }
+
+        if (order.loanTokenSent > 0) {
+            address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
+                .loanTokenAddress();
+            _checkWithdrawalOnCancel(_loanTokenAsset, order.loanTokenSent);
+        }
+
+        canceledOfHash[hash] = true;
+        canceledHashes.push(hash);
+
+        emit MarginOrderCanceled(hash, order.trader);
+    }
+
+    /**
+     * @notice Checks if an order is canceled/already fully filled for spot
+     * limit order trades.
+     * @param args FillOrderArgs struct.
+     * @param hash Hash of order struct.
+     * */
     function _validateStatus(FillOrderArgs memory args, bytes32 hash)
         internal
         view
@@ -452,7 +546,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
-    // Checks if an order is canceled / already fully filled
+    /**
+     * @notice Checks if an order is canceled/already fully filled for margin
+     * limit order trades.
+     * @param args FillMarginOrderArgs struct.
+     * @param hash Hash of margin order struct.
+     * */
     function _validateMarginStatus(
         FillMarginOrderArgs memory args,
         bytes32 hash
@@ -462,6 +561,15 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(filledAmountInOfHash[hash] == 0, "already-filled");
     }
 
+    /**
+     * @notice Internal function that initiates the margin trade for limit orders.
+     * @param order Margin order details.
+     * @param loanTokenAsset Loan token asset address.
+     * @param actualLoanTokenAmount Loan token amount.
+     * @param actualCollateralAmount Collateral token amount.
+     * @return principalAmount Principal amount.
+     * @return collateralAmount Collateral amount.
+     * */
     function _marginTrade(
         MarginOrders.Order memory order,
         address loanTokenAsset,
@@ -511,6 +619,14 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         );
     }
 
+    /**
+     * @notice Internal function to calculate fee for margin limit order.
+     * @param order MarginOrder struct.
+     * @return relayerFee Relayer Fee
+     * @return relayerFeeOnLoanAsset Relayer fee on loan asset.
+     * @return actualCollateralAmount Actual Collateral Amount.
+     * @return actualLoanTokenAmount Actual Loan Token Amount.
+     * */
     function _calculateMarginOrderFee(MarginOrders.Order memory order)
         internal
         view
@@ -573,6 +689,15 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         actualLoanTokenAmount = order.loanTokenSent.sub(relayerFeeOnLoanAsset);
     }
 
+    /**
+     * @notice Internal function to calculate relayer fee for both spot
+     * and margin limit order.
+     * @param fromToken The from token address.
+     * @param orderSize Total order size.
+     * @param amountToFill Amount to fill for patial orders.
+     * @param isSpot True - Spot, False - Margin.
+     * @return relayerFee Relayer fee.
+     * */
     function _checkRelayerFee(
         address fromToken,
         uint256 orderSize,
@@ -621,6 +746,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
+    /**
+     * @notice Internal function to deposit asset to the settlements contract.
+     * @param owner The owner address.
+     * @param assetAddress Token address.
+     * @param amount Amount to be deposited.
+     * */
     function _depositOrderAsset(
         address owner,
         address assetAddress,
@@ -636,14 +767,24 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
+    /**
+     * @notice Internal function to withdraw asset.
+     * @param token The token address.
+     * @param amount Amount to be withdrawn.
+     * */
     function _checkWithdrawalOnCancel(address token, uint256 amount) internal {
         if (token == WRBTC_ADDRESS && balanceOf[msg.sender] >= amount) {
             withdraw(amount);
         }
     }
 
-    // Checks allowance of settlement contract for spending token,
-    // if allowance < needed, approve unlimited amount
+    /**
+     * @notice Checks allowance of settlement contract for spending token,
+     * if allowance < needed, approve unlimited amount.
+     * @param tokenAdr The token address.
+     * @param spender Address of the spender.
+     * @param amount Amount to be approved.
+     * */
     function _checkAllowance(
         address tokenAdr,
         address spender,
@@ -656,8 +797,16 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    // internal functions
-    // Checks the amount returned from the token swap
+    /**
+     * @notice Checks the amount returned from the token swap.
+     * @param _conversionPath The path - from and to token.
+     * @param _amount Amount of token.
+     * @param _minReturn Minimum swap return expected.
+     * @param _receiver The token address of receiver.
+     * @return sourceToken Address of source token.
+     * @return targetToken Address of target token.
+     * @return targetTokenAmount Amount of target token received.
+     * */
     function swapInternal(
         address[] memory _conversionPath,
         uint256 _amount,
@@ -695,45 +844,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             );
     }
 
-    // Cancels an order, has to been called by order maker
-    function cancelOrder(Orders.Order memory order) public override {
-        bytes32 hash = order.hash();
-        require(msg.sender == order.maker, "not-called-by-maker");
-
-        canceledOfHash[hash] = true;
-        canceledHashes.push(hash);
-
-        _checkWithdrawalOnCancel(order.fromToken, order.amountIn);
-
-        emit OrderCanceled(hash, order.maker);
-    }
-
-    function cancelMarginOrder(MarginOrders.Order memory order)
-        public
-        override
-    {
-        bytes32 hash = order.hash();
-        require(msg.sender == order.trader, "not-called-by-maker");
-
-        if (order.collateralTokenSent > 0) {
-            _checkWithdrawalOnCancel(
-                order.collateralTokenAddress,
-                order.collateralTokenSent
-            );
-        }
-
-        if (order.loanTokenSent > 0) {
-            address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
-                .loanTokenAddress();
-            _checkWithdrawalOnCancel(_loanTokenAsset, order.loanTokenSent);
-        }
-
-        canceledOfHash[hash] = true;
-        canceledHashes.push(hash);
-
-        emit MarginOrderCanceled(hash, order.trader);
-    }
-
+    /**
+     * @notice Returns list of all cancelled hashes.
+     * @return canceledHashes Hashes of cancelled orders.
+     * */
     function allCanceledHashes()
         public
         view
@@ -743,7 +857,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         return canceledHashes;
     }
 
-    // Stores the order hashes and the cancelled flag
+    /**
+     * @notice Returns the order hashes and the cancelled flag.
+     * @return result Returns an array of struct with hashes and cancellation flag.
+     * */
     function checkCanceledHashes(bytes32[] memory hashes)
         public
         view
@@ -757,7 +874,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    // Stores the filled orders and the respective amounts
+    /**
+     * @notice Returns the filled orders and the respective amounts.
+     * @return result Returns an array of struct with hashes and amount filled.
+     * */
     function checkFilledAmountHashes(bytes32[] memory hashes)
         public
         view
@@ -769,13 +889,5 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             bytes32 hash = hashes[i];
             result[i] = FilledAmountCheck(hash, filledAmountInOfHash[hash]);
         }
-    }
-
-    function approveTokenLoan(
-        address loanToken,
-        address asset,
-        uint256 amount
-    ) public onlyOwner {
-        IERC20(asset).approve(loanToken, amount);
     }
 }
