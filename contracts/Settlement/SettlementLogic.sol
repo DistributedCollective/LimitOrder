@@ -14,6 +14,7 @@ import "../libraries/EIP712.sol";
 import "../libraries/RSKAddrValidator.sol";
 import "../interfaces/ISettlement.sol";
 import "../interfaces/IPriceFeeds.sol";
+import "../interfaces/ISovrynSwapNetwork.sol";
 
 contract SettlementLogic is ISettlement, SettlementStorage {
     using SafeMath for uint256;
