@@ -191,7 +191,11 @@ describe("Settlement", async () => {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }));
+        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }), amountOutMin);
+        const receipt = await tx.wait();
+        const event = receipt.logs[receipt.logs.length - 1];
+        const created = orderBook.interface.decodeEventLog("OrderCreated", event.data, event.topics);
+        await helpers.expectToEqual(created.limitPrice, amountOutMin);
         orderG = order;
         const hash = await order.hash();
         console.log("order wrbtc-xusd hash", hash);

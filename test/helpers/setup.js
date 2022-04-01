@@ -93,7 +93,7 @@ module.exports = async () => {
         const { abi: orderBookABI } = await deployments.get("OrderBookSwapLogic");
         const { address: orderBoookAddress } = await deployments.get("OrderBookSwapProxy");
         const orderBook = await ethers.getContractAt(orderBookABI, orderBoookAddress);
-        const tx = await orderBook.createOrder(await order.toArgs(overrides));
+        const tx = await orderBook.createOrder(await order.toArgs(overrides), amountOutMin);
         return { order, tx };
     };
 

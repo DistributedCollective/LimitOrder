@@ -13,7 +13,11 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
     using Bytes32Pagination for bytes32[];
 
     //Events
-    event OrderCreated(bytes32 indexed hash, Orders.Order order);
+    event OrderCreated(
+        bytes32 indexed hash,
+        Orders.Order order,
+        uint256 limitPrice
+    );
 
     /**
      * @notice Replace constructor with initialize function for Upgradable Contracts
@@ -106,7 +110,7 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
     }
 
     // Creates an order
-    function createOrder(Orders.Order memory order) public {
+    function createOrder(Orders.Order memory order, uint256 limitPrice) public {
         order.validate();
 
         bytes32 hash = order.hash();
@@ -130,7 +134,7 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
         _hashesOfFromToken[order.fromToken].push(hash);
         _hashesOfToToken[order.toToken].push(hash);
 
-        emit OrderCreated(hash, order);
+        emit OrderCreated(hash, order, limitPrice);
     }
 
     // Returns the address of maker for an order
