@@ -91,7 +91,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const amn = ethers.utils.parseEther('0.001');
         const rbtcPrice = await swapContract.methods.rateByPath(xusdWrbtcPath, amn).call();
         const minSwapOrderSize = ethers.utils.parseEther('100').mul(rbtcPrice).div(amn); //min 100$ for margin order
-        const minMarginOrderSize = ethers.utils.parseEther('400').mul(rbtcPrice).div(amn); //min 400$ for margin order
+        const minMarginOrderSize = ethers.utils.parseEther('200').mul(rbtcPrice).div(amn); //min 200$ for margin order
     
         await settlement.methods.setMinSwapOrderSize(minSwapOrderSize);
         await settlement.methods.setMinMarginOrderSize(minMarginOrderSize);

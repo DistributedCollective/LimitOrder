@@ -72,8 +72,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 _minMarginOrderTxFee = tx.gasprice.mul(1800000).mul(3).div(2);
         setMinSwapOrderTxFee(_minSwapOrderTxFee);
         setMinMarginOrderTxFee(_minMarginOrderTxFee);
-        setMinSwapOrderSize(100);
-        setMinMarginOrderSize(100);
         setPriceFeeds(_priceFeeds);
     }
 
@@ -584,6 +582,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee; // Checks for the minimum fee
         uint256 minFeeAmountInToken = minFeeAmount;
         uint256 fillAmountInRBtc = amountToFill; // Partial Order possible - in tokens
+        uint256 orderSizeInRBtc = orderSize;
 
         // Converts rBTC to tokens to calculate the equivalent minimum fee
         if (fromToken != WRBTC_ADDRESS) {
@@ -591,6 +590,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 .queryRate(WRBTC_ADDRESS, fromToken);
             minFeeAmountInToken = minFeeAmount.mul(_rate).div(_precision); // rBTC -> Token
             fillAmountInRBtc = amountToFill.mul(_precision).div(_rate); // Token -> rBTC
+            orderSizeInRBtc = orderSize.mul(_precision).div(_rate); // Token -> rBTC
         }
 
         // If 0.2% of order(spot/margin) is less than minimum fee(spot/margin) -> pay minimum fee.
@@ -610,9 +610,10 @@ contract SettlementLogic is ISettlement, SettlementStorage {
                 ? minSwapOrderSize
                 : minMarginOrderSize;
 
-            // Relayer can only fill partial orders greater than a certain minimum size
+            // If an order is partially filled, the remaining amount should be bigger than the minSize
             require(
-                fillAmountInRBtc >= minFillingAmount,
+                orderSizeInRBtc == fillAmountInRBtc || // Complete filling
+                    orderSizeInRBtc.sub(fillAmountInRBtc) >= minFillingAmount, // Partial Order - remaining amount >= minSize
                 "Filling amount is too low"
             );
             relayerFee = estOrderFee; // 0.2% of orders(spot/margin)
