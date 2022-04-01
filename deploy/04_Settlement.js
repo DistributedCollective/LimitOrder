@@ -77,7 +77,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const SettlementLogic = await deployments.get('SettlementLogic');
         const settlement = new web3.eth.Contract(SettlementLogic.abi, proxyNotInititalized ? deployProxy.address : deployLogic.address);
         tx = await settlement.methods.initialize(
-            chainId,
+            orderBookChainId,
             orderBookAdr,
             orderBookMarginAdr,
             sovrynSwapNetwork,
@@ -93,14 +93,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const minSwapOrderSize = ethers.utils.parseEther('100').mul(rbtcPrice).div(amn); //min 100$ for margin order
         const minMarginOrderSize = ethers.utils.parseEther('200').mul(rbtcPrice).div(amn); //min 200$ for margin order
     
-        await settlement.methods.setMinSwapOrderSize(minSwapOrderSize);
-        await settlement.methods.setMinMarginOrderSize(minMarginOrderSize);
+        await settlement.methods.setMinSwapOrderSize(minSwapOrderSize).send({from: deployer});
+        await settlement.methods.setMinMarginOrderSize(minMarginOrderSize).send({from: deployer});
 
         // Transfer ownership
-        await settlement.methods.transferOwnership(multisig)
+        await settlement.methods.transferOwnership(multisig).send({from: deployer});
     }
 
-    await settlementProxy.methods.setProxyOwner(multisig);
+    await settlementProxy.methods.setProxyOwner(multisig).send({from: deployer});
 
     if (network.name === "hardhat" || network.name === "localhost") {
         await replaceInFile({
