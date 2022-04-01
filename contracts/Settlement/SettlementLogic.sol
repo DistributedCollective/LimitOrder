@@ -122,7 +122,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         override
         onlyOwner
     {
-        require(_relayerFeePercent <= 10**20, "value too high");
+        require(_relayerFeePercent <= 1e20, "value too high");
         uint256 oldValue = relayerFeePercent;
         relayerFeePercent = _relayerFeePercent;
 
@@ -298,7 +298,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         emit FeeTransferred(hash, msg.sender, relayerFee, path[0]);
 
-        uint256 _filledPrice = amountOut.mul(10**18).div(actualAmountIn);
+        uint256 _filledPrice = amountOut.mul(1e18).div(actualAmountIn);
 
         emit OrderFilled(
             hash,
@@ -704,7 +704,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         uint256 amountToFill,
         bool isSpot
     ) internal view returns (uint256 relayerFee) {
-        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(10**20); // 0.2% of amount to fill
+        uint256 estOrderFee = amountToFill.mul(relayerFeePercent).div(1e20); // 0.2% of amount to fill
         uint256 minFeeAmount = isSpot ? minSwapOrderTxFee : minMarginOrderTxFee; // Checks for the minimum fee
         uint256 minFeeAmountInToken = minFeeAmount;
         uint256 fillAmountInRBtc = amountToFill; // Partial Order possible - in tokens
