@@ -66,7 +66,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         WRBTC_ADDRESS = _WRBTC;
         orderBookAddress = _orderBookAddress;
         orderBookMarginAddress = _marginOrderBookAddress;
-        setRelayerFee(2 * 10**17); // Relayer fee percent = 0.2
+        setRelayerFee(2e17); // Relayer fee percent = 0.2
 
         // min fee = tx fee + 50%
         uint256 _minSwapOrderTxFee = tx.gasprice.mul(800000).mul(3).div(2);
