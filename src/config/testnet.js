@@ -14,7 +14,9 @@ module.exports = {
     loanContracts: {
         iXUSD: "0x9bd0ce087b14ef67c3d37c891139aae7d94a961a",
         iRBTC: "0xe67fe227e0504e8e96a34c3594795756dc26e14b",
-        iSUSD: "0x74e00a8ceddc752074aad367785bfae7034ed89f",
+        iDOC: "0x74e00a8ceddc752074aad367785bfae7034ed89f",
+        iUSDT: "0xd1f225BEAE98ccc51c468d1E92d0331c4f93e566",
+        iBPRo: "0x6226b4B3F29Ecb5f9EEC3eC3391488173418dD5d",
     },
     tokens: {
         SOV: "0x6a9A07972D07e58F0daf5122d11E069288A375fb",
