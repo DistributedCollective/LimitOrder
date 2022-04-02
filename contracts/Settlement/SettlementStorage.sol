@@ -3,9 +3,6 @@ pragma solidity =0.6.12;
 
 import "../proxy/Initializable.sol";
 import "../proxy/Ownable.sol";
-import "../libraries/Orders.sol";
-import "../interfaces/ISovrynSwapNetwork.sol";
-import "../interfaces/IPriceFeeds.sol";
 
 /**
  * @title Settlement Storage contract.
@@ -33,7 +30,6 @@ contract SettlementStorage is Initializable, Ownable {
     mapping(address => uint256) public balanceOf;
 
     //RBTC/WRBTC addresses
-    address public RBTC_ADDRESS;
     address public WRBTC_ADDRESS;
 
     uint256 public constant UNLIMITED_ALLOWANCE = (2**256) - 1;

@@ -42,9 +42,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             console.log(tx.transactionHash);
     
             // Transfer ownership
-            await orderBookMargin.methods.transferOwnership(multisig)
+            await orderBookMargin.methods.transferOwnership(multisig).send({from: deployer});
         }
         
-        await orderBookMarginProxy.methods.setProxyOwner(multisig)
+        await orderBookMarginProxy.methods.setProxyOwner(multisig).send({from: deployer});
     }
 };
