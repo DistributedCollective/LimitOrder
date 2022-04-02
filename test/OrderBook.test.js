@@ -33,19 +33,24 @@ describe("OrderBook", async () => {
         const { address } = await deployments.get("OrderBookSwapProxy");
         const orderBook = await ethers.getContractAt(abi, address);
 
-        const { order } = await createOrder(
+        const { order, limitPrice, tx } = await createOrder(
             users[0],
             fromToken,
             toToken,
-            parseEther('0.01'),
-            parseEther('0.0001'),
+            parseEther('100'),
+            parseEther('500'),
             getDeadline(24)
         );
 
         orderG=order;
+
         
         const hash = await order.hash();
+        const receipt = await tx.wait();
+        const event = receipt.logs[receipt.logs.length - 1];
+        const created = orderBook.interface.decodeEventLog("OrderCreated", event.data, event.topics);
 
+        helpers.expectToEqual(created.limitPrice, limitPrice)
         await helpers.expectToEqual(1, orderBook.numberOfAllHashes());
         await helpers.expectToEqual(1, orderBook.numberOfHashesOfMaker(users[0].address));
         await helpers.expectToEqual(1, orderBook.numberOfHashesOfFromToken(fromToken.address));

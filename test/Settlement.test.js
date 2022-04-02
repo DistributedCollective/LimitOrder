@@ -39,23 +39,9 @@ describe("Settlement", async () => {
     });
 
     async function getActualFillAmount(order, fillAmount) {
-        fillAmount = fillAmount || order.amountIn;
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        const orderSize = ethers.BigNumber.from(String(fillAmount));
-        let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
-        let minFeeAmount = await settlement.minSwapOrderTxFee();
-
-        if (order.fromToken.address.toLowerCase() != WrbtcAdr.toLowerCase()) {
-            const { users } = await helpers.setup();
-            const swap = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-            const path = await swap.conversionPath(WrbtcAdr, order.fromToken.address);
-            minFeeAmount = await swap.rateByPath(path, minFeeAmount);
-        }
-
-        if (orderFee.lt(minFeeAmount)) orderFee = minFeeAmount;
-
+        const orderSize = fillAmount || order.amountIn
+        const { estOrderFee } = await helpers.setup();
+        const orderFee = await estOrderFee(order, fillAmount);
         return orderSize.sub(orderFee);
     }
 
@@ -67,7 +53,7 @@ describe("Settlement", async () => {
             fromToken,
             toToken,
             parseEther('100'),
-            parseEther('0.005'),
+            parseEther('80'),
             getDeadline(24)
         );
 
@@ -95,6 +81,7 @@ describe("Settlement", async () => {
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, orderG.hash());
         await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
+        console.log('filled price', formatEther(filled.filledPrice));
     });
 
     it("Should deposit()", async() => {
@@ -164,7 +151,7 @@ describe("Settlement", async () => {
     });
 
     it("Should createOrder() RBTC-XUSD", async () => {
-        const { users, chainId, getDeadline } = await helpers.setup();
+        const { users, chainId, getDeadline, estOrderFee } = await helpers.setup();
         const signer = users[0];
         const { abi: settlementABI } = await deployments.get("SettlementLogic");
         const { address: settlementAddress } = await deployments.get("SettlementProxy");
@@ -174,8 +161,8 @@ describe("Settlement", async () => {
         const orderBook = await ethers.getContractAt(orderBookABI, orderBoookAddress);
         const fromToken = WRBTC[chainId];
         const toToken = XUSD[chainId];
-        const amountIn = parseEther('0.01');
-        const amountOutMin = parseEther('0.0001');
+        const amountIn = parseEther('0.1');
+        const amountOutMin = parseEther('80');
         
         await settlement.deposit(signer.address, {
             value: amountIn
@@ -191,11 +178,10 @@ describe("Settlement", async () => {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }), amountOutMin);
-        const receipt = await tx.wait();
-        const event = receipt.logs[receipt.logs.length - 1];
-        const created = orderBook.interface.decodeEventLog("OrderCreated", event.data, event.topics);
-        await helpers.expectToEqual(created.limitPrice, amountOutMin);
+        const estFee = await estOrderFee(order, order.amountIn);
+        const limitPrice = order.amountOutMin.mul(ethers.constants.WeiPerEther).div(order.amountIn.sub(estFee));
+        console.log('limit price', formatEther(limitPrice));
+        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }), limitPrice);
         orderG = order;
         const hash = await order.hash();
         console.log("order wrbtc-xusd hash", hash);
@@ -234,7 +220,7 @@ describe("Settlement", async () => {
             fromToken,
             toToken,
             parseEther('100'),
-            parseEther('0.00001'),
+            parseEther('0.08'),
             getDeadline(24)
         );
 
@@ -274,8 +260,8 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('0.01'),
-            parseEther('0.0001'),
+            parseEther('100'),
+            parseEther('500'),
             getDeadline(24)
         );
 
@@ -291,30 +277,30 @@ describe("Settlement", async () => {
         const receipt = await tx1.wait();
     });
 
-    it("Should failed fillOrder because minFee", async () => {
-        const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        await settlement.setMinSwapOrderSize(parseEther('0.001'));
-        const { order , tx } = await createOrder(
-            users[0],
-            fromToken,
-            toToken,
-            parseEther('0.002'),
-            parseEther('0.0001'),
-            getDeadline(24)
-        );
-        await tx.wait();
+    // it("Should failed fillOrder because minFee", async () => {
+    //     const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
+    //     const { abi: settlementABI } = await deployments.get("SettlementLogic");
+    //     const { address: settlementAddress } = await deployments.get("SettlementProxy");
+    //     const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+    //     await settlement.setMinSwapOrderSize(parseEther('0.001'));
+    //     const { order , tx } = await createOrder(
+    //         users[0],
+    //         fromToken,
+    //         toToken,
+    //         parseEther('10'),
+    //         parseEther('8'),
+    //         getDeadline(24)
+    //     );
+    //     await tx.wait();
         
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-        const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
+    //     const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+    //     const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
-            fillOrder(users[0], order, order.amountIn, order.amountOutMin, path)
-        );
-        await settlement.setMinSwapOrderSize(parseEther('0'));
-    });
+    //     await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
+    //         fillOrder(users[0], order, order.amountIn, order.amountOutMin, path)
+    //     );
+    //     await settlement.setMinSwapOrderSize(parseEther('0'));
+    // });
 
     it("Should withdraw RBTC when cancel order", async () => {
         const { users, chainId, getDeadline, createOrder } = await helpers.setup();

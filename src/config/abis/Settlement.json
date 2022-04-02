@@ -149,12 +149,6 @@
                 "internalType": "address",
                 "name": "collateralTokenAddress",
                 "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "filledPrice",
-                "type": "uint256"
             }
         ],
         "name": "MarginOrderFilled",
@@ -517,19 +511,6 @@
                 "internalType": "bytes32",
                 "name": "",
                 "type": "bytes32"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "RBTC_ADDRESS",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",
@@ -1304,12 +1285,12 @@
                 "type": "address"
             },
             {
-                "internalType": "contract ISovrynSwapNetwork",
+                "internalType": "address",
                 "name": "_sovrynSwapNetwork",
                 "type": "address"
             },
             {
-                "internalType": "contract IPriceFeeds",
+                "internalType": "address",
                 "name": "_priceFeeds",
                 "type": "address"
             },
@@ -1433,7 +1414,7 @@
         "name": "priceFeeds",
         "outputs": [
             {
-                "internalType": "contract IPriceFeeds",
+                "internalType": "address",
                 "name": "",
                 "type": "address"
             }
@@ -1509,7 +1490,7 @@
     {
         "inputs": [
             {
-                "internalType": "contract IPriceFeeds",
+                "internalType": "address",
                 "name": "_priceFeeds",
                 "type": "address"
             }
@@ -1537,7 +1518,7 @@
         "name": "sovrynSwapNetwork",
         "outputs": [
             {
-                "internalType": "contract ISovrynSwapNetwork",
+                "internalType": "address",
                 "name": "",
                 "type": "address"
             }
