@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let sovrynSwapNetwork;
     let wrbtcAddress, xusdAddress;
     const chainId = network.name === "mainnet" ? 30 : await getChainId();
-    let orderBookChainId = chainId;
+    let orderBookChainId = 30;
     let orderBookAdr, orderBookMarginAdr;
     let priceFeedAdr;
   

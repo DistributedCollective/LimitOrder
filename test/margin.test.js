@@ -402,7 +402,7 @@ describe("Margin Order", async () => {
             collateralToken: SUSD,
             collateralTokenSent: parseEther("1000"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("999"),
+            minEntryPrice: parseEther("1000"),
         });
         await orderTx.wait();
         const receipt = await filledTx.wait();
