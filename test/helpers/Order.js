@@ -55,7 +55,7 @@ class Order {
 
     async sign(overrides = {}) {
         const { address } = await deployments.get("OrderBookSwapProxy");
-        const chainId = await getChainId();
+        const chainId = 30; // await getChainId();
         const domain = {
             name: "OrderBook",
             version: "1",

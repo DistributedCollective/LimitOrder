@@ -9,3 +9,7 @@ node_modules
 coverage
 coverage.json
 yarn-error.log
+src/store.json
+logs
+public/dist
+.DS_Store

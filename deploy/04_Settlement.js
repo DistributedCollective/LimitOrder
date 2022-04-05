@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let sovrynSwapNetwork;
     let wrbtcAddress, xusdAddress;
     const chainId = network.name === "mainnet" ? 30 : await getChainId();
-    let orderBookChainId = chainId;
+    let orderBookChainId = 30;
     let orderBookAdr, orderBookMarginAdr;
     let priceFeedAdr;
   
@@ -37,7 +37,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
         xusdAddress = "0xb5999795be0ebb5bab23144aa5fd6a02d080299f";
         priceFeedAdr = "0x437AC62769f386b2d238409B7f0a7596d36506e4";
-        orderBookChainId = 31;
     }
 
     if (network.name === 'mainnet') {
@@ -90,8 +89,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const xusdWrbtcPath = await swapContract.methods.conversionPath(xusdAddress, wrbtcAddress).call();
         const amn = ethers.utils.parseEther('0.001');
         const rbtcPrice = await swapContract.methods.rateByPath(xusdWrbtcPath, amn).call();
-        const minSwapOrderSize = ethers.utils.parseEther('100').mul(rbtcPrice).div(amn); //min 100$ for margin order
-        const minMarginOrderSize = ethers.utils.parseEther('200').mul(rbtcPrice).div(amn); //min 200$ for margin order
+        const minSwapOrderSize = ethers.utils.parseEther('100').mul(rbtcPrice).div(amn); // min 100$ for swap order
+        const minMarginOrderSize = ethers.utils.parseEther('200').mul(rbtcPrice).div(amn); // min 200$ for margin order
     
         await settlement.methods.setMinSwapOrderSize(minSwapOrderSize).send({from: deployer});
         await settlement.methods.setMinMarginOrderSize(minMarginOrderSize).send({from: deployer});

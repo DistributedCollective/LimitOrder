@@ -298,7 +298,9 @@ app.get('/api/orders/:adr', async (req, res) => {
             const filled = (filledData || []).find(item => order.hash == item.hash);
             order.canceled = (canceled || {}).canceled || false;
             order.filled = (filled || {}).amount || false;
-            order.transactionHash = txStore.getTx(order.hash);
+            const { tx, limitPrice } = txStore.getTx(order.hash);
+            order.transactionHash = tx;
+            if (limitPrice) order.limitPrice = limitPrice;
         }
 
         return res.status(200).json({

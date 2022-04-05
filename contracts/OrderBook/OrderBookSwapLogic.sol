@@ -32,10 +32,6 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
      * This function will be called only once by the owner.
      * */
     function initialize() external onlyOwner initializer {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256(
@@ -43,7 +39,7 @@ contract OrderBookSwapLogic is OrderBookSwapStorage {
                 ),
                 keccak256("OrderBook"),
                 keccak256("1"),
-                chainId,
+                30,
                 address(this)
             )
         );

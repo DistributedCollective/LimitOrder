@@ -15,8 +15,11 @@ class TxStore {
     }
 
     async init(provider) {
+        this.provider = provider;
+        this.orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, provider);
+        this.orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, provider);
         await this.read();
-        await this.loadAllOrders(provider);
+        await this.loadAllOrders();
     }
 
     async read() {
@@ -45,19 +48,23 @@ class TxStore {
         });
     }
 
-    async loadAllOrders(provider) {
+    async loadAllOrders() {
         try {
             console.log('Loading all created order hashes');
-            const orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, provider);
-            const orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, provider);
-            const events = (await orderBookContract.queryFilter(orderBookContract.filters.OrderCreated())) || [];
-            const marginEvents = (await orderBookMarginContract.queryFilter(orderBookMarginContract.filters.MarginOrderCreated())) || [];
+            const events = (await this.orderBookContract.queryFilter(this.orderBookContract.filters.OrderCreated())) || [];
+            const marginEvents = (await this.orderBookMarginContract.queryFilter(this.orderBookMarginContract.filters.MarginOrderCreated())) || [];
             console.log('Total %s spot orders, %s margin orders', events.length, marginEvents.length);
 
             events.concat(marginEvents).forEach(event => {
                 const hash = event && event.args && event.args.hash;
                 if (hash && !this.orderTxs[hash]) {
-                    this.orderTxs[hash] = event.transactionHash;
+                    const data = {
+                        tx: event.transactionHash,
+                    };
+                    if (event.args.limitPrice) {
+                        data.limitPrice = String(event.args.limitPrice);
+                    }
+                    this.orderTxs[hash] = data;
                 }
             });
 
@@ -68,8 +75,28 @@ class TxStore {
     }
 
     async addOrderHash(hash, txHash) {
-        this.orderTxs[hash] = txHash;
+        this.orderTxs[hash] = {
+            tx: txHash
+        };
         await this.write();
+
+        this.provider.waitForTransaction(txHash).then(receipt => {
+            if (receipt && receipt.logs && receipt.logs.length > 0) {
+                const createdLog = receipt.logs[receipt.logs.length - 1];
+                let orderCreatedEv;
+                try {
+                    orderCreatedEv = this.orderBookContract.interface.decodeEventLog('OrderCreated', createdLog.data, createdLog.topic);
+                } catch(e) {}
+
+                if (orderCreatedEv) {
+                    this.orderTxs[hash] = {
+                        tx: txHash,
+                        limitPrice: String(orderCreatedEv.limitPrice)
+                    };
+                    this.write();
+                }
+            }
+        });
     }
 
     getTx(orderHash) {
