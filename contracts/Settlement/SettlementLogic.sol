@@ -606,12 +606,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             order.loanDataBytes /// Arbitrary order data.
         );
         (bool success, bytes memory result) = loanTokenAdr.call(data);
-        if (!success) {
+        /*if (!success) {
             if (result.length == 0) revert();
             assembly {
                 revert(add(32, result), mload(result))
             }
-        }
+        }*/
 
         (principalAmount, collateralAmount) = abi.decode(
             result,
