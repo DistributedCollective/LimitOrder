@@ -4,3 +4,7 @@ artifacts
 deployments
 cache
 node_modules
+*.code-workspace
+.vscode/
+coverage
+coverage.json
