@@ -54,7 +54,8 @@
     "solhint": "^3.1.0",
     "solhint-plugin-buidler": "^0.0.1",
     "solhint-plugin-prettier": "^0.0.4",
-    "solidity-coverage": "^0.7.14",
+    "solidity-coverage": "^0.7.20",
+    "sovryn-sc": "git+https://github.com/DistributedCollective/Sovryn-smart-contracts#1.18.1",
     "typechain": "^5.2.0",
     "webpack": "^4.43.0",
     "webpack-cli": "^3.3.12"
