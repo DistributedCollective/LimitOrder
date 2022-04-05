@@ -19,13 +19,13 @@ require("hardhat-deploy-ethers");
 // https://hardhat.org/guides/create-task.html
 /// this is for use with ethers.js
 task("accounts", "Prints the list of accounts", async () => {
-    const accounts = await ethers.getSigners();
+	const accounts = await ethers.getSigners();
 
-    for (const account of accounts.address) {
-        const wallet = ethers.Wallet.fromMnemonic("test test test test test test test test test test test junk", "m/44'/60'/0'/0");
+	for (const account of accounts.address) {
+		const wallet = ethers.Wallet.fromMnemonic("test test test test test test test test test test test junk", "m/44'/60'/0'/0");
 
-        console.log(account);
-    }
+		console.log(account);
+	}
 });
 
 /*task("accounts", "Prints accounts", async (_, { web3 }) => {
@@ -41,95 +41,107 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 /**/
 const accounts = {
-    mnemonic: "test test test test test test test test test test test junk",
+	mnemonic: "test test test test test test test test test test test junk",
 };
 
 module.exports = {
-    solidity: {
-        compilers: [
-            {
-                version: "0.5.17",
-                settings: {
-                    optimizer: {
-                        enabled: true,
-                        runs: 200,
-                    }
-                }
-            },
-            {
-                version: "0.6.12",
-                settings: {
-                    optimizer: {
-                        enabled: true,
-                        runs: 200,
-                    },
-                },
-            }
-        ],
-    },
-    abiExporter: {
-        path: "./abi",
-        clear: true,
-        flat: false,
-        only: [],
-        except: [],
-        spacing: 4,
-    },
-    contractSizer: {
-        alphaSort: false,
-        runOnCompile: false,
-        disambiguatePaths: false,
-    },
-    defaultNetwork: "hardhat",
-    networks: {
-        hardhat: {
-            gas: 12000000,
-            blockGasLimit: 12000000,
-            allowUnlimitedContractSize: true,
-            live: false,
-            saveDeployments: true,
-            accounts,
-        },
-        localhost: {
-            url: 'http://127.0.0.1:8545',
-            gas: 12000000,
-            blockGasLimit: 12000000,
-            allowUnlimitedContractSize: true,
-            live: false,
-            saveDeployments: true,
-            accounts,
-        },
-        rsktestnet: {
-            url: "https://testnet.sovryn.app/rpc",
-            accounts: [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_RELAYER],
-            network_id: 31,
-            confirmations: 4,
-            gasMultiplier: 1.25,
-            timeout: 50000, // increase if needed; 20000 is the default value
-            //allowUnlimitedContractSize, //EIP170 contrtact size restriction temporal testnet workaround
-        },
-        mainnet: {
-            url: "https://mainnet.sovryn.app/rpc",
-            accounts: [process.env.PRIVATE_KEY],
-            network_id: 30,
-            //timeout: 20000, // increase if needed; 20000 is the default value
-        },
-    },
-    paths: {
-        sources: "./contracts",
-        tests: "./tests",
-    },
-    mocha: {
-        timeout: 800000,
-        grep: "^(?!.*; using Ganache).*",
-    },
-    docgen: {
-        path: "./docs",
-        clear: true,
-    },
-    namedAccounts: {
-        deployer: 0,
-        relayer: 1,
-        user: 2,
-    },
+	solidity: {
+		compilers: [
+			{
+				version: "0.5.17",
+				settings: {
+					optimizer: {
+						enabled: true,
+						runs: 200,
+					},
+				},
+			},
+			{
+				version: "0.6.12",
+				settings: {
+					optimizer: {
+						enabled: true,
+						runs: 200,
+					},
+				},
+			},
+		],
+		configureYulOptimizer: true,
+	},
+	abiExporter: {
+		path: "./abi",
+		clear: true,
+		flat: false,
+		only: [],
+		except: [],
+		spacing: 4,
+	},
+	contractSizer: {
+		alphaSort: false,
+		runOnCompile: false,
+		disambiguatePaths: false,
+	},
+	defaultNetwork: "hardhat",
+	networks: {
+		hardhat: {
+			gas: 12000000,
+			blockGasLimit: 12000000,
+			allowUnlimitedContractSize: true,
+			live: false,
+			saveDeployments: true,
+			accounts,
+		},
+		localhost: {
+			url: "http://127.0.0.1:8545",
+			gas: 12000000,
+			blockGasLimit: 12000000,
+			allowUnlimitedContractSize: true,
+			live: false,
+			saveDeployments: true,
+			accounts,
+		},
+		rsktestnet: {
+			url: "https://testnet.sovryn.app/rpc",
+			// accounts: [process.env.PRIVATE_KEY || "", process.env.PRIVATE_KEY_RELAYER || ""],
+			accounts: accounts, //{ "mnemonic": "test" },
+			network_id: 31,
+			confirmations: 4,
+			gasMultiplier: 1.25,
+			timeout: 50000, // increase if needed; 20000 is the default value
+			//allowUnlimitedContractSize, //EIP170 contrtact size restriction temporal testnet workaround
+		},
+		mainnet: {
+			url: "https://mainnet.sovryn.app/rpc",
+			// accounts: [process.env.PRIVATE_KEY || ""],
+			accounts: accounts,
+			network_id: 30,
+			//timeout: 20000, // increase if needed; 20000 is the default value
+		},
+	},
+	paths: {
+		sources: "./contracts",
+		tests: "./tests",
+	},
+	mocha: {
+		timeout: 800000,
+		grep: "^(?!.*; using Ganache).*",
+	},
+	docgen: {
+		path: "./docs",
+		clear: true,
+	},
+	namedAccounts: {
+		deployer: 0,
+		relayer: 1,
+		user: 2,
+	},
+	external: {
+		contracts: [
+			{
+				//artifacts: "external-contracts/sovryn-protocol/artifacts/contracts/**/*.sol/!(*.dbg.json)",
+				artifacts: "external-contracts/sovryn-protocol/artifacts",
+				deploy: "external-contracts/sovryn-protocol/deploy",
+			},
+		],
+	},
 };
