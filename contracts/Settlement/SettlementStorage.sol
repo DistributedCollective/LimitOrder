@@ -3,8 +3,6 @@ pragma solidity =0.6.12;
 
 import "../proxy/Initializable.sol";
 import "../proxy/Ownable.sol";
-import "../libraries/Orders.sol";
-import "../interfaces/ISovrynSwapNetwork.sol";
 
 /**
  * @title Settlement Storage contract.
@@ -32,10 +30,16 @@ contract SettlementStorage is Initializable, Ownable {
     mapping(address => uint256) public balanceOf;
 
     //RBTC/WRBTC addresses
-    address public RBTC_ADDRESS;
     address public WRBTC_ADDRESS;
 
-    ISovrynSwapNetwork public sovrynSwapNetwork;
+    // Approval
+    uint256 public constant UNLIMITED_ALLOWANCE = (2**256) - 1;
+
+    // AMM contract
+    address public sovrynSwapNetwork;
+
+    // Price oracle
+    address public priceFeeds;
 
     // Address of OrderBook proxy
     address public orderBookAddress;
@@ -46,6 +50,15 @@ contract SettlementStorage is Initializable, Ownable {
     // Relayer Fee Percent
     uint256 public relayerFeePercent;
 
-    // Minimum Fee
-    uint256 public minFee; //in wrbtc
+    // Minimum tx fee for filling a swap order
+    uint256 public minSwapOrderTxFee;
+
+    // Minimum tx fee for filling a margin order
+    uint256 public minMarginOrderTxFee;
+
+    // Minimum swap order size for partial filling
+    uint256 public minSwapOrderSize; //in wrbtc
+
+    // Minimum margin order size for partial filling
+    uint256 public minMarginOrderSize; //in wrbtc
 }

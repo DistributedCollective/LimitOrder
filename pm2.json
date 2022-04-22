@@ -1,0 +1,16 @@
+{
+    "apps": [
+      {
+        "name": "Limitorder backend testnet",
+        "script": "./src/start.js",
+        "watch": false,
+        "args": "--testnet",
+        "out_file": "./logs/out.log",
+        "error_file": "./logs/err.log",
+        "time": true,
+        "env": {
+          "NODE_ENV": "production"
+        }
+      }
+    ]
+  }

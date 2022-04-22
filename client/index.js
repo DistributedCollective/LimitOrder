@@ -3,7 +3,7 @@ const Web3 = require("web3");
 const ethers = require('ethers');
 const axios = require('axios');
 const abiDecoder = require('abi-decoder');
-const config = require('../src/config/testnet');
+const config = require('../src/config/local');
 const ABIs = require("../src/config/abis");
 const Order = require('../src/Order');
 const MarginOrder = require('../src/MarginOrder');
@@ -15,211 +15,211 @@ $(document).ready(() => {
         connectWallet();
         abiDecoder.addABI(ABIs.OrderBook);
 
-        
         $('#sellSovXusdBtn').on('click', function () {
-            createOrder('SOV', 'XUSD', ethers.utils.parseEther('10'), $(this));
+            createOrder('SOV', 'XUSD', ethers.utils.parseEther('100'), $(this), 0.9);
         });
-        $('#buySovXusdbtn').on('click', function () {
-            createOrder('XUSD', 'SOV', ethers.utils.parseEther('10'), $(this));
-        });
+
+        // $('#buySovXusdbtn').on('click', function () {
+        //     createOrder('XUSD', 'SOV', ethers.utils.parseEther('10'), $(this));
+        // });
         
-        $('#sellSovWrbtcBtn').on('click', function () {
-            createOrder('SOV', 'WRBTC', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovWrbtcCBtn').on('click', function () {
-            createOrder('WRBTC', 'SOV', ethers.utils.parseEther('1'), $(this));
-        });
+        // $('#sellSovWrbtcBtn').on('click', function () {
+        //     createOrder('SOV', 'WRBTC', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovWrbtcCBtn').on('click', function () {
+        //     createOrder('WRBTC', 'SOV', ethers.utils.parseEther('1'), $(this));
+        // });
         
-        $('#sellSovBProBtn').on('click', function () {
-            createOrder('SOV', 'BPRO', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovBProBtn').on('click', function () {
-            createOrder('BPRO', 'SOV', ethers.utils.parseEther('0.001'), $(this));
-        });
+        // $('#sellSovBProBtn').on('click', function () {
+        //     createOrder('SOV', 'BPRO', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovBProBtn').on('click', function () {
+        //     createOrder('BPRO', 'SOV', ethers.utils.parseEther('0.001'), $(this));
+        // });
         
-        $('#sellSovDocBtn').on('click', function () {
-            createOrder('SOV', 'DOC', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovDocBtn').on('click', function () {
-            createOrder('DOC', 'SOV', ethers.utils.parseEther('10'), $(this));
-        });
+        // $('#sellSovDocBtn').on('click', function () {
+        //     createOrder('SOV', 'DOC', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovDocBtn').on('click', function () {
+        //     createOrder('DOC', 'SOV', ethers.utils.parseEther('10'), $(this));
+        // });
         
-        $('#sellSovUsdtBtn').on('click', function () {
-            createOrder('SOV', 'USDT', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovUsdtBtn').on('click', function () {
-            createOrder('USDT', 'SOV', ethers.utils.parseEther('10'), $(this));
-        });
+        // $('#sellSovUsdtBtn').on('click', function () {
+        //     createOrder('SOV', 'USDT', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovUsdtBtn').on('click', function () {
+        //     createOrder('USDT', 'SOV', ethers.utils.parseEther('10'), $(this));
+        // });
         
-        $('#sellSovEthsBtn').on('click', function () {
-            createOrder('SOV', 'ETHs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovEthsBtn').on('click', function () {
-            createOrder('ETHs', 'SOV', ethers.utils.parseEther('0.05'), $(this));
-        });
+        // $('#sellSovEthsBtn').on('click', function () {
+        //     createOrder('SOV', 'ETHs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'SOV', ethers.utils.parseEther('0.05'), $(this));
+        // });
         
-        $('#sellSovBnbsBtn').on('click', function () {
-            createOrder('SOV', 'BNBs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buySovBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'SOV', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellSovBnbsBtn').on('click', function () {
+        //     createOrder('SOV', 'BNBs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buySovBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'SOV', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
 
-        $('#sellXusdWrbtcBtn').on('click', function () {
-            createOrder('XUSD', 'WRBTC', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdWrbtcBtn').on('click', function () {
-            createOrder('WRBTC', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellXusdWrbtcBtn').on('click', function () {
+        //     createOrder('XUSD', 'WRBTC', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdWrbtcBtn').on('click', function () {
+        //     createOrder('WRBTC', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
-        $('#sellXusdBproBtn').on('click', function () {
-            createOrder('XUSD', 'BRPO', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdBproBtn').on('click', function () {
-            createOrder('BPRO', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellXusdBproBtn').on('click', function () {
+        //     createOrder('XUSD', 'BRPO', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdBproBtn').on('click', function () {
+        //     createOrder('BPRO', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
-        $('#sellXusdDocBtn').on('click', function () {
-            createOrder('XUSD', 'DOC', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdDocBtn').on('click', function () {
-            createOrder('DOC', 'XUSD', ethers.utils.parseEther('10'), $(this));
-        });
+        // $('#sellXusdDocBtn').on('click', function () {
+        //     createOrder('XUSD', 'DOC', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdDocBtn').on('click', function () {
+        //     createOrder('DOC', 'XUSD', ethers.utils.parseEther('10'), $(this));
+        // });
 
-        $('#sellXusdUsdtBtn').on('click', function () {
-            createOrder('XUSD', 'USDT', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdUsdtBtn').on('click', function () {
-            createOrder('USDT', 'XUSD', ethers.utils.parseEther('10'), $(this));
-        });
+        // $('#sellXusdUsdtBtn').on('click', function () {
+        //     createOrder('XUSD', 'USDT', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdUsdtBtn').on('click', function () {
+        //     createOrder('USDT', 'XUSD', ethers.utils.parseEther('10'), $(this));
+        // });
 
-        $('#sellXusdEthsBtn').on('click', function () {
-            createOrder('XUSD', 'ETHs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdEthsBtn').on('click', function () {
-            createOrder('ETHs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellXusdEthsBtn').on('click', function () {
+        //     createOrder('XUSD', 'ETHs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
-        $('#sellXusdBnbsBtn').on('click', function () {
-            createOrder('XUSD', 'BNBs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyXusdBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellXusdBnbsBtn').on('click', function () {
+        //     createOrder('XUSD', 'BNBs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyXusdBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'XUSD', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
 
-        $('#sellRbtcBproBtn').on('click', function () {
-            createOrder('WRBTC', 'BRPO', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyRbtcBproBtn').on('click', function () {
-            createOrder('BRPO', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellRbtcBproBtn').on('click', function () {
+        //     createOrder('WRBTC', 'BRPO', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyRbtcBproBtn').on('click', function () {
+        //     createOrder('BRPO', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        // });
         
-        $('#sellRbtcUsdtBtn').on('click', function () {
-            createOrder('WRBTC', 'USDT', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyRbtcUsdtBtn').on('click', function () {
-            createOrder('USDT', 'WRBTC', ethers.utils.parseEther('100'), $(this));
-        });
+        // $('#sellRbtcUsdtBtn').on('click', function () {
+        //     createOrder('WRBTC', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyRbtcUsdtBtn').on('click', function () {
+        //     createOrder('USDT', 'WRBTC', ethers.utils.parseEther('100'), $(this));
+        // });
         
-        $('#sellRbtcDocBtn').on('click', function () {
-            createOrder('WRBTC', 'DOC', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyRbtcDocBtn').on('click', function () {
-            createOrder('DOC', 'WRBTC', ethers.utils.parseEther('100'), $(this));
-        });
+        // $('#sellRbtcDocBtn').on('click', function () {
+        //     createOrder('WRBTC', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyRbtcDocBtn').on('click', function () {
+        //     createOrder('DOC', 'WRBTC', ethers.utils.parseEther('100'), $(this));
+        // });
 
-        $('#sellRbtcEthsBtn').on('click', function () {
-            createOrder('WRBTC', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyRbtcEthsBtn').on('click', function () {
-            createOrder('ETHs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellRbtcEthsBtn').on('click', function () {
+        //     createOrder('WRBTC', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyRbtcEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
-        $('#sellRbtcBnbsBtn').on('click', function () {
-            createOrder('WRBTC', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyRbtcBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
-        });
-
-
-        $('#sellBproDocBtn').on('click', function () {
-            createOrder('BPRO', 'DOC', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyBproDocBtn').on('click', function () {
-            createOrder('DOC', 'BPRO', ethers.utils.parseEther('100'), $(this));
-        });
-
-        $('#sellBproUsdtBtn').on('click', function () {
-            createOrder('BPRO', 'USDT', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyBproUsdtBtn').on('click', function () {
-            createOrder('USDT', 'BPRO', ethers.utils.parseEther('100'), $(this));
-        });
-
-        $('#sellBproEthsBtn').on('click', function () {
-            createOrder('BPRO', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyBproEthsBtn').on('click', function () {
-            createOrder('ETHs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
-        });
-
-        $('#sellBproBnbsBtn').on('click', function () {
-            createOrder('BPRO', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyBproBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellRbtcBnbsBtn').on('click', function () {
+        //     createOrder('WRBTC', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyRbtcBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'WRBTC', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
 
-        $('#sellDocUsdtBtn').on('click', function () {
-            createOrder('DOC', 'USDT', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyDocUsdtBtn').on('click', function () {
-            createOrder('USDT', 'DOC', ethers.utils.parseEther('10'), $(this));
-        });
+        // $('#sellBproDocBtn').on('click', function () {
+        //     createOrder('BPRO', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyBproDocBtn').on('click', function () {
+        //     createOrder('DOC', 'BPRO', ethers.utils.parseEther('100'), $(this));
+        // });
 
-        $('#sellDocEthsBtn').on('click', function () {
-            createOrder('DOC', 'ETHs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyDocEthsBtn').on('click', function () {
-            createOrder('ETHs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellBproUsdtBtn').on('click', function () {
+        //     createOrder('BPRO', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyBproUsdtBtn').on('click', function () {
+        //     createOrder('USDT', 'BPRO', ethers.utils.parseEther('100'), $(this));
+        // });
 
-        $('#sellDocBnbsBtn').on('click', function () {
-            createOrder('DOC', 'BNBs', ethers.utils.parseEther('10'), $(this));
-        });
-        $('#buyDocBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellBproEthsBtn').on('click', function () {
+        //     createOrder('BPRO', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyBproEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
+        // });
+
+        // $('#sellBproBnbsBtn').on('click', function () {
+        //     createOrder('BPRO', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyBproBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'BPRO', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
 
-        $('#sellUsdtEthsBtn').on('click', function () {
-            createOrder('USDT', 'ETHs', ethers.utils.parseEther('100'), $(this));
-        });
-        $('#buyUsdtEthsBtn').on('click', function () {
-            createOrder('ETHs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellDocUsdtBtn').on('click', function () {
+        //     createOrder('DOC', 'USDT', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyDocUsdtBtn').on('click', function () {
+        //     createOrder('USDT', 'DOC', ethers.utils.parseEther('10'), $(this));
+        // });
 
-        $('#sellUsdtBnbsBtn').on('click', function () {
-            createOrder('USDT', 'BNBs', ethers.utils.parseEther('100'), $(this));
-        });
-        $('#buyUsdtBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellDocEthsBtn').on('click', function () {
+        //     createOrder('DOC', 'ETHs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyDocEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
-        $('#sellEthsBnbsBtn').on('click', function () {
-            createOrder('ETHs', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
-        });
-        $('#buyEthsBnbsBtn').on('click', function () {
-            createOrder('BNBs', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
-        });
+        // $('#sellDocBnbsBtn').on('click', function () {
+        //     createOrder('DOC', 'BNBs', ethers.utils.parseEther('10'), $(this));
+        // });
+        // $('#buyDocBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'DOC', ethers.utils.parseEther('0.1'), $(this));
+        // });
+
+
+        // $('#sellUsdtEthsBtn').on('click', function () {
+        //     createOrder('USDT', 'ETHs', ethers.utils.parseEther('100'), $(this));
+        // });
+        // $('#buyUsdtEthsBtn').on('click', function () {
+        //     createOrder('ETHs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        // });
+
+        // $('#sellUsdtBnbsBtn').on('click', function () {
+        //     createOrder('USDT', 'BNBs', ethers.utils.parseEther('100'), $(this));
+        // });
+        // $('#buyUsdtBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'USDT', ethers.utils.parseEther('0.1'), $(this));
+        // });
+
+        // $('#sellEthsBnbsBtn').on('click', function () {
+        //     createOrder('ETHs', 'BNBs', ethers.utils.parseEther('0.1'), $(this));
+        // });
+        // $('#buyEthsBnbsBtn').on('click', function () {
+        //     createOrder('BNBs', 'ETHs', ethers.utils.parseEther('0.1'), $(this));
+        // });
 
 
         $('#longBTCx2').on('click', function () {
-            createMarginOrder('long', '20', $(this));
+            createMarginOrder('long', '200', $(this));
         });
         $('#shortBTCx2').on('click', function () {
             createMarginOrder('short', '20', $(this));
@@ -310,7 +310,32 @@ const waitTransaction = async (txHash) => {
     });
 }
 
-async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
+/**
+ * Get fee for swap order on [toToken]
+ */
+const getSwapOrderFeeOut = async (amountIn, fromToken, toToken) => {
+    const swapContract = new web3.eth.Contract(ABIs.SovrynSwap, config.contracts.swap);
+    const settlement = new web3.eth.Contract(ABIs.Settlement, config.contracts.settlement);
+    const orderSize = ethers.BigNumber.from(String(amountIn));
+    let orderFee = orderSize.mul(2).div(1000); //-0.2% relayer fee
+    let minFeeAmount = await settlement.methods.minSwapOrderTxFee().call();
+    console.log('minFeeAmount', Number(minFeeAmount));
+
+    let minFeeInToken = minFeeAmount;
+    if (fromToken != config.tokens.WRBTC) {
+        const rbtcPath = await swapContract.methods.conversionPath(config.tokens.WRBTC, fromToken).call();
+        minFeeInToken = await swapContract.methods.rateByPath(rbtcPath, minFeeAmount).call();
+    }
+
+    if (orderFee.lt(minFeeInToken)) orderFee = minFeeInToken;
+
+    const path = await swapContract.methods.conversionPath(fromToken, toToken).call();
+    const feeOnToToken = await swapContract.methods.rateByPath(path, orderFee).call();
+
+    return feeOnToToken;
+}
+
+async function createOrder(fromCurrency, toCurrency, amountIn, btn, priceBuffer = 1) {
     const apiUrl = `${config.baseAPIUrl}/api/createOrder`;
     if (bal <= 0) {
         alert('Insufficient balance');
@@ -325,9 +350,22 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         const toToken = config.tokens[toCurrency];
         if (!fromToken || !toToken) return showMsg(`Token not found for currency ${fromCurrency}, ${toCurrency}`);
 
-        //minAmountOut = 0.8 * amountIn
-        const minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn)).mul('8').div('10');
-        showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} for ${formatEther(amountIn)} ${fromCurrency}`);
+        let minAmountOut = (await getPriceAmm(fromToken, toToken, amountIn));
+        const curPrice = Number(minAmountOut)/Number(amountIn);
+        minAmountOut = minAmountOut.mul((priceBuffer * 1000).toFixed(0)).div('1000');
+        const limitPrice = minAmountOut.mul(ethers.constants.WeiPerEther).div(amountIn);
+        const feeOut = await getSwapOrderFeeOut(amountIn, fromToken, toToken);
+        minAmountOut = minAmountOut.sub(feeOut);
+        showMsg(`Min amount out: ${formatEther(minAmountOut)} ${toCurrency} 
+            for ${formatEther(amountIn)} ${fromCurrency} 
+            limit price ${formatEther(limitPrice)}
+            current price ${curPrice}
+        `);
+        showMsg(`Fee out: ~${formatEther(feeOut)} ${toCurrency}`);
+
+        if (minAmountOut.lt(0)) {
+            return alert("Amount is less than relayer fee");
+        }
 
         if (fromToken == config.tokens.WRBTC) {
             showMsg(`sending ${formatEther(amountIn)} rbtc to Settlement contract`);
@@ -357,7 +395,7 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
             amountIn,
             minAmountOut,
             account,
-            getDeadline(24),
+            getDeadline(240),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
         const chainId = config.orderBookChainId;
@@ -385,7 +423,7 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
             sig.r,
             sig.s,
         ];
-        const txData = await contract.methods.createOrder(args).encodeABI();
+        const txData = await contract.methods.createOrder(args, limitPrice).encodeABI();
 
         const { status, data } = await axios.post(apiUrl, {
             data: txData,
@@ -395,6 +433,7 @@ async function createOrder(fromCurrency, toCurrency, amountIn, btn) {
         showMsg('tx', JSON.stringify(data, null, 2));
         if (data && data.data && data.data.hash) {
             const receipt = await waitTransaction(data.data.hash);
+            console.log(receipt)
             const logs = abiDecoder.decodeLogs(receipt.logs) || [];
             showMsg('logs', JSON.stringify(logs, null, 2));
         }
@@ -453,7 +492,7 @@ async function createMarginOrder(pos, amountUSD, $btn) {
             account, //trader,
             minEntryPrice,
             ethers.constants.HashZero, //loanDataBytes,
-            getDeadline(24),//deadline,
+            getDeadline(240),//deadline,
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), //createdTimestamp,
         );
 
@@ -530,7 +569,7 @@ async function getCurEntryPrice(loanTokenAddress, loanTokenSent, collateralToken
     if (collateralTokenSent.gt(ethers.constants.Zero)) {
         path = await swapContract.methods.conversionPath(collateralTokenAddress, loanTokenAddress).call();
         const amn = await swapContract.methods.rateByPath(path, collateralTokenSent).call();
-        totalLoanDeposited = ethers.BigNumber.from(amn).add(totalCollateral);
+        totalLoanDeposited = ethers.BigNumber.from(amn).add(totalLoanDeposited);
     }
 
     const pathLoan2Col = await swapContract.methods.conversionPath(loanTokenAddress, collateralTokenAddress).call();

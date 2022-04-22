@@ -1,19 +1,22 @@
 module.exports = {
-    port: 3001,
+    port: 3003,
     chainId: 31,
     orderBookChainId: 31,
-    baseAPIUrl: 'http://localhost:3001',
+    baseAPIUrl: 'http://18.217.222.156:3003',
     networkUrl: 'https://testnet.sovryn.app/rpc',
     orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0xb830d425101aD0dd49292D82dEB551d986BC80f7',
-        orderBook: '0x1B819cd8DC291c2788cF8a99Ba230ea074866Af1',
-        orderBookMargin: '0xbA37D9382cEa314404d01E123c2e30730409e649',
+        settlement: '0x4dfb9ab1653Eb5A295109E02e37fc222D85fdA74',
+        orderBook: '0xfD4D1FBFC652f5b3D98881b9346635399F1e6254',
+        orderBookMargin: '0x1213B6D3552DA46dF4767EeD8cb2d0BD7D8e913d',
         swap: '0x61172b53423e205a399640e5283e51fe60ec2256'
     },
     loanContracts: {
         iXUSD: "0x9bd0ce087b14ef67c3d37c891139aae7d94a961a",
         iRBTC: "0xe67fe227e0504e8e96a34c3594795756dc26e14b",
+        iDOC: "0x74e00a8ceddc752074aad367785bfae7034ed89f",
+        iUSDT: "0xd1f225BEAE98ccc51c468d1E92d0331c4f93e566",
+        iBPRo: "0x6226b4B3F29Ecb5f9EEC3eC3391488173418dD5d",
     },
     tokens: {
         SOV: "0x6a9A07972D07e58F0daf5122d11E069288A375fb",

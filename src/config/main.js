@@ -6,16 +6,17 @@ module.exports = {
     networkUrl: 'https://mainnet.sovryn.app/rpc',
     orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
-        settlement: '0x438CD12C586d4E4Bbd6CbaD7f600Bb5945cf1516',
-        orderBook: '0x1B819cd8DC291c2788cF8a99Ba230ea074866Af1',
-        orderBookMargin: '0xbA37D9382cEa314404d01E123c2e30730409e649',
+        settlement: '0x823e55322a395516ac3930F4C1ad9C7c2Fe2EACd',
+        orderBook: '0x1c910918d6D05feC83e2376D57226d1b08324028',
+        orderBookMargin: '0x3677e8a679536d80F0b33ED2d1d0bC01a6634a4D',
         swap: '0x98ace08d2b759a265ae326f010496bcd63c15afc'
     },
     loanContracts: {
         iXUSD: "0x8f77ecf69711a4b346f23109c40416be3dc7f129",
         iRBTC: "0xa9dcdc63eabb8a2b6f39d7ff9429d88340044a7a",
-        iSUSD: "0xd8d25f03ebba94e15df2ed4d6d38276b595593c1",
+        iDOC: "0xd8d25f03ebba94e15df2ed4d6d38276b595593c1",
         iUSDT: "0x849c47f9c259e9d62f289bf1b2729039698d8387",
+        iBPRo: "0x6E2fb26a60dA535732F8149b25018C9c0823a715",
     },
     tokens: {
         SOV: "0xefc78fc7d48b64958315949279ba181c2114abbd",

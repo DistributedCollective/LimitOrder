@@ -14,6 +14,7 @@ const LoanSettings = artifacts.require("LoanSettings");
 const LoanMaintenance = artifacts.require("LoanMaintenance");
 const LoanOpenings = artifacts.require("LoanOpenings");
 const LoanClosingsWith = artifacts.require("LoanClosingsWith");
+const LoanClosingsBase = artifacts.require("LoanClosingsBase");
 
 const SwapsExternal = artifacts.require("SwapsExternal");
 
@@ -83,8 +84,8 @@ const getPriceFeeds = async (WRBTC, SUSD, RBTC, sovryn, BZRX) => {
 	const feeds = await PriceFeedsLocal.new(WRBTC.address, BZRX.address);
 
 	await feeds.setRates(WRBTC.address, RBTC.address, oneEth.toString());
-	await feeds.setRates(WRBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
-	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
+	await feeds.setRates(WRBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
+	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
 	return feeds;
 };
 
@@ -93,7 +94,7 @@ const getPriceFeedsRBTC = async (WRBTC, SUSD, RBTC, sovryn, BZRX) => {
 
 	await feeds.setRates(WRBTC.address, RBTC.address, oneEth.toString());
 	await feeds.setRates(WRBTC.address, SUSD.address, oneEth.toString());
-	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(22)).toString());
+	await feeds.setRates(RBTC.address, SUSD.address, new BN(10).pow(new BN(21)).toString());
 	return feeds;
 };
 
@@ -120,6 +121,7 @@ const getSovryn = async (WRBTC, SUSD, RBTC, priceFeeds) => {
 
 	// loanClosing
 	await sovryn.replaceContract((await LoanClosingsWith.new()).address);
+	await sovryn.replaceContract((await LoanClosingsBase.new()).address);
 
 	// affiliates
 	await sovryn.replaceContract((await Affiliates.new()).address);

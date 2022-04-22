@@ -8,7 +8,7 @@ const sSNAbi = require('./ssnabi.json');
 const Order = require("./helpers/Order");
 
 var orderG, fromToken, toToken;
-let settlement;
+let settlement, WrbtcAdr;
 
 describe("Settlement", async () => {
     beforeEach(async () => {
@@ -17,6 +17,7 @@ describe("Settlement", async () => {
         const {chainId} = await helpers.setup();
         fromToken = XUSD[chainId];
         toToken = SOV[chainId];
+        WrbtcAdr = WRBTC[chainId].address.toLowerCase();
         
         if(network.name === "mainnet") sovrynSwapNetworkAdr= "0x98ace08d2b759a265ae326f010496bcd63c15afc";
         else if(network.name=="rsktestnet") sovrynSwapNetworkAdr = "0x61172b53423e205a399640e5283e51fe60ec2256";
@@ -25,26 +26,23 @@ describe("Settlement", async () => {
             sovrynSwapNetworkAdr = sovrynSwapNetworkAdr.address;
 
             const accounts = await ethers.getSigners();
-            // await Promise.all(accounts.map(async (acc) => {
-            //     console.log(acc.address, Number(await acc.getBalance()));
-            //     // console.log(acc)
-            // }));
             await accounts[0].sendTransaction({
                 to: WRBTC[chainId].address,
                 value: parseEther("10")
             });
 
-            const priceFeeds = await getContract("PriceFeedsLocal", accounts[0]);
-            await priceFeeds.setRates(fromToken.address, toToken.address, parseEther("1"));
             const { abi: settlementABI } = await deployments.get("SettlementLogic");
             const { address: settlementAddress } = await deployments.get("SettlementProxy");
             const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-            await settlement.setMinFee(parseEther('0'));
+            await settlement.setMinSwapOrderSize(parseEther('0'));
         }
     });
 
-    function getActualFillAmount(amount) {
-        return ethers.BigNumber.from(String(amount)).mul(998).div(1000); //-0.2% relayer fee
+    async function getActualFillAmount(order, fillAmount) {
+        const orderSize = fillAmount || order.amountIn
+        const { estOrderFee } = await helpers.setup();
+        const orderFee = await estOrderFee(order, fillAmount);
+        return orderSize.sub(orderFee);
     }
 
     it("Should createOrder()", async () => {
@@ -54,8 +52,8 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('1'),
-            parseEther('0.0001'),
+            parseEther('100'),
+            parseEther('80'),
             getDeadline(24)
         );
 
@@ -79,12 +77,11 @@ describe("Settlement", async () => {
 
         const tx2 = await fillOrder(users[1], orderG, orderG.amountIn, orderG.amountOutMin, path);
         const receipt2 = await tx2.wait();
-        // console.log(receipt2);
         const event = receipt2.logs[receipt2.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG.amountIn));
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(await filledAmountIn(users[1], orderG)));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
+        console.log('filled price', formatEther(filled.filledPrice));
     });
 
     it("Should deposit()", async() => {
@@ -154,7 +151,7 @@ describe("Settlement", async () => {
     });
 
     it("Should createOrder() RBTC-XUSD", async () => {
-        const { users, chainId, getDeadline } = await helpers.setup();
+        const { users, chainId, getDeadline, estOrderFee } = await helpers.setup();
         const signer = users[0];
         const { abi: settlementABI } = await deployments.get("SettlementLogic");
         const { address: settlementAddress } = await deployments.get("SettlementProxy");
@@ -164,8 +161,8 @@ describe("Settlement", async () => {
         const orderBook = await ethers.getContractAt(orderBookABI, orderBoookAddress);
         const fromToken = WRBTC[chainId];
         const toToken = XUSD[chainId];
-        const amountIn = parseEther('0.01');
-        const amountOutMin = parseEther('0.0001');
+        const amountIn = parseEther('0.1');
+        const amountOutMin = parseEther('80');
         
         await settlement.deposit(signer.address, {
             value: amountIn
@@ -181,7 +178,10 @@ describe("Settlement", async () => {
             getDeadline(24),
             ethers.BigNumber.from(Math.floor(Date.now() / 1000))
         );
-        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }));
+        const estFee = await estOrderFee(order, order.amountIn);
+        const limitPrice = order.amountOutMin.mul(ethers.constants.WeiPerEther).div(order.amountIn.sub(estFee));
+        console.log('limit price', formatEther(limitPrice));
+        const tx = await orderBook.createOrder(await order.toArgs({ contract: orderBook.address }), limitPrice);
         orderG = order;
         const hash = await order.hash();
         console.log("order wrbtc-xusd hash", hash);
@@ -207,8 +207,7 @@ describe("Settlement", async () => {
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         console.log("Order filled: %sWRBTC -> %sXUSD", formatEther(filled.amountIn.toString()), formatUnits(filled.amountOut.toString(), 18));
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG.amountIn));
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(await filledAmountIn(users[0], orderG)));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
     });
 
     it("Should createOrder() XUSD-RBTC", async () => {
@@ -220,8 +219,8 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('0.1'),
-            parseEther('0.000001'),
+            parseEther('100'),
+            parseEther('0.08'),
             getDeadline(24)
         );
 
@@ -251,8 +250,7 @@ describe("Settlement", async () => {
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         console.log("Order filled: %sXUSD -> %sRBTC", formatUnits(filled.amountIn.toString(), 18), formatEther(filled.amountOut.toString()));
         await helpers.expectToEqual(filled.hash, orderG.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG.amountIn));
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(await filledAmountIn(users[0], orderG)));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
     });
 
     it("Should cancelOrder()", async () => {
@@ -262,8 +260,8 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('0.01'),
-            parseEther('0.0001'),
+            parseEther('100'),
+            parseEther('500'),
             getDeadline(24)
         );
 
@@ -279,30 +277,30 @@ describe("Settlement", async () => {
         const receipt = await tx1.wait();
     });
 
-    it("Should failed fillOrder because minFee", async () => {
-        const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
-        const { abi: settlementABI } = await deployments.get("SettlementLogic");
-        const { address: settlementAddress } = await deployments.get("SettlementProxy");
-        const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        await settlement.setMinFee(parseEther('0.001'));
-        const { order , tx } = await createOrder(
-            users[0],
-            fromToken,
-            toToken,
-            parseEther('0.002'),
-            parseEther('0.0001'),
-            getDeadline(24)
-        );
-        await tx.wait();
+    // it("Should failed fillOrder because minFee", async () => {
+    //     const { users, getDeadline, createOrder, fillOrder } = await helpers.setup();
+    //     const { abi: settlementABI } = await deployments.get("SettlementLogic");
+    //     const { address: settlementAddress } = await deployments.get("SettlementProxy");
+    //     const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
+    //     await settlement.setMinSwapOrderSize(parseEther('0.001'));
+    //     const { order , tx } = await createOrder(
+    //         users[0],
+    //         fromToken,
+    //         toToken,
+    //         parseEther('10'),
+    //         parseEther('8'),
+    //         getDeadline(24)
+    //     );
+    //     await tx.wait();
         
-        const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
-        const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
+    //     const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
+    //     const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
-            fillOrder(users[0], order, order.amountIn, order.amountOutMin, path)
-        );
-        await settlement.setMinFee(parseEther('0'));
-    });
+    //     await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
+    //         fillOrder(users[0], order, order.amountIn, order.amountOutMin, path)
+    //     );
+    //     await settlement.setMinSwapOrderSize(parseEther('0'));
+    // });
 
     it("Should withdraw RBTC when cancel order", async () => {
         const { users, chainId, getDeadline, createOrder } = await helpers.setup();
@@ -342,7 +340,7 @@ describe("Settlement", async () => {
         const { abi: settlementABI } = await deployments.get("SettlementLogic");
         const { address: settlementAddress } = await deployments.get("SettlementProxy");
         const settlement = await ethers.getContractAt(settlementABI, settlementAddress);
-        await settlement.setMinFee(parseEther('0.001'));
+        await settlement.setMinSwapOrderSize(parseEther('0.001'));
         
         const fromToken = XUSD[chainId];
         const toToken = SOV[chainId];
@@ -350,8 +348,8 @@ describe("Settlement", async () => {
             users[0],
             fromToken,
             toToken,
-            parseEther('100'),
-            parseEther('10'),
+            parseEther('10000'),
+            parseEther('5000'),
             getDeadline(24)
         );
         await tx.wait();
@@ -359,7 +357,7 @@ describe("Settlement", async () => {
         const sovrynSwapNetwork = await ethers.getContractAt(sSNAbi, sovrynSwapNetworkAdr, users[0]);
         const path = await sovrynSwapNetwork.conversionPath(fromToken.address, toToken.address);
 
-        const fillAmount1 = parseEther('45'), fillAmount2 = parseEther('55');
+        const fillAmount1 = parseEther('4800'), fillAmount2 = parseEther('5100');
         const fillAmountMinOut1 = order.amountOutMin.mul(fillAmount1).div(order.amountIn);
         const fillAmountMinOut2 = order.amountOutMin.mul(fillAmount2).div(order.amountIn);
         const tx1 = await fillOrder(users[0], order, fillAmount1, fillAmountMinOut1, path);
@@ -367,13 +365,13 @@ describe("Settlement", async () => {
         const event = receipt1.logs[receipt1.logs.length - 1];
         const filled = settlement.interface.decodeEventLog("OrderFilled", event.data, event.topics);
         await helpers.expectToEqual(filled.hash, order.hash());
-        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(fillAmount1));
+        await helpers.expectToEqual(filled.amountIn, getActualFillAmount(order, fillAmount1));
         
         const tx2 = await fillOrder(users[0], order, fillAmount2, fillAmountMinOut2, path);
         const receipt2 = await tx2.wait();
         const event2 = receipt2.logs[receipt2.logs.length - 1];
         const filled2 = settlement.interface.decodeEventLog("OrderFilled", event2.data, event2.topics);
         await helpers.expectToEqual(filled2.hash, order.hash());
-        await helpers.expectToEqual(filled2.amountIn, getActualFillAmount(fillAmount2));
+        await helpers.expectToEqual(filled2.amountIn, getActualFillAmount(order, fillAmount2));
     });
 });

@@ -20,9 +20,10 @@ const {
 	getPriceFeeds,
 	getSovryn,
 } = require("./Utils/initializer.js");
-const { approve } = require('../scripts/approval');
+const TOKENS = require('../test/tokens');
 
 const ILoanTokenModules = artifacts.require("ILoanTokenModules");
+const IPriceFeeds = artifacts.require("contracts/interfaces/IPriceFeeds.sol:IPriceFeeds");
 const TestToken = artifacts.require("TestToken");
 const TestWrbtc = artifacts.require("TestWrbtc");
 
@@ -55,6 +56,7 @@ describe("Margin Order", async () => {
             isLocalNetwork = false;
             loanTokenSUSD = await ILoanTokenModules.at("0x9bd0ce087b14ef67c3d37c891139aae7d94a961a"); // iXUSD
             loanTokenWRBTC = await ILoanTokenModules.at("0xe67fe227e0504e8e96a34c3594795756dc26e14b"); // iWRBTC
+            priceFeeds = await IPriceFeeds.at("0x7f38c422b99075f63C9c919ECD200DF8d2Cf5BD4");
             const susdAdr = await loanTokenSUSD.loanTokenAddress();
             const wrbtcAdr = await loanTokenWRBTC.loanTokenAddress();
             SUSD = await TestToken.at(susdAdr);
@@ -64,12 +66,12 @@ describe("Margin Order", async () => {
             console.log("asset wrbtc", await loanTokenWRBTC.loanTokenAddress());
 
             const settlement = await getContract('Settlement');
-            await settlement.setMinFee(parseEther('0'));
+            await settlement.setMinMarginOrderSize(parseEther('0'));
             
         } else {
-            SUSD = await getSUSD();
             RBTC = await getRBTC();
-            WRBTC = await getWRBTC();
+            SUSD = await TestToken.at(TOKENS.XUSD['31337'].address);
+            WRBTC = await TestWrbtc.at(TOKENS.WRBTC['31337'].address);
             BZRX = await getBZRX();
             priceFeeds = await getPriceFeeds(WRBTC, SUSD, RBTC, sovryn, BZRX);
 
@@ -85,7 +87,7 @@ describe("Margin Order", async () => {
             await SUSD.transfer(loanTokenSUSD.address, parseEther("100000"));
 
             const settlement = await getContract('Settlement');
-            await settlement.setMinFee(parseEther('0'));
+            await settlement.setMinMarginOrderSize(parseEther('0'));
             
             console.log('iloanSUSD', loanTokenSUSD.address);
             console.log('iloanWRBTC', loanTokenWRBTC.address);
@@ -98,16 +100,6 @@ describe("Margin Order", async () => {
                 files: 'src/config/local.js',
                 from: new RegExp('iRBTC: "0x([0-9a-fA-F]{40})"'),
                 to: 'iRBTC: "' + loanTokenWRBTC.address + '"',
-            });
-
-            await approve({
-                iXUSD: loanTokenSUSD.address,
-                iRBTC: loanTokenWRBTC.address
-            }, {
-                SOV: SOV.address,
-                XUSD: SUSD.address,
-                WRBTC: WRBTC.address,
-                RBTC: RBTC.address,
             });
         }
         const adr = accounts[0].address;
@@ -144,21 +136,29 @@ describe("Margin Order", async () => {
         const checkAllowance = async (token, owner, spender) => {
             const allowance = await token.allowance(owner, spender);
             console.log(`Allowance of ${token.address} ${await token.symbol()}, owner ${owner}, spender ${spender}: ${Number(allowance)}`);
-        }
+        };
+        const prepareOrderAsset = async (assetAddress, amount) => {
+            if (assetAddress.toLowerCase() == WRBTC.address.toLowerCase()) {
+                await settlement.deposit(signer.address, {
+                    value: amount
+                });
+                // console.log('WRBTC.address', WRBTC.address)
+                // console.log('WRBTC on settlement', await settlement.WRBTC_ADDRESS())
+                // console.log('Deposited', formatEther(amount), 'rbtc to settlement');
+            } else {
+                const token = await ethers.getContractAt("TestToken", assetAddress, signer);
+                const allowance = await token.allowance(signer.address, settlement.address);
+                const _tx = await token.approve(settlement.address, amount.add(allowance));
+                await _tx.wait();
+                // await checkAllowance(token, signer.address, settlement.address);
+            }
+        };
         if (Number(loanTokenSent) > 0) {
             const loanTokenAssetAddress = await loanToken.loanTokenAddress();
-            const loanTokenAsset = await ethers.getContractAt("TestToken", loanTokenAssetAddress, signer);
-            const allowance = await loanTokenAsset.allowance(signer.address, settlement.address);
-            const _tx = await loanTokenAsset.approve(settlement.address, loanTokenSent.add(allowance));
-            await _tx.wait();
-            await checkAllowance(loanTokenAsset, settlement.address, loanToken.address)
+            await prepareOrderAsset(loanTokenAssetAddress, loanTokenSent);
         }
         if (Number(collateralTokenSent) > 0) {
-            const collateralToken = await ethers.getContractAt("TestToken", collateralTokenAddress, signer);
-            const allowance = await collateralToken.allowance(signer.address, settlement.address);
-            const _tx = await collateralToken.approve(settlement.address, collateralTokenSent.add(allowance));
-            await _tx.wait();
-            await checkAllowance(collateralToken, settlement.address, loanToken.address)
+            await prepareOrderAsset(collateralTokenAddress, collateralTokenSent);
         }
 
         const order = new MarginOrder(
@@ -185,7 +185,7 @@ describe("Margin Order", async () => {
         const settlement = await getContract('Settlement')
         const orderArgs = await order.toArgs();
 
-        return await settlement.fillMarginOrder([orderArgs]);
+        return await settlement.connect(signer).fillMarginOrder([orderArgs]);
     };
 
     const createFillMarginOrder = async ({
@@ -239,6 +239,45 @@ describe("Margin Order", async () => {
             orderTx: tx,
             filledTx
         }
+    };
+
+    const getRelayerFee = async (order) => {
+        const settlement = await getContract('Settlement');
+        const loanContract = await ILoanTokenModules.at(order.loanTokenAddress);
+        const loanTokenAsset = await loanContract.loanTokenAddress();
+        let orderSize = order.collateralTokenSent;
+        const loanTokenPrice = await priceFeeds.queryRate(loanTokenAsset, order.collateralTokenAddress);
+
+        if (order.loanTokenSent.gt(0)) {
+            const convertedLoanSent = order.loanTokenSent
+                .mul(loanTokenPrice.rate.toString())
+                .div(loanTokenPrice.precision.toString());
+            orderSize = orderSize.add(convertedLoanSent);
+        }
+
+        let orderFee = orderSize.mul(2).div(1000);
+        let minFeeAmount = await settlement.minMarginOrderTxFee();
+        if (order.collateralTokenAddress.toLowerCase() != WRBTC.address.toLowerCase()) {
+            const rbtcPrice = await priceFeeds.queryRate(WRBTC.address, order.collateralTokenAddress);
+            minFeeAmount = minFeeAmount.mul(rbtcPrice.rate.toString()).div(rbtcPrice.precision.toString());
+        }
+
+        if (orderFee.lt(minFeeAmount)) {
+            orderFee = minFeeAmount;
+        }
+
+        let feeOnCollateral = orderFee;
+        let feeOnLoanToken = BigNumber.from("0");
+        if (orderFee.gt(order.collateralTokenSent)) {
+            feeOnCollateral = order.collateralTokenSent;
+            const outgoingFee = orderFee.sub(order.collateralTokenSent);
+            feeOnLoanToken = outgoingFee.mul(loanTokenPrice.precision.toString()).div(loanTokenPrice.rate.toString());
+        }
+
+        return {
+            feeOnCollateral,
+            feeOnLoanToken
+        };
     }
 
     it("Should createMarginOrder SUSD", async () => {
@@ -246,7 +285,7 @@ describe("Margin Order", async () => {
         const orderBook = await getContract('OrderBookMargin')
         const trader = getAccount(0);
         const collateralToken = WRBTC.address;
-        const collateralAmount = parseEther("0.01");
+        const collateralAmount = parseEther("0.05");
 
         if (isLocalNetwork) {
             await set_demand_curve(loanTokenSUSD);
@@ -263,7 +302,7 @@ describe("Margin Order", async () => {
             parseEther("0"), // loan token sent
             collateralAmount, // collateral token sent
             collateralToken, // collateral token
-            parseEther("0.00002"), // min return
+            parseEther("0.00001"), // min return
             ethers.constants.HashZero, // loan data bytes
             getDeadline(24), // deadline
             ethers.BigNumber.from(Math.floor(Date.now() / 1000)), // created at timestamp
@@ -306,7 +345,7 @@ describe("Margin Order", async () => {
             collateralToken: SUSD,
             collateralTokenSent: parseEther("1000"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("5000"),
+            minEntryPrice: parseEther("999"),
         });
 
         const receipt = await orderTx.wait();
@@ -351,77 +390,97 @@ describe("Margin Order", async () => {
         await helpers.expectToEqual(canceled.hash, hash);
     });
 
-    it("Should relayer receive correct fee on loan SUSD", async () => {
+    it("Should get correct relayer fee on collateral SUSD", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
-        const balances = {
-            susd: {
-                before: formatEther((await SUSD.balanceOf(relayer.address)).toString())
-            },
-            rbtc: {
-                before: formatEther((await relayer.getBalance()).toString())
-            },
-            wrbtc: {
-                before: formatEther((await WRBTC.balanceOf(relayer.address)).toString())
-            }
-        };
+
         const {order, orderTx, filledTx } = await createFillMarginOrder({
             trader,
             relayer,
             loanToken: loanTokenWRBTC,
-            loanTokenSent: parseEther("0.5"),
+            loanTokenSent: parseEther("0"),
             collateralToken: SUSD,
             collateralTokenSent: parseEther("1000"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("3000"),
+            minEntryPrice: parseEther("1000"),
         });
         await orderTx.wait();
-        await filledTx.wait();
+        const receipt = await filledTx.wait();
+        const fees = await getRelayerFee(order);
         
-        balances.susd.after = formatEther((await SUSD.balanceOf(relayer.address)).toString());
-        balances.rbtc.after = formatEther((await relayer.getBalance()).toString());
-        balances.wrbtc.after = formatEther((await WRBTC.balanceOf(relayer.address)).toString());
-        console.log(balances);
+        const settlement = await getContract('Settlement');
+        const event = receipt.logs[receipt.logs.length - 2];
+        const feeTransfered = settlement.interface.decodeEventLog("FeeTransferred", event.data, event.topics);
+        await helpers.expectToEqual(feeTransfered.hash, order.hash());
+        await helpers.expectToEqual(feeTransfered.recipient, relayer.address);
+        await helpers.expectToEqual(feeTransfered.amount, fees.feeOnCollateral);
+        await helpers.expectToEqual(feeTransfered.token, order.collateralTokenAddress);
     });
 
-    it("Should relayer receive correct fee on loan WRBTC", async () => {
+    it("Should get correct relayer fee on loan SUSD", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
-        const balances = {
-            susd: {
-                before: formatEther((await SUSD.balanceOf(relayer.address)).toString())
-            },
-            rbtc: {
-                before: formatEther((await relayer.getBalance()).toString())
-            },
-            wrbtc: {
-                before: formatEther((await WRBTC.balanceOf(relayer.address)).toString())
-            }
-        };
         const {order, orderTx, filledTx } = await createFillMarginOrder({
             trader,
             relayer,
             loanToken: loanTokenSUSD,
-            loanTokenSent: parseEther("1200"),
+            loanTokenSent: parseEther("1000"),
             collateralToken: RBTC,
-            collateralTokenSent: parseEther("1"),
+            collateralTokenSent: parseEther("0"),
             leverageAmount: parseEther("5"),
-            minEntryPrice: parseEther("0.00005"),
+            minEntryPrice: parseEther("0.0009"),
         });
         await orderTx.wait();
-        await filledTx.wait();
-        
-        balances.susd.after = formatEther((await SUSD.balanceOf(relayer.address)).toString());
-        balances.rbtc.after = formatEther((await relayer.getBalance()).toString());
-        balances.wrbtc.after = formatEther((await WRBTC.balanceOf(relayer.address)).toString());
-        console.log(balances);
+        const receipt = await filledTx.wait();
+        const fees = await getRelayerFee(order);
+
+        const settlement = await getContract('Settlement');
+        const event = receipt.logs[receipt.logs.length - 2];
+        const feeTransfered = settlement.interface.decodeEventLog("FeeTransferred", event.data, event.topics);
+        await helpers.expectToEqual(feeTransfered.hash, order.hash());
+        await helpers.expectToEqual(feeTransfered.recipient, relayer.address);
+        await helpers.expectToEqual(feeTransfered.amount, fees.feeOnLoanToken);
+        await helpers.expectToEqual(feeTransfered.token, SUSD.address);
+    });
+    
+    it("Should get correct relayer fee on loan SUSD and collateral WRBTC", async () => {
+        const trader = getAccount(0);
+        const relayer = getAccount(1);
+        const {order, orderTx, filledTx } = await createFillMarginOrder({
+            trader,
+            relayer,
+            loanToken: loanTokenSUSD,
+            loanTokenSent: parseEther("500"),
+            collateralToken: RBTC,
+            collateralTokenSent: parseEther("0.01"),
+            leverageAmount: parseEther("5"),
+            minEntryPrice: parseEther("0.0009"),
+        });
+        await orderTx.wait();
+        const receipt = await filledTx.wait();
+        const fees = await getRelayerFee(order);
+
+        const settlement = await getContract('Settlement');
+        const event1 = receipt.logs[receipt.logs.length - 2]; //FeeTransferred for loan token
+        const event2 = receipt.logs[receipt.logs.length - 4]; //FeeTransferred for collateral
+        const feeTransferedUsd = settlement.interface.decodeEventLog("FeeTransferred", event1.data, event1.topics);
+        const feeTransferedWrbtc = settlement.interface.decodeEventLog("FeeTransferred", event2.data, event2.topics);
+        await helpers.expectToEqual(feeTransferedUsd.hash, order.hash());
+        await helpers.expectToEqual(feeTransferedUsd.recipient, relayer.address);
+        await helpers.expectToEqual(feeTransferedUsd.amount, fees.feeOnLoanToken);
+        await helpers.expectToEqual(feeTransferedUsd.token, SUSD.address);
+
+        await helpers.expectToEqual(feeTransferedWrbtc.hash, order.hash());
+        await helpers.expectToEqual(feeTransferedWrbtc.recipient, relayer.address);
+        await helpers.expectToEqual(feeTransferedWrbtc.amount, fees.feeOnCollateral);
+        await helpers.expectToEqual(feeTransferedWrbtc.token, RBTC.address);
     });
 
     it("Should create a long position with 2x leverage", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
         const leverageAmount = parseEther("2");
-        const loanTokenSent = parseEther("5"); //SUSD
+        const loanTokenSent = parseEther("500"); //SUSD
         const collateralToken = WRBTC;
         const collateralTokenSent = parseEther("0");
         const { collateral } = await loanTokenSUSD.getEstimatedMarginDetails(
@@ -459,7 +518,6 @@ describe("Margin Order", async () => {
             collateralTokenSent,
             collateralToken.address,
         );
-        console.log(formatEther(String(collateral)));
         const {order, orderTx, filledTx } = await createFillMarginOrder({
             trader,
             relayer,
@@ -475,11 +533,11 @@ describe("Margin Order", async () => {
         console.log(receipt.transactionHash);
     });
 
-    it("Should failed fillMarginOrder because minFee", async () => {
+    it("Should fail to fill MarginOrder because minFee", async () => {
         const trader = getAccount(0);
         const relayer = getAccount(1);
         const settlement = await getContract('Settlement');
-        const tx = await settlement.setMinFee(parseEther('0.1'));
+        const tx = await settlement.setMinMarginOrderSize(parseEther('25'));
         await tx.wait();
         await helpers.expectToBeReverted('Order amount is too low to pay the relayer fee', 
             createFillMarginOrder({
@@ -488,11 +546,11 @@ describe("Margin Order", async () => {
                 loanToken: loanTokenWRBTC,
                 loanTokenSent: parseEther("0"),
                 collateralToken: SUSD,
-                collateralTokenSent: parseEther('1'),
+                collateralTokenSent: parseEther('20'),
                 leverageAmount: parseEther("2"),
                 minEntryPrice: parseEther("2"),
             })
         );
-        await settlement.setMinFee(parseEther('0'));
+        await settlement.setMinMarginOrderSize(parseEther('0'));
     });
 });

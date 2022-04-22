@@ -4,3 +4,6 @@ artifacts
 deployments
 cache
 node_modules
+src/store.json
+logs
+public/dist

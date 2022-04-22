@@ -63,6 +63,12 @@
                 "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
             }
         ],
         "name": "FeeTransferred",
@@ -248,6 +254,12 @@
                 "internalType": "address[]",
                 "name": "path",
                 "type": "address[]"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "filledPrice",
+                "type": "uint256"
             }
         ],
         "name": "OrderFilled",
@@ -270,6 +282,156 @@
             }
         ],
         "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetMinMarginOrderSize",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetMinMarginOrderTxFee",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetMinSwapOrderSize",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetMinSwapOrderTxFee",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "oldValue",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newValue",
+                "type": "address"
+            }
+        ],
+        "name": "SetPriceFeeds",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldValue",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newValue",
+                "type": "uint256"
+            }
+        ],
+        "name": "SetRelayerFee",
         "type": "event"
     },
     {
@@ -356,12 +518,12 @@
     },
     {
         "inputs": [],
-        "name": "RBTC_ADDRESS",
+        "name": "UNLIMITED_ALLOWANCE",
         "outputs": [
             {
-                "internalType": "address",
+                "internalType": "uint256",
                 "name": "",
-                "type": "address"
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -476,7 +638,7 @@
                     },
                     {
                         "internalType": "uint256",
-                        "name": "minReturn",
+                        "name": "minEntryPrice",
                         "type": "uint256"
                     },
                     {
@@ -727,7 +889,7 @@
                             },
                             {
                                 "internalType": "uint256",
-                                "name": "minReturn",
+                                "name": "minEntryPrice",
                                 "type": "uint256"
                             },
                             {
@@ -830,7 +992,7 @@
                             },
                             {
                                 "internalType": "uint256",
-                                "name": "minReturn",
+                                "name": "minEntryPrice",
                                 "type": "uint256"
                             },
                             {
@@ -962,6 +1124,11 @@
                         "type": "uint256"
                     },
                     {
+                        "internalType": "uint256",
+                        "name": "amountToFillOut",
+                        "type": "uint256"
+                    },
+                    {
                         "internalType": "address[]",
                         "name": "path",
                         "type": "address[]"
@@ -1055,6 +1222,11 @@
                         "type": "uint256"
                     },
                     {
+                        "internalType": "uint256",
+                        "name": "amountToFillOut",
+                        "type": "uint256"
+                    },
+                    {
                         "internalType": "address[]",
                         "name": "path",
                         "type": "address[]"
@@ -1113,8 +1285,13 @@
                 "type": "address"
             },
             {
-                "internalType": "contract ISovrynSwapNetwork",
+                "internalType": "address",
                 "name": "_sovrynSwapNetwork",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_priceFeeds",
                 "type": "address"
             },
             {
@@ -1143,7 +1320,46 @@
     },
     {
         "inputs": [],
-        "name": "minFee",
+        "name": "minMarginOrderSize",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "minMarginOrderTxFee",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "minSwapOrderSize",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "minSwapOrderTxFee",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -1195,6 +1411,19 @@
     },
     {
         "inputs": [],
+        "name": "priceFeeds",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "relayerFeePercent",
         "outputs": [
             {
@@ -1210,11 +1439,76 @@
         "inputs": [
             {
                 "internalType": "uint256",
-                "name": "fee",
+                "name": "_minMarginOrderSize",
                 "type": "uint256"
             }
         ],
-        "name": "setMinFee",
+        "name": "setMinMarginOrderSize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_newGas",
+                "type": "uint256"
+            }
+        ],
+        "name": "setMinMarginOrderTxFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_minSwapOrderSize",
+                "type": "uint256"
+            }
+        ],
+        "name": "setMinSwapOrderSize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_newGas",
+                "type": "uint256"
+            }
+        ],
+        "name": "setMinSwapOrderTxFee",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_priceFeeds",
+                "type": "address"
+            }
+        ],
+        "name": "setPriceFeeds",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_relayerFeePercent",
+                "type": "uint256"
+            }
+        ],
+        "name": "setRelayerFee",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1224,7 +1518,7 @@
         "name": "sovrynSwapNetwork",
         "outputs": [
             {
-                "internalType": "contract ISovrynSwapNetwork",
+                "internalType": "address",
                 "name": "",
                 "type": "address"
             }
