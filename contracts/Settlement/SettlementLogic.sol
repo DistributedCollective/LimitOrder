@@ -488,6 +488,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     function cancelOrder(Orders.Order memory order) public override {
         bytes32 hash = order.hash();
         require(msg.sender == order.maker, "not-called-by-maker");
+        require(filledAmountInOfHash[hash] == 0, "already-filled");
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
@@ -507,6 +508,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     {
         bytes32 hash = order.hash();
         require(msg.sender == order.trader, "not-called-by-maker");
+        require(filledAmountInOfHash[hash] == 0, "already-filled");
 
         if (order.collateralTokenSent > 0) {
             _checkWithdrawalOnCancel(
