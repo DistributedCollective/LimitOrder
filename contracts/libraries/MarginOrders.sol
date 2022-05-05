@@ -11,14 +11,14 @@ library MarginOrders {
 
     // MarginOrder details including the v, r and s components of a signature
     struct Order {
-        bytes32 loanId; //default 0x0000000000000000000000000000000000000000000000000000000000000000 for new loan
+        bytes32 loanId; // default 0x0000000000000000000000000000000000000000000000000000000000000000 for new loan
         uint256 leverageAmount;
-        address loanTokenAddress;
-        uint256 loanTokenSent; //default 0
+        address loanTokenAddress; // iToken - lendingPoolAddress
+        uint256 loanTokenSent; // default 0
         uint256 collateralTokenSent;
         address collateralTokenAddress;
         address trader;
-        uint256 minEntryPrice; //optional
+        uint256 minEntryPrice; // optional
         bytes32 loanDataBytes;
         uint256 deadline;
         uint256 createdTimestamp;
@@ -35,7 +35,7 @@ library MarginOrders {
                     ORDER_TYPEHASH,
                     order.loanId,
                     order.leverageAmount,
-                    order.loanTokenAddress,
+                    order.loanTokenAddress, // iToken
                     order.loanTokenSent,
                     order.collateralTokenSent,
                     order.collateralTokenAddress,
