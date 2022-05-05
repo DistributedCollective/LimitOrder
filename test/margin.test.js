@@ -21,6 +21,7 @@ const {
 	getSovryn,
 } = require("./Utils/initializer.js");
 const TOKENS = require('../test/tokens');
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
 const ILoanTokenModules = artifacts.require("ILoanTokenModules");
 const IPriceFeeds = artifacts.require("contracts/interfaces/IPriceFeeds.sol:IPriceFeeds");
@@ -330,6 +331,8 @@ describe("Margin Order", async () => {
 
         console.log("Margin principal", formatEther(filled.principal));
         console.log("Margin new collateral", formatEther(filled.collateral));
+        // Order should not be cancelled after it is executed
+        await expectRevert(settlement.cancelMarginOrder(await orderG.toArgs()), "order executed");
     });
 
     it("Should createMarginOrder - fillMarginOrder WRBTC", async () => {

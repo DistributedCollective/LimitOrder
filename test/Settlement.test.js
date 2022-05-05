@@ -6,6 +6,7 @@ let sovrynSwapNetworkAdr;
 const { parseEther, formatUnits, formatEther } = ethers.utils;
 const sSNAbi = require('./ssnabi.json');
 const Order = require("./helpers/Order");
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
 var orderG, fromToken, toToken;
 let settlement, WrbtcAdr;
@@ -82,6 +83,8 @@ describe("Settlement", async () => {
         await helpers.expectToEqual(filled.hash, orderG.hash());
         await helpers.expectToEqual(filled.amountIn, getActualFillAmount(orderG));
         console.log('filled price', formatEther(filled.filledPrice));
+        // Order should not be cancelled after it is executed
+        await expectRevert(settlement.cancelOrder(await orderG.toArgs()), "order executed");
     });
 
     it("Should deposit()", async() => {
