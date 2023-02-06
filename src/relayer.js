@@ -3,15 +3,10 @@ const AsyncLock = require('async-lock');
 const { relayers } = require('../secrets/account');
 
 const locker = new AsyncLock();
-// let cnt = 0;
 const lock = async (key) => {
-    // const uuid = "#" + (++cnt)
-    // console.log(uuid, 'locking', key)
     return new Promise(resolve => {
         locker.acquire(key, (release) => {
             resolve(release);
-        }).then(() => {
-            // console.log("<<<<<<" + uuid, 'released', key)
         });
     });
 };
@@ -23,19 +18,79 @@ const waste = async (seconds) => {
 class Relayer {
     init(provider) {
         this.provider = provider;
-        this.relayers = relayers.map(({privateKey}) => {
+        this.relayers = relayers.map(({ privateKey }) => {
             return new ethers.Wallet(privateKey, provider);
         });
         this.pendingTxs = {};
+        this.relayerNonces = {};
     }
 
-    async getAccount() {
+    /**
+     * returns a wallet with less than 4 pending transactions
+     * @param {*} timeout the maximum waiting time in ms
+     */
+    async getAccount(timeout) {
+        const stopAt = Date.now() + timeout;
+        while(Date.now() < stopAt) {
+            for (const relayer of this.relayers) {
+                this.pendingTxs[relayer.address] = this.pendingTxs[relayer.address] || 0;
+                const bal = await relayer.getBalance();
+                if (bal.gt(ethers.constants.Zero) && this.pendingTxs[relayer.address] < 4) {
+                    this.pendingTxs[relayer.address] ++;
+                    return relayer;
+                }
+            }
+            waste(0.5);
+        }
+    }
+
+    /**
+     * decreases the pending tx count for a wallet
+     * @param {*} walletAddress
+     */
+    decreasePending(walletAddress) {
         for (const relayer of this.relayers) {
-            const bal = await relayer.getBalance();
-            if (bal.gt(ethers.constants.Zero) && Object.keys(this.pendingTxs[relayer.address]||{}).length < 5) {
-                return relayer;
+            if (relayer.address.toLowerCase() === walletAddress.toLowerCase()) {
+                this.pendingTxs[relayer.address]--;
+                return true;
             }
         }
+
+        console.error("could not decrease the pending tx count for non-existing wallet address: " + walletAddress);
+        return false;
+    }
+
+    /**
+     * The Rsk node does not return a valid response occasionally for a short period of time
+     * Thats why the request is repeated 5 times and in case it still fails the last nonce +1 is returned
+     */
+    async getNonce(wallet) {
+        const lastNonce = this.relayerNonces[wallet.address];
+        for (let cnt = 0; cnt < 5; cnt++) {
+            try {
+                const nonce = await wallet.getTransactionCount('pending');
+                console.log('pending tx count %s, last nonce %s, attemp %s', nonce, lastNonce, cnt)
+                if (lastNonce != null && nonce !== lastNonce + 1) {
+                    console.log("nonce %d not expected %d", nonce, lastNonce + 1);
+                    if (cnt === 4) {
+                        console.log("giving up and returning it anyway")
+                        return nonce;
+                    }
+
+                    await waste(0.5 ** 2 ** cnt);
+                }
+                else {
+                    return nonce;
+                }
+            } catch (e) {
+                console.error("Error retrieving transaction count");
+                console.error(e);
+            }
+        }
+
+        const finalNonce = lastNonce + 1 || 0;
+        console.error("Returning guessed nonce %d", finalNonce);
+        return finalNonce;
     }
 
     async getGasPrice() {
@@ -43,50 +98,37 @@ class Relayer {
         return ethers.BigNumber.from(Math.round(Number(gasPrice) * 1.2).toString());
     }
 
-    async sendTx(data, retry) {
-        let nonce, relayer, release;
+    async sendTx(data) {
+        let nonce, relayer;
+        const release = await lock('relayer.sendTx');
         try {
-            release = await lock('relayer.sendTx');
-            relayer = await this.getAccount();
+            relayer = await this.getAccount(5 * 60 * 1000);
             if (!relayer) {
-                retry = (retry || 0) + 1;
-                console.log("No wallet has enough fund or available, retry #" + retry);
-
-                if (retry < 10) {
-                    await waste(15);
-                    release();
-                    return this.sendTx(data, retry);
-                }
+                console.log("No wallet has enough fund or available");
                 release();
                 return;
             }
 
-            this.pendingTxs[relayer.address] = this.pendingTxs[relayer.address] || {};
-            nonce = await relayer.getTransactionCount('latest');
-            nonce += Object.keys(this.pendingTxs[relayer.address]).length;
+            nonce = this.relayerNonces[relayer.address] = await this.getNonce(relayer);
 
-            this.pendingTxs[relayer.address][nonce] = data;
-            release();
-      
             const tx = await relayer.sendTransaction({
                 ...data,
                 gasPrice: await this.getGasPrice(),
                 nonce
             });
 
-            
             if (tx) {
                 console.log('sending tx %s, nonce %s', tx.hash, nonce);
                 new Promise(async (resolve) => {
                     try {
                         await tx.wait();
-                        delete this.pendingTxs[relayer.address][nonce];
                         console.log('tx %s, nonce %s confirmed', tx.hash, nonce);
                         resolve();
                     } catch (e) {
-                        delete this.pendingTxs[relayer.address][nonce];
                         console.log('tx failed %s, nonce %s', tx.hash, nonce);
                         console.error(e);
+                    } finally {
+                        this.decreasePending(relayer.address);
                     }
                 });
 
@@ -96,10 +138,11 @@ class Relayer {
             }
         } catch (err) {
             if (nonce != null && relayer) {
-                delete this.pendingTxs[relayer.address][nonce];
+                this.decreasePending(relayer.address);
             }
-            release && release();
             throw err;
+        } finally {
+            release();
         }
     }
 }

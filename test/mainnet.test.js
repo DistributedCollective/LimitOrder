@@ -252,7 +252,7 @@ async function createMarginOrder(pos, amountUSD, leverage) {
 }
 
 (async function start() {
-    // await createOrder('WRBTC', 'SOV', ethers.utils.parseEther('0.0005'));
+     await createOrder('WRBTC', 'SOV', ethers.utils.parseEther('0.0005'));
     // await createOrder('SOV', 'XUSD', ethers.utils.parseEther('2'));
-    await createMarginOrder('long', '50', '3');
+   // await createMarginOrder('long', '50', '3');
 })();

@@ -7,9 +7,9 @@ const Web3 = require('web3');
 
 const config = require('../src/config');
 const { SOV, XUSD } = require('./tokens');
-const { abi: orderBookAbi } = require('../deployments/localhost/OrderBookSwapLogic.json');
-const { abi: orderBookMarginAbi } = require('../deployments/localhost/OrderBookMarginLogic.json');
-const { abi: settlementAbi } = require('../deployments/localhost/SettlementLogic.json');
+const { abi: orderBookAbi } = require('../deployments/rsktestnet/OrderBookSwapLogic.json');
+const { abi: orderBookMarginAbi } = require('../deployments/rsktestnet/OrderBookMarginLogic.json');
+const { abi: settlementAbi } = require('../deployments/rsktestnet/SettlementLogic.json');
 const { ERC20: ERC20Abi } = require("../src/config/abis");
 const Order = require('../src/Order');
 const helpers = require("./helpers");

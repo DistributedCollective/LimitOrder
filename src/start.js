@@ -38,6 +38,8 @@ txStore.init(orderBookProvider);
 app.use(bodyParser.json());
 
 app.use('/public', express.static(path.resolve(__dirname, '../public')));
+app.use('/logs', express.static(path.resolve(__dirname, '../logs')));
+
 
 app.listen(port, () => {
     console.log("Server started listening on port", port);
@@ -74,12 +76,15 @@ const validateContractParams = (res, rawTx, from, contractAddress) => {
 }
 
 app.post('/api/createOrder', async (req, res) => {
+    console.log("new order")
     try {
         const { data, from } = req.body;
 
         let iface = new ethers.utils.Interface(orderBookABI);
         const decoded = iface.decodeFunctionData('createOrder', data);
         if (!decoded || !decoded.order) {
+            console.log("error decoding");
+            console.log(decoded);
             return res.status(200).json({ error: 'Invalid data' });
         }
 
@@ -137,6 +142,7 @@ app.post('/api/createOrder', async (req, res) => {
 });
 
 app.post('/api/createMarginOrder', async (req, res) => {
+    console.log("new margin order")
     try {
         const { data, from } = req.body;
 
@@ -236,6 +242,7 @@ app.post('/api/cancelOrder', async (req, res) => {
 });
 
 app.get('/api/orders/:adr', async (req, res) => {
+    
     try {
         const userAdr = req.params.adr;
         const isMargin = req.query.isMargin == '1';
