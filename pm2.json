@@ -1,10 +1,10 @@
 {
     "apps": [
       {
-        "name": "Limitorder backend testnet",
+        "name": "Limitorder backend mainnet",
         "script": "./src/start.js",
         "watch": false,
-        "args": "--testnet",
+        "args": "--mainnet",
         "out_file": "./logs/out.log",
         "error_file": "./logs/err.log",
         "time": true,

@@ -1,0 +1,541 @@
+strace: Process 2269527 attached
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=839482521}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=839573495}) = 0
+epoll_wait(14, [], 1024, 88)            = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928054852}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928147673}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928248764}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928325745}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928421475}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928785990}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322822, tv_nsec=928861407}) = 0
+epoll_wait(14, [], 1024, 318)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=247432002}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=247528574}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=247632466}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=247707012}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=247800124}) = 0
+write(3, "{\"type\":\"axm:monitor\",\"data\":{\"Active requests\":{\"historic\":true,\"type\":\"internal/libuv/requests\",\"value\":0},\"Active handles\":{\"historic\":true,\"type\":\"internal/libuv/handles\",\"value\":4},\"Event Loop Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p50\",\"value\":\"0.37\"},\"Event Loop Latency p95\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p95\",\"value\":\"1.27\"},\"Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/total\",\"value\":\"58.89\"},\"Heap Usage\":{\"historic\":true,\"unit\":\"%\",\"type\":\"internal/v8/heap/usage\",\"value\":52.61},\"Used Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/used\",\"value\":\"30.98\"},\"HTTP Mean Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p50\",\"value\":264.5},\"HTTP P95 Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p95\",\"value\":348.0999999999999},\"HTTP\":{\"historic\":true,\"unit\":\"req/min\",\"type\":\"internal/http/builtin/reqs\",\"value\":0.06}}}\n", 986) = 986
+ | 00000  7b 22 74 79 70 65 22 3a  22 61 78 6d 3a 6d 6f 6e  {"type":"axm:mon |
+ | 00010  69 74 6f 72 22 2c 22 64  61 74 61 22 3a 7b 22 41  itor","data":{"A |
+ | 00020  63 74 69 76 65 20 72 65  71 75 65 73 74 73 22 3a  ctive requests": |
+ | 00030  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 00040  2c 22 74 79 70 65 22 3a  22 69 6e 74 65 72 6e 61  ,"type":"interna |
+ | 00050  6c 2f 6c 69 62 75 76 2f  72 65 71 75 65 73 74 73  l/libuv/requests |
+ | 00060  22 2c 22 76 61 6c 75 65  22 3a 30 7d 2c 22 41 63  ","value":0},"Ac |
+ | 00070  74 69 76 65 20 68 61 6e  64 6c 65 73 22 3a 7b 22  tive handles":{" |
+ | 00080  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00090  74 79 70 65 22 3a 22 69  6e 74 65 72 6e 61 6c 2f  type":"internal/ |
+ | 000a0  6c 69 62 75 76 2f 68 61  6e 64 6c 65 73 22 2c 22  libuv/handles"," |
+ | 000b0  76 61 6c 75 65 22 3a 34  7d 2c 22 45 76 65 6e 74  value":4},"Event |
+ | 000c0  20 4c 6f 6f 70 20 4c 61  74 65 6e 63 79 22 3a 7b   Loop Latency":{ |
+ | 000d0  22 68 69 73 74 6f 72 69  63 22 3a 74 72 75 65 2c  "historic":true, |
+ | 000e0  22 75 6e 69 74 22 3a 22  6d 73 22 2c 22 74 79 70  "unit":"ms","typ |
+ | 000f0  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 6c 69 62  e":"internal/lib |
+ | 00100  75 76 2f 6c 61 74 65 6e  63 79 2f 70 35 30 22 2c  uv/latency/p50", |
+ | 00110  22 76 61 6c 75 65 22 3a  22 30 2e 33 37 22 7d 2c  "value":"0.37"}, |
+ | 00120  22 45 76 65 6e 74 20 4c  6f 6f 70 20 4c 61 74 65  "Event Loop Late |
+ | 00130  6e 63 79 20 70 39 35 22  3a 7b 22 68 69 73 74 6f  ncy p95":{"histo |
+ | 00140  72 69 63 22 3a 74 72 75  65 2c 22 75 6e 69 74 22  ric":true,"unit" |
+ | 00150  3a 22 6d 73 22 2c 22 74  79 70 65 22 3a 22 69 6e  :"ms","type":"in |
+ | 00160  74 65 72 6e 61 6c 2f 6c  69 62 75 76 2f 6c 61 74  ternal/libuv/lat |
+ | 00170  65 6e 63 79 2f 70 39 35  22 2c 22 76 61 6c 75 65  ency/p95","value |
+ | 00180  22 3a 22 31 2e 32 37 22  7d 2c 22 48 65 61 70 20  ":"1.27"},"Heap  |
+ | 00190  53 69 7a 65 22 3a 7b 22  68 69 73 74 6f 72 69 63  Size":{"historic |
+ | 001a0  22 3a 74 72 75 65 2c 22  75 6e 69 74 22 3a 22 4d  ":true,"unit":"M |
+ | 001b0  69 42 22 2c 22 74 79 70  65 22 3a 22 69 6e 74 65  iB","type":"inte |
+ | 001c0  72 6e 61 6c 2f 76 38 2f  68 65 61 70 2f 74 6f 74  rnal/v8/heap/tot |
+ | 001d0  61 6c 22 2c 22 76 61 6c  75 65 22 3a 22 35 38 2e  al","value":"58. |
+ | 001e0  38 39 22 7d 2c 22 48 65  61 70 20 55 73 61 67 65  89"},"Heap Usage |
+ | 001f0  22 3a 7b 22 68 69 73 74  6f 72 69 63 22 3a 74 72  ":{"historic":tr |
+ | 00200  75 65 2c 22 75 6e 69 74  22 3a 22 25 22 2c 22 74  ue,"unit":"%","t |
+ | 00210  79 70 65 22 3a 22 69 6e  74 65 72 6e 61 6c 2f 76  ype":"internal/v |
+ | 00220  38 2f 68 65 61 70 2f 75  73 61 67 65 22 2c 22 76  8/heap/usage","v |
+ | 00230  61 6c 75 65 22 3a 35 32  2e 36 31 7d 2c 22 55 73  alue":52.61},"Us |
+ | 00240  65 64 20 48 65 61 70 20  53 69 7a 65 22 3a 7b 22  ed Heap Size":{" |
+ | 00250  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00260  75 6e 69 74 22 3a 22 4d  69 42 22 2c 22 74 79 70  unit":"MiB","typ |
+ | 00270  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 76 38 2f  e":"internal/v8/ |
+ | 00280  68 65 61 70 2f 75 73 65  64 22 2c 22 76 61 6c 75  heap/used","valu |
+ | 00290  65 22 3a 22 33 30 2e 39  38 22 7d 2c 22 48 54 54  e":"30.98"},"HTT |
+ | 002a0  50 20 4d 65 61 6e 20 4c  61 74 65 6e 63 79 22 3a  P Mean Latency": |
+ | 002b0  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 002c0  2c 22 75 6e 69 74 22 3a  22 6d 73 22 2c 22 74 79  ,"unit":"ms","ty |
+ | 002d0  70 65 22 3a 22 69 6e 74  65 72 6e 61 6c 2f 68 74  pe":"internal/ht |
+ | 002e0  74 70 2f 62 75 69 6c 74  69 6e 2f 6c 61 74 65 6e  tp/builtin/laten |
+ | 002f0  63 79 2f 70 35 30 22 2c  22 76 61 6c 75 65 22 3a  cy/p50","value": |
+ | 00300  32 36 34 2e 35 7d 2c 22  48 54 54 50 20 50 39 35  264.5},"HTTP P95 |
+ | 00310  20 4c 61 74 65 6e 63 79  22 3a 7b 22 68 69 73 74   Latency":{"hist |
+ | 00320  6f 72 69 63 22 3a 74 72  75 65 2c 22 75 6e 69 74  oric":true,"unit |
+ | 00330  22 3a 22 6d 73 22 2c 22  74 79 70 65 22 3a 22 69  ":"ms","type":"i |
+ | 00340  6e 74 65 72 6e 61 6c 2f  68 74 74 70 2f 62 75 69  nternal/http/bui |
+ | 00350  6c 74 69 6e 2f 6c 61 74  65 6e 63 79 2f 70 39 35  ltin/latency/p95 |
+ | 00360  22 2c 22 76 61 6c 75 65  22 3a 33 34 38 2e 30 39  ","value":348.09 |
+ | 00370  39 39 39 39 39 39 39 39  39 39 39 7d 2c 22 48 54  99999999999},"HT |
+ | 00380  54 50 22 3a 7b 22 68 69  73 74 6f 72 69 63 22 3a  TP":{"historic": |
+ | 00390  74 72 75 65 2c 22 75 6e  69 74 22 3a 22 72 65 71  true,"unit":"req |
+ | 003a0  2f 6d 69 6e 22 2c 22 74  79 70 65 22 3a 22 69 6e  /min","type":"in |
+ | 003b0  74 65 72 6e 61 6c 2f 68  74 74 70 2f 62 75 69 6c  ternal/http/buil |
+ | 003c0  74 69 6e 2f 72 65 71 73  22 2c 22 76 61 6c 75 65  tin/reqs","value |
+ | 003d0  22 3a 30 2e 30 36 7d 7d  7d 0a                    ":0.06}}}.       |
+epoll_ctl(14, EPOLL_CTL_MOD, 3, {EPOLLIN, {u32=3, u64=3}}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=250104125}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=250171978}) = 0
+epoll_wait(14, [], 1024, 109)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=359639621}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=359728669}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=359817733}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=359890815}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=359979139}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360055617}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360135367}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360237753}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360310805}) = 0
+gettimeofday({tv_sec=1657119871, tv_usec=496165}, NULL) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360625644}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=360699515}) = 0
+epoll_wait(14, [], 1024, 368)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=729428344}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=729518657}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=729638346}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=729712211}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=729803725}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=730136657}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322823, tv_nsec=730206999}) = 0
+epoll_wait(14, [], 1024, 507)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238053105}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238140773}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238229847}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238301881}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238392117}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238469295}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=238567223}) = 0
+write(3, "{\"type\":\"axm:monitor\",\"data\":{\"Active requests\":{\"historic\":true,\"type\":\"internal/libuv/requests\",\"value\":0},\"Active handles\":{\"historic\":true,\"type\":\"internal/libuv/handles\",\"value\":4},\"Event Loop Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p50\",\"value\":\"0.37\"},\"Event Loop Latency p95\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p95\",\"value\":\"1.27\"},\"Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/total\",\"value\":\"58.89\"},\"Heap Usage\":{\"historic\":true,\"unit\":\"%\",\"type\":\"internal/v8/heap/usage\",\"value\":53.47},\"Used Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/used\",\"value\":\"31.49\"},\"HTTP Mean Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p50\",\"value\":264.5},\"HTTP P95 Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p95\",\"value\":348.0999999999999},\"HTTP\":{\"historic\":true,\"unit\":\"req/min\",\"type\":\"internal/http/builtin/reqs\",\"value\":0.05}}}\n", 986) = 986
+ | 00000  7b 22 74 79 70 65 22 3a  22 61 78 6d 3a 6d 6f 6e  {"type":"axm:mon |
+ | 00010  69 74 6f 72 22 2c 22 64  61 74 61 22 3a 7b 22 41  itor","data":{"A |
+ | 00020  63 74 69 76 65 20 72 65  71 75 65 73 74 73 22 3a  ctive requests": |
+ | 00030  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 00040  2c 22 74 79 70 65 22 3a  22 69 6e 74 65 72 6e 61  ,"type":"interna |
+ | 00050  6c 2f 6c 69 62 75 76 2f  72 65 71 75 65 73 74 73  l/libuv/requests |
+ | 00060  22 2c 22 76 61 6c 75 65  22 3a 30 7d 2c 22 41 63  ","value":0},"Ac |
+ | 00070  74 69 76 65 20 68 61 6e  64 6c 65 73 22 3a 7b 22  tive handles":{" |
+ | 00080  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00090  74 79 70 65 22 3a 22 69  6e 74 65 72 6e 61 6c 2f  type":"internal/ |
+ | 000a0  6c 69 62 75 76 2f 68 61  6e 64 6c 65 73 22 2c 22  libuv/handles"," |
+ | 000b0  76 61 6c 75 65 22 3a 34  7d 2c 22 45 76 65 6e 74  value":4},"Event |
+ | 000c0  20 4c 6f 6f 70 20 4c 61  74 65 6e 63 79 22 3a 7b   Loop Latency":{ |
+ | 000d0  22 68 69 73 74 6f 72 69  63 22 3a 74 72 75 65 2c  "historic":true, |
+ | 000e0  22 75 6e 69 74 22 3a 22  6d 73 22 2c 22 74 79 70  "unit":"ms","typ |
+ | 000f0  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 6c 69 62  e":"internal/lib |
+ | 00100  75 76 2f 6c 61 74 65 6e  63 79 2f 70 35 30 22 2c  uv/latency/p50", |
+ | 00110  22 76 61 6c 75 65 22 3a  22 30 2e 33 37 22 7d 2c  "value":"0.37"}, |
+ | 00120  22 45 76 65 6e 74 20 4c  6f 6f 70 20 4c 61 74 65  "Event Loop Late |
+ | 00130  6e 63 79 20 70 39 35 22  3a 7b 22 68 69 73 74 6f  ncy p95":{"histo |
+ | 00140  72 69 63 22 3a 74 72 75  65 2c 22 75 6e 69 74 22  ric":true,"unit" |
+ | 00150  3a 22 6d 73 22 2c 22 74  79 70 65 22 3a 22 69 6e  :"ms","type":"in |
+ | 00160  74 65 72 6e 61 6c 2f 6c  69 62 75 76 2f 6c 61 74  ternal/libuv/lat |
+ | 00170  65 6e 63 79 2f 70 39 35  22 2c 22 76 61 6c 75 65  ency/p95","value |
+ | 00180  22 3a 22 31 2e 32 37 22  7d 2c 22 48 65 61 70 20  ":"1.27"},"Heap  |
+ | 00190  53 69 7a 65 22 3a 7b 22  68 69 73 74 6f 72 69 63  Size":{"historic |
+ | 001a0  22 3a 74 72 75 65 2c 22  75 6e 69 74 22 3a 22 4d  ":true,"unit":"M |
+ | 001b0  69 42 22 2c 22 74 79 70  65 22 3a 22 69 6e 74 65  iB","type":"inte |
+ | 001c0  72 6e 61 6c 2f 76 38 2f  68 65 61 70 2f 74 6f 74  rnal/v8/heap/tot |
+ | 001d0  61 6c 22 2c 22 76 61 6c  75 65 22 3a 22 35 38 2e  al","value":"58. |
+ | 001e0  38 39 22 7d 2c 22 48 65  61 70 20 55 73 61 67 65  89"},"Heap Usage |
+ | 001f0  22 3a 7b 22 68 69 73 74  6f 72 69 63 22 3a 74 72  ":{"historic":tr |
+ | 00200  75 65 2c 22 75 6e 69 74  22 3a 22 25 22 2c 22 74  ue,"unit":"%","t |
+ | 00210  79 70 65 22 3a 22 69 6e  74 65 72 6e 61 6c 2f 76  ype":"internal/v |
+ | 00220  38 2f 68 65 61 70 2f 75  73 61 67 65 22 2c 22 76  8/heap/usage","v |
+ | 00230  61 6c 75 65 22 3a 35 33  2e 34 37 7d 2c 22 55 73  alue":53.47},"Us |
+ | 00240  65 64 20 48 65 61 70 20  53 69 7a 65 22 3a 7b 22  ed Heap Size":{" |
+ | 00250  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00260  75 6e 69 74 22 3a 22 4d  69 42 22 2c 22 74 79 70  unit":"MiB","typ |
+ | 00270  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 76 38 2f  e":"internal/v8/ |
+ | 00280  68 65 61 70 2f 75 73 65  64 22 2c 22 76 61 6c 75  heap/used","valu |
+ | 00290  65 22 3a 22 33 31 2e 34  39 22 7d 2c 22 48 54 54  e":"31.49"},"HTT |
+ | 002a0  50 20 4d 65 61 6e 20 4c  61 74 65 6e 63 79 22 3a  P Mean Latency": |
+ | 002b0  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 002c0  2c 22 75 6e 69 74 22 3a  22 6d 73 22 2c 22 74 79  ,"unit":"ms","ty |
+ | 002d0  70 65 22 3a 22 69 6e 74  65 72 6e 61 6c 2f 68 74  pe":"internal/ht |
+ | 002e0  74 70 2f 62 75 69 6c 74  69 6e 2f 6c 61 74 65 6e  tp/builtin/laten |
+ | 002f0  63 79 2f 70 35 30 22 2c  22 76 61 6c 75 65 22 3a  cy/p50","value": |
+ | 00300  32 36 34 2e 35 7d 2c 22  48 54 54 50 20 50 39 35  264.5},"HTTP P95 |
+ | 00310  20 4c 61 74 65 6e 63 79  22 3a 7b 22 68 69 73 74   Latency":{"hist |
+ | 00320  6f 72 69 63 22 3a 74 72  75 65 2c 22 75 6e 69 74  oric":true,"unit |
+ | 00330  22 3a 22 6d 73 22 2c 22  74 79 70 65 22 3a 22 69  ":"ms","type":"i |
+ | 00340  6e 74 65 72 6e 61 6c 2f  68 74 74 70 2f 62 75 69  nternal/http/bui |
+ | 00350  6c 74 69 6e 2f 6c 61 74  65 6e 63 79 2f 70 39 35  ltin/latency/p95 |
+ | 00360  22 2c 22 76 61 6c 75 65  22 3a 33 34 38 2e 30 39  ","value":348.09 |
+ | 00370  39 39 39 39 39 39 39 39  39 39 39 7d 2c 22 48 54  99999999999},"HT |
+ | 00380  54 50 22 3a 7b 22 68 69  73 74 6f 72 69 63 22 3a  TP":{"historic": |
+ | 00390  74 72 75 65 2c 22 75 6e  69 74 22 3a 22 72 65 71  true,"unit":"req |
+ | 003a0  2f 6d 69 6e 22 2c 22 74  79 70 65 22 3a 22 69 6e  /min","type":"in |
+ | 003b0  74 65 72 6e 61 6c 2f 68  74 74 70 2f 62 75 69 6c  ternal/http/buil |
+ | 003c0  74 69 6e 2f 72 65 71 73  22 2c 22 76 61 6c 75 65  tin/reqs","value |
+ | 003d0  22 3a 30 2e 30 35 7d 7d  7d 0a                    ":0.05}}}.       |
+epoll_ctl(14, EPOLL_CTL_MOD, 3, {EPOLLIN, {u32=3, u64=3}}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=240814430}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=240886408}) = 0
+epoll_wait(14, [], 1024, 119)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360136797}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360172678}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360211287}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360237494}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360276130}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360307053}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360357495}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360421187}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360449826}) = 0
+gettimeofday({tv_sec=1657119872, tv_usec=496236}, NULL) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360552115}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=360575599}) = 0
+epoll_wait(14, [], 1024, 169)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530027616}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530116396}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530203557}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530275555}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530361491}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530679738}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322824, tv_nsec=530750201}) = 0
+epoll_wait(14, [], 1024, 698)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=229757753}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=229856884}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=230003636}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=230144296}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=230261419}) = 0
+write(3, "{\"type\":\"axm:monitor\",\"data\":{\"Active requests\":{\"historic\":true,\"type\":\"internal/libuv/requests\",\"value\":0},\"Active handles\":{\"historic\":true,\"type\":\"internal/libuv/handles\",\"value\":4},\"Event Loop Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p50\",\"value\":\"0.37\"},\"Event Loop Latency p95\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p95\",\"value\":\"1.27\"},\"Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/total\",\"value\":\"58.89\"},\"Heap Usage\":{\"historic\":true,\"unit\":\"%\",\"type\":\"internal/v8/heap/usage\",\"value\":54.33},\"Used Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/used\",\"value\":\"32.00\"},\"HTTP Mean Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p50\",\"value\":264.5},\"HTTP P95 Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p95\",\"value\":348.0999999999999},\"HTTP\":{\"historic\":true,\"unit\":\"req/min\",\"type\":\"internal/http/builtin/reqs\",\"value\":0.05}}}\n", 986) = 986
+ | 00000  7b 22 74 79 70 65 22 3a  22 61 78 6d 3a 6d 6f 6e  {"type":"axm:mon |
+ | 00010  69 74 6f 72 22 2c 22 64  61 74 61 22 3a 7b 22 41  itor","data":{"A |
+ | 00020  63 74 69 76 65 20 72 65  71 75 65 73 74 73 22 3a  ctive requests": |
+ | 00030  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 00040  2c 22 74 79 70 65 22 3a  22 69 6e 74 65 72 6e 61  ,"type":"interna |
+ | 00050  6c 2f 6c 69 62 75 76 2f  72 65 71 75 65 73 74 73  l/libuv/requests |
+ | 00060  22 2c 22 76 61 6c 75 65  22 3a 30 7d 2c 22 41 63  ","value":0},"Ac |
+ | 00070  74 69 76 65 20 68 61 6e  64 6c 65 73 22 3a 7b 22  tive handles":{" |
+ | 00080  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00090  74 79 70 65 22 3a 22 69  6e 74 65 72 6e 61 6c 2f  type":"internal/ |
+ | 000a0  6c 69 62 75 76 2f 68 61  6e 64 6c 65 73 22 2c 22  libuv/handles"," |
+ | 000b0  76 61 6c 75 65 22 3a 34  7d 2c 22 45 76 65 6e 74  value":4},"Event |
+ | 000c0  20 4c 6f 6f 70 20 4c 61  74 65 6e 63 79 22 3a 7b   Loop Latency":{ |
+ | 000d0  22 68 69 73 74 6f 72 69  63 22 3a 74 72 75 65 2c  "historic":true, |
+ | 000e0  22 75 6e 69 74 22 3a 22  6d 73 22 2c 22 74 79 70  "unit":"ms","typ |
+ | 000f0  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 6c 69 62  e":"internal/lib |
+ | 00100  75 76 2f 6c 61 74 65 6e  63 79 2f 70 35 30 22 2c  uv/latency/p50", |
+ | 00110  22 76 61 6c 75 65 22 3a  22 30 2e 33 37 22 7d 2c  "value":"0.37"}, |
+ | 00120  22 45 76 65 6e 74 20 4c  6f 6f 70 20 4c 61 74 65  "Event Loop Late |
+ | 00130  6e 63 79 20 70 39 35 22  3a 7b 22 68 69 73 74 6f  ncy p95":{"histo |
+ | 00140  72 69 63 22 3a 74 72 75  65 2c 22 75 6e 69 74 22  ric":true,"unit" |
+ | 00150  3a 22 6d 73 22 2c 22 74  79 70 65 22 3a 22 69 6e  :"ms","type":"in |
+ | 00160  74 65 72 6e 61 6c 2f 6c  69 62 75 76 2f 6c 61 74  ternal/libuv/lat |
+ | 00170  65 6e 63 79 2f 70 39 35  22 2c 22 76 61 6c 75 65  ency/p95","value |
+ | 00180  22 3a 22 31 2e 32 37 22  7d 2c 22 48 65 61 70 20  ":"1.27"},"Heap  |
+ | 00190  53 69 7a 65 22 3a 7b 22  68 69 73 74 6f 72 69 63  Size":{"historic |
+ | 001a0  22 3a 74 72 75 65 2c 22  75 6e 69 74 22 3a 22 4d  ":true,"unit":"M |
+ | 001b0  69 42 22 2c 22 74 79 70  65 22 3a 22 69 6e 74 65  iB","type":"inte |
+ | 001c0  72 6e 61 6c 2f 76 38 2f  68 65 61 70 2f 74 6f 74  rnal/v8/heap/tot |
+ | 001d0  61 6c 22 2c 22 76 61 6c  75 65 22 3a 22 35 38 2e  al","value":"58. |
+ | 001e0  38 39 22 7d 2c 22 48 65  61 70 20 55 73 61 67 65  89"},"Heap Usage |
+ | 001f0  22 3a 7b 22 68 69 73 74  6f 72 69 63 22 3a 74 72  ":{"historic":tr |
+ | 00200  75 65 2c 22 75 6e 69 74  22 3a 22 25 22 2c 22 74  ue,"unit":"%","t |
+ | 00210  79 70 65 22 3a 22 69 6e  74 65 72 6e 61 6c 2f 76  ype":"internal/v |
+ | 00220  38 2f 68 65 61 70 2f 75  73 61 67 65 22 2c 22 76  8/heap/usage","v |
+ | 00230  61 6c 75 65 22 3a 35 34  2e 33 33 7d 2c 22 55 73  alue":54.33},"Us |
+ | 00240  65 64 20 48 65 61 70 20  53 69 7a 65 22 3a 7b 22  ed Heap Size":{" |
+ | 00250  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00260  75 6e 69 74 22 3a 22 4d  69 42 22 2c 22 74 79 70  unit":"MiB","typ |
+ | 00270  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 76 38 2f  e":"internal/v8/ |
+ | 00280  68 65 61 70 2f 75 73 65  64 22 2c 22 76 61 6c 75  heap/used","valu |
+ | 00290  65 22 3a 22 33 32 2e 30  30 22 7d 2c 22 48 54 54  e":"32.00"},"HTT |
+ | 002a0  50 20 4d 65 61 6e 20 4c  61 74 65 6e 63 79 22 3a  P Mean Latency": |
+ | 002b0  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 002c0  2c 22 75 6e 69 74 22 3a  22 6d 73 22 2c 22 74 79  ,"unit":"ms","ty |
+ | 002d0  70 65 22 3a 22 69 6e 74  65 72 6e 61 6c 2f 68 74  pe":"internal/ht |
+ | 002e0  74 70 2f 62 75 69 6c 74  69 6e 2f 6c 61 74 65 6e  tp/builtin/laten |
+ | 002f0  63 79 2f 70 35 30 22 2c  22 76 61 6c 75 65 22 3a  cy/p50","value": |
+ | 00300  32 36 34 2e 35 7d 2c 22  48 54 54 50 20 50 39 35  264.5},"HTTP P95 |
+ | 00310  20 4c 61 74 65 6e 63 79  22 3a 7b 22 68 69 73 74   Latency":{"hist |
+ | 00320  6f 72 69 63 22 3a 74 72  75 65 2c 22 75 6e 69 74  oric":true,"unit |
+ | 00330  22 3a 22 6d 73 22 2c 22  74 79 70 65 22 3a 22 69  ":"ms","type":"i |
+ | 00340  6e 74 65 72 6e 61 6c 2f  68 74 74 70 2f 62 75 69  nternal/http/bui |
+ | 00350  6c 74 69 6e 2f 6c 61 74  65 6e 63 79 2f 70 39 35  ltin/latency/p95 |
+ | 00360  22 2c 22 76 61 6c 75 65  22 3a 33 34 38 2e 30 39  ","value":348.09 |
+ | 00370  39 39 39 39 39 39 39 39  39 39 39 7d 2c 22 48 54  99999999999},"HT |
+ | 00380  54 50 22 3a 7b 22 68 69  73 74 6f 72 69 63 22 3a  TP":{"historic": |
+ | 00390  74 72 75 65 2c 22 75 6e  69 74 22 3a 22 72 65 71  true,"unit":"req |
+ | 003a0  2f 6d 69 6e 22 2c 22 74  79 70 65 22 3a 22 69 6e  /min","type":"in |
+ | 003b0  74 65 72 6e 61 6c 2f 68  74 74 70 2f 62 75 69 6c  ternal/http/buil |
+ | 003c0  74 69 6e 2f 72 65 71 73  22 2c 22 76 61 6c 75 65  tin/reqs","value |
+ | 003d0  22 3a 30 2e 30 35 7d 7d  7d 0a                    ":0.05}}}.       |
+epoll_ctl(14, EPOLL_CTL_MOD, 3, {EPOLLIN, {u32=3, u64=3}}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=232205997}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=232280687}) = 0
+epoll_wait(14, [], 1024, 98)            = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=330686316}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=330771991}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=330860740}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=330933613}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=331018705}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=331354067}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=331424959}) = 0
+epoll_wait(14, [], 1024, 29)            = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=360759059}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=360843408}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=360929434}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361006807}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361090997}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361171895}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361254916}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361356882}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361435586}) = 0
+gettimeofday({tv_sec=1657119873, tv_usec=497275}, NULL) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361692417}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=361769981}) = 0
+epoll_wait(14, [], 1024, 192)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554317366}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554409495}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554502860}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554631291}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554727412}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=554930201}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=555006680}) = 0
+epoll_wait(14, [], 1024, 285)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=840640826}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=840727859}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=840818511}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=840893802}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=840985421}) = 0
+gettimeofday({tv_sec=1657119873, tv_usec=976897}, NULL) = 0
+gettimeofday({tv_sec=1657119873, tv_usec=976977}, NULL) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=841444050}) = 0
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+futex(0x2cd1a48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x2cd19e0, FUTEX_WAKE_PRIVATE, 1) = 1
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=843958040}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=844073499}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=844111816}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=844256202}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=844367354}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=844445925}) = 0
+epoll_wait(14, [{EPOLLIN, {u32=17, u64=17}}], 1024, 1) = 1
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=845055573}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=845118088}) = 0
+read(17, "\1\0\0\0\0\0\0\0", 1024)      = 8
+socket(AF_INET, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, IPPROTO_IP) = 19
+connect(19, {sa_family=AF_INET, sin_port=htons(443), sin_addr=inet_addr("3.130.153.161")}, 16) = -1 EINPROGRESS (Operation now in progress)
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=845593860}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=845665178}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=845815123}) = 0
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+futex(0x2cd1a48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x2cd19e0, FUTEX_WAKE_PRIVATE, 1) = 1
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=848221276}) = 0
+epoll_ctl(14, EPOLL_CTL_ADD, 19, {EPOLLOUT, {u32=19, u64=19}}) = 0
+epoll_wait(14, [{EPOLLIN, {u32=17, u64=17}}, {EPOLLOUT, {u32=19, u64=19}}], 1024, 0) = 2
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=848660471}) = 0
+read(17, "\1\0\0\0\0\0\0\0", 1024)      = 8
+socket(AF_INET, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, IPPROTO_IP) = 20
+connect(20, {sa_family=AF_INET, sin_port=htons(443), sin_addr=inet_addr("3.130.153.161")}, 16) = -1 EINPROGRESS (Operation now in progress)
+getsockopt(19, SOL_SOCKET, SO_ERROR, [0], [4]) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=849109450}) = 0
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+write(19, "\26\3\1\2/\1\0\2+\3\3Z\321Mgv\234\246\357\303\224%f\242\255 \223R\370\323\7\244\372`\32\0031xoT\275\32> \307R\344\377_k\306L\312\22\246\32\212t\32=!g=\16\31\342fW\35n\206\263\36\270\274\\\0v\23\2\23\3\23\1\300/\300+\3000\300,\0\236\300'\0g\300(\0k\0\243\0\237\314\251\314\250\314\252\300\257\300\255\300\243\300\237\300]\300a\300W\300S\0\242\300\256\300\254\300\242\300\236\300\\\300`\300V\300R\300$\0j\300#\0@\300\n\300\24\09\08\300\t\300\23\0003\0002\0\235\300\241\300\235\300Q\0\234\300\240\300\234\300P\0=\0<\0005\0/\0\377\1\0\1l\0\0\0\27\0\25\0\0\22testnet.sovryn.app\0\v\0\4\3\0\1\2\0\n\0\f\0\n\0\35\0\27\0\36\0\31\0\30\0#\0\300\352#\31\201\311CN\3556\206\345M\216\rW\313\362d\312~\2735w\307\322\265\227J\7\206zBV\252\353\26\0330\315=\341\304\27\353:5\33d\267\320\377\300\350\210&\220Y\261\21\214\3y\0200\31\205\275\265\202\\+Rw\365\22F\324{\20\215\260\347NSK\222U\254\17\213\31\246x\306\325Sb\20\1771\267\230\257\332\310#\367=\3315\224\205\300\"\246\376H\221\37a1\f\200\321\32\264b\261\5QZ\16\27\314R\246\301\265\260\245\201\353\f\307\216\377\275\274#\233\2\314>\246=.!6\7\372\0\306\205\4\377\204\340\250>H\357\f7\204\203y\\\273\315\334\2\31\307K\177\253\344\245s\253\200\n\0\26\0\0\0\27\0\0\0\r\0000\0.\4\3\5\3\6\3\10\7\10\10\10\t\10\n\10\v\10\4\10\5\10\6\4\1\5\1\6\1\3\3\2\3\3\1\2\1\3\2\2\2\4\2\5\2\6\2\0+\0\5\4\3\4\3\3\0-\0\2\1\1\0003\0&\0$\0\35\0 \250vT\310r\366=Z\366\201\363\26\361\2012{\27\36\t\271\330\221\3240\235\301\230n\256\204oU", 564) = 564
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=849733318}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=849797061}) = 0
+epoll_ctl(14, EPOLL_CTL_ADD, 20, {EPOLLOUT, {u32=20, u64=20}}) = 0
+epoll_ctl(14, EPOLL_CTL_ADD, 19, {EPOLLIN, {u32=19, u64=19}}) = -1 EEXIST (File exists)
+epoll_ctl(14, EPOLL_CTL_MOD, 19, {EPOLLIN, {u32=19, u64=19}}) = 0
+epoll_wait(14, [{EPOLLIN, {u32=19, u64=19}}, {EPOLLOUT, {u32=20, u64=20}}], 1024, 0) = 2
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=850185460}) = 0
+read(19, "\26\3\3\0Q\2\0\0M\3\3\334\276\247\373H\265\33\31\221\316w0\267\272MX\253\375\3666\310\7c\257c3%\345\315 E\334 \307R\344\377_k\306L\312\22\246\32\212t\32=!g=\16\31\342fW\35n\206\263\36\270\274\\\300/\0\0\5\377\1\0\1\0\24\3\3\0\1\1\26\3\3\0(#b\t\30\311o7\20\312\364JMm\371\366_\324\275\247dG\275\361\177\353J\17\264\222\204qsg\357\3465\26_ \377", 65536) = 137
+getpid()                                = 2269527
+getpid()                                = 2269527
+write(19, "\24\3\3\0\1\1\26\3\3\0(XH\352\20s\200V\335\370\354\274~\351CX\316\271\10\374^\250\\\24Q\266\326\247s=>\306SM\r\34\203\0\367\272\266\27\3\3\0\323XH\352\20s\200V\336xQ=j\332\265E^\20\17\232\31\r3\362q\374V\337\223\317\371\0065\322\352\332\25\320\2347?C\321\246\327\6\247\351\207\34\220 ?\264*\376[\2144\26\270\37\n\203?\254\32z|\204\247b\226t\352\252r\vkNS\256\275](O`\345L\257\352\7u\3636d\32\t[n\361n\212\17\227\205\213?\214\330\267\2750P\256\375\343_\231\245\273NF9\223\n\235)\306\202\236Ty\177\305o?=)E0<\27\tCo9.\3473\331\356\266\216\375\22\367\340a\31vFC\326D\203\350#\355\21\23D\rn\367h=\206\350W\345\353\341\26\274\7\322\260\270K\211\212\356\245\30\10\252T\27\275\215x}$\276\5\336\272\301\5xH", 267) = 267
+getsockopt(20, SOL_SOCKET, SO_ERROR, [0], [4]) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=850884286}) = 0
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+getpid()                                = 2269527
+write(20, "\26\3\1\2/\1\0\2+\3\3+\363\247:\310Q\203\333 \226\204\264\325/\"\224\4\253r\310\306\203F\223R\314\2\245Is\313Q \307R\344\377_k\306L\312\22\246\32\212t\32=!g=\16\31\342fW\35n\206\263\36\270\274\\\0v\23\2\23\3\23\1\300/\300+\3000\300,\0\236\300'\0g\300(\0k\0\243\0\237\314\251\314\250\314\252\300\257\300\255\300\243\300\237\300]\300a\300W\300S\0\242\300\256\300\254\300\242\300\236\300\\\300`\300V\300R\300$\0j\300#\0@\300\n\300\24\09\08\300\t\300\23\0003\0002\0\235\300\241\300\235\300Q\0\234\300\240\300\234\300P\0=\0<\0005\0/\0\377\1\0\1l\0\0\0\27\0\25\0\0\22testnet.sovryn.app\0\v\0\4\3\0\1\2\0\n\0\f\0\n\0\35\0\27\0\36\0\31\0\30\0#\0\300\352#\31\201\311CN\3556\206\345M\216\rW\313\362d\312~\2735w\307\322\265\227J\7\206zBV\252\353\26\0330\315=\341\304\27\353:5\33d\267\320\377\300\350\210&\220Y\261\21\214\3y\0200\31\205\275\265\202\\+Rw\365\22F\324{\20\215\260\347NSK\222U\254\17\213\31\246x\306\325Sb\20\1771\267\230\257\332\310#\367=\3315\224\205\300\"\246\376H\221\37a1\f\200\321\32\264b\261\5QZ\16\27\314R\246\301\265\260\245\201\353\f\307\216\377\275\274#\233\2\314>\246=.!6\7\372\0\306\205\4\377\204\340\250>H\357\f7\204\203y\\\273\315\334\2\31\307K\177\253\344\245s\253\200\n\0\26\0\0\0\27\0\0\0\r\0000\0.\4\3\5\3\6\3\10\7\10\10\10\t\10\n\10\v\10\4\10\5\10\6\4\1\5\1\6\1\3\3\2\3\3\1\2\1\3\2\2\2\4\2\5\2\6\2\0+\0\5\4\3\4\3\3\0-\0\2\1\1\0003\0&\0$\0\35\0 4\5\370a\364\346\213]\262\20m\3525\260\321\337z\234\374C\324\342\343=\266\244\5\30JJ\211\1", 564) = 564
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=851441498}) = 0
+epoll_ctl(14, EPOLL_CTL_MOD, 19, {EPOLLIN, {u32=19, u64=19}}) = 0
+epoll_ctl(14, EPOLL_CTL_ADD, 20, {EPOLLIN, {u32=20, u64=20}}) = -1 EEXIST (File exists)
+epoll_ctl(14, EPOLL_CTL_MOD, 20, {EPOLLIN, {u32=20, u64=20}}) = 0
+epoll_wait(14, [{EPOLLIN, {u32=20, u64=20}}], 1024, 0) = 1
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=851833899}) = 0
+read(20, "\26\3\3\0Q\2\0\0M\3\3\353\207\275\265\207\211\270~\342L,j0\346$B\254\346\23\311\n@\27\200\251\237Yh\20\35\257[ \307R\344\377_k\306L\312\22\246\32\212t\32=!g=\16\31\342fW\35n\206\263\36\270\274\\\300/\0\0\5\377\1\0\1\0\24\3\3\0\1\1\26\3\3\0(RK\341np\303\374\324\33\254i\210\36\0\v\244\364\5(\270\177\23\301\\Q\340^:\201\203\17\270\27\2\227\374\356\357\27D", 65536) = 137
+getpid()                                = 2269527
+getpid()                                = 2269527
+write(20, "\24\3\3\0\1\1\26\3\3\0(\347oF\242,]\3177\36s\16\375\362\0002+\3764.\202\272\355\3261\261\24t\257\231\255\364s\263\353\32\16\255\301#4\27\3\3\0\317\347oF\242,]\3178+\354\236^)\353F\215\251N~\266\223y\333\31H\213\4\354\226\356n\257@\375\374G\320\360\374\215\276\316\311\265\241\371\4\4\n`\227%\33\330\276\v=\263\0\21\233\0\377\230\351a\220\243\253CRM\377\211Lb\1\23135da\316\262?\247J3bp\354\222=W\213%\247\n*E\231\\\353\240\304\34\223\371\377\7;\266\212Ha\377\274(\3565).i\34}\335\1\247\36\317@\220~\265#,G.[Q\27\0100r]~\304\207\324\236\6\220\257\5\20\233\357\260\33\24):\323\266w/\234m\36\272t\307\353\222\246m\241\253\202\304#\211Ck\236\316^.B\322\27\237\300h\240,\337\377\267y\241\212\325 \322A\\", 263) = 263
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=852365721}) = 0
+epoll_ctl(14, EPOLL_CTL_MOD, 20, {EPOLLIN, {u32=20, u64=20}}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=852556596}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=852618627}) = 0
+epoll_wait(14, [{EPOLLIN, {u32=20, u64=20}}], 1024, 279) = 1
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=935862247}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=935938370}) = 0
+read(20, "\27\3\3\0\323RK\341np\303\374\325!\341\0\210\17\302A\231s_^\3457\222[\251d\267c`\225E\275\202\234mc\36r\367&\360l\250\330'\6W\2\6\362S>\f0{\312\fE\217\34\375\362\17\373*\357mSQ\203\307\235`-z\17F\355L*o@ \265+\340\331\344\fR\331\251\206\246\203\216R]@j\261\233\355\264(H\374D\223\7%\216A>\201\330\201\330\322\223\17\35\236w\241o7\367\0\236\212W\255\206E\350\350\202\244V\365\"\313\220\177\374\217\211\355\272\336O\252\277X\rg\320\334\27K\300\365\206\177\260\260\375}\207\265vV\205\363z4H\273@\376\207\370\215\34voG\226\221\36\366\204\331\234\17\334\302\227|'\2763\204\2329A`\3s\344\361\27\3\3\0\35RK\341np\303\374\3265%\177f\315J)\4\3507\300\237\4\346\205\375\327h-#A", 65536) = 250
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=936159006}) = 0
+write(20, "\25\3\3\0\32\347oF\242,]\3179@\370\\5\221C\242@\304]\351\267\376\321\313e\313\212", 31) = 31
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=936772273}) = 0
+shutdown(20, SHUT_WR)                   = 0
+epoll_ctl(14, EPOLL_CTL_DEL, 20, 0x7ffe9b6b9410) = 0
+close(20)                               = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937372368}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937578254}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937712367}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937795928}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937924467}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322825, tv_nsec=937989679}) = 0
+epoll_wait(14, [], 1024, 194)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=132483724}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=132577818}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=132663475}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=132734891}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=132818422}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=133117135}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=133186751}) = 0
+epoll_wait(14, [], 1024, 87)            = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=220583816}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=220669707}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=220758326}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=220833862}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=220921623}) = 0
+write(3, "{\"type\":\"axm:monitor\",\"data\":{\"Active requests\":{\"historic\":true,\"type\":\"internal/libuv/requests\",\"value\":0},\"Active handles\":{\"historic\":true,\"type\":\"internal/libuv/handles\",\"value\":4},\"Event Loop Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p50\",\"value\":\"0.37\"},\"Event Loop Latency p95\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/libuv/latency/p95\",\"value\":\"1.27\"},\"Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/total\",\"value\":\"58.89\"},\"Heap Usage\":{\"historic\":true,\"unit\":\"%\",\"type\":\"internal/v8/heap/usage\",\"value\":55.41},\"Used Heap Size\":{\"historic\":true,\"unit\":\"MiB\",\"type\":\"internal/v8/heap/used\",\"value\":\"32.63\"},\"HTTP Mean Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p50\",\"value\":264.5},\"HTTP P95 Latency\":{\"historic\":true,\"unit\":\"ms\",\"type\":\"internal/http/builtin/latency/p95\",\"value\":348.0999999999999},\"HTTP\":{\"historic\":true,\"unit\":\"req/min\",\"type\":\"internal/http/builtin/reqs\",\"value\":0.05}}}\n", 986) = 986
+ | 00000  7b 22 74 79 70 65 22 3a  22 61 78 6d 3a 6d 6f 6e  {"type":"axm:mon |
+ | 00010  69 74 6f 72 22 2c 22 64  61 74 61 22 3a 7b 22 41  itor","data":{"A |
+ | 00020  63 74 69 76 65 20 72 65  71 75 65 73 74 73 22 3a  ctive requests": |
+ | 00030  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 00040  2c 22 74 79 70 65 22 3a  22 69 6e 74 65 72 6e 61  ,"type":"interna |
+ | 00050  6c 2f 6c 69 62 75 76 2f  72 65 71 75 65 73 74 73  l/libuv/requests |
+ | 00060  22 2c 22 76 61 6c 75 65  22 3a 30 7d 2c 22 41 63  ","value":0},"Ac |
+ | 00070  74 69 76 65 20 68 61 6e  64 6c 65 73 22 3a 7b 22  tive handles":{" |
+ | 00080  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00090  74 79 70 65 22 3a 22 69  6e 74 65 72 6e 61 6c 2f  type":"internal/ |
+ | 000a0  6c 69 62 75 76 2f 68 61  6e 64 6c 65 73 22 2c 22  libuv/handles"," |
+ | 000b0  76 61 6c 75 65 22 3a 34  7d 2c 22 45 76 65 6e 74  value":4},"Event |
+ | 000c0  20 4c 6f 6f 70 20 4c 61  74 65 6e 63 79 22 3a 7b   Loop Latency":{ |
+ | 000d0  22 68 69 73 74 6f 72 69  63 22 3a 74 72 75 65 2c  "historic":true, |
+ | 000e0  22 75 6e 69 74 22 3a 22  6d 73 22 2c 22 74 79 70  "unit":"ms","typ |
+ | 000f0  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 6c 69 62  e":"internal/lib |
+ | 00100  75 76 2f 6c 61 74 65 6e  63 79 2f 70 35 30 22 2c  uv/latency/p50", |
+ | 00110  22 76 61 6c 75 65 22 3a  22 30 2e 33 37 22 7d 2c  "value":"0.37"}, |
+ | 00120  22 45 76 65 6e 74 20 4c  6f 6f 70 20 4c 61 74 65  "Event Loop Late |
+ | 00130  6e 63 79 20 70 39 35 22  3a 7b 22 68 69 73 74 6f  ncy p95":{"histo |
+ | 00140  72 69 63 22 3a 74 72 75  65 2c 22 75 6e 69 74 22  ric":true,"unit" |
+ | 00150  3a 22 6d 73 22 2c 22 74  79 70 65 22 3a 22 69 6e  :"ms","type":"in |
+ | 00160  74 65 72 6e 61 6c 2f 6c  69 62 75 76 2f 6c 61 74  ternal/libuv/lat |
+ | 00170  65 6e 63 79 2f 70 39 35  22 2c 22 76 61 6c 75 65  ency/p95","value |
+ | 00180  22 3a 22 31 2e 32 37 22  7d 2c 22 48 65 61 70 20  ":"1.27"},"Heap  |
+ | 00190  53 69 7a 65 22 3a 7b 22  68 69 73 74 6f 72 69 63  Size":{"historic |
+ | 001a0  22 3a 74 72 75 65 2c 22  75 6e 69 74 22 3a 22 4d  ":true,"unit":"M |
+ | 001b0  69 42 22 2c 22 74 79 70  65 22 3a 22 69 6e 74 65  iB","type":"inte |
+ | 001c0  72 6e 61 6c 2f 76 38 2f  68 65 61 70 2f 74 6f 74  rnal/v8/heap/tot |
+ | 001d0  61 6c 22 2c 22 76 61 6c  75 65 22 3a 22 35 38 2e  al","value":"58. |
+ | 001e0  38 39 22 7d 2c 22 48 65  61 70 20 55 73 61 67 65  89"},"Heap Usage |
+ | 001f0  22 3a 7b 22 68 69 73 74  6f 72 69 63 22 3a 74 72  ":{"historic":tr |
+ | 00200  75 65 2c 22 75 6e 69 74  22 3a 22 25 22 2c 22 74  ue,"unit":"%","t |
+ | 00210  79 70 65 22 3a 22 69 6e  74 65 72 6e 61 6c 2f 76  ype":"internal/v |
+ | 00220  38 2f 68 65 61 70 2f 75  73 61 67 65 22 2c 22 76  8/heap/usage","v |
+ | 00230  61 6c 75 65 22 3a 35 35  2e 34 31 7d 2c 22 55 73  alue":55.41},"Us |
+ | 00240  65 64 20 48 65 61 70 20  53 69 7a 65 22 3a 7b 22  ed Heap Size":{" |
+ | 00250  68 69 73 74 6f 72 69 63  22 3a 74 72 75 65 2c 22  historic":true," |
+ | 00260  75 6e 69 74 22 3a 22 4d  69 42 22 2c 22 74 79 70  unit":"MiB","typ |
+ | 00270  65 22 3a 22 69 6e 74 65  72 6e 61 6c 2f 76 38 2f  e":"internal/v8/ |
+ | 00280  68 65 61 70 2f 75 73 65  64 22 2c 22 76 61 6c 75  heap/used","valu |
+ | 00290  65 22 3a 22 33 32 2e 36  33 22 7d 2c 22 48 54 54  e":"32.63"},"HTT |
+ | 002a0  50 20 4d 65 61 6e 20 4c  61 74 65 6e 63 79 22 3a  P Mean Latency": |
+ | 002b0  7b 22 68 69 73 74 6f 72  69 63 22 3a 74 72 75 65  {"historic":true |
+ | 002c0  2c 22 75 6e 69 74 22 3a  22 6d 73 22 2c 22 74 79  ,"unit":"ms","ty |
+ | 002d0  70 65 22 3a 22 69 6e 74  65 72 6e 61 6c 2f 68 74  pe":"internal/ht |
+ | 002e0  74 70 2f 62 75 69 6c 74  69 6e 2f 6c 61 74 65 6e  tp/builtin/laten |
+ | 002f0  63 79 2f 70 35 30 22 2c  22 76 61 6c 75 65 22 3a  cy/p50","value": |
+ | 00300  32 36 34 2e 35 7d 2c 22  48 54 54 50 20 50 39 35  264.5},"HTTP P95 |
+ | 00310  20 4c 61 74 65 6e 63 79  22 3a 7b 22 68 69 73 74   Latency":{"hist |
+ | 00320  6f 72 69 63 22 3a 74 72  75 65 2c 22 75 6e 69 74  oric":true,"unit |
+ | 00330  22 3a 22 6d 73 22 2c 22  74 79 70 65 22 3a 22 69  ":"ms","type":"i |
+ | 00340  6e 74 65 72 6e 61 6c 2f  68 74 74 70 2f 62 75 69  nternal/http/bui |
+ | 00350  6c 74 69 6e 2f 6c 61 74  65 6e 63 79 2f 70 39 35  ltin/latency/p95 |
+ | 00360  22 2c 22 76 61 6c 75 65  22 3a 33 34 38 2e 30 39  ","value":348.09 |
+ | 00370  39 39 39 39 39 39 39 39  39 39 39 7d 2c 22 48 54  99999999999},"HT |
+ | 00380  54 50 22 3a 7b 22 68 69  73 74 6f 72 69 63 22 3a  TP":{"historic": |
+ | 00390  74 72 75 65 2c 22 75 6e  69 74 22 3a 22 72 65 71  true,"unit":"req |
+ | 003a0  2f 6d 69 6e 22 2c 22 74  79 70 65 22 3a 22 69 6e  /min","type":"in |
+ | 003b0  74 65 72 6e 61 6c 2f 68  74 74 70 2f 62 75 69 6c  ternal/http/buil |
+ | 003c0  74 69 6e 2f 72 65 71 73  22 2c 22 76 61 6c 75 65  tin/reqs","value |
+ | 003d0  22 3a 30 2e 30 35 7d 7d  7d 0a                    ":0.05}}}.       |
+epoll_ctl(14, EPOLL_CTL_MOD, 3, {EPOLLIN, {u32=3, u64=3}}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=223084488}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=223152682}) = 0
+epoll_wait(14, [], 1024, 138)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=361605534}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=361693466}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=361783921}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=361857592}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=361945641}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362023599}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362104518}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362231926}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362327991}) = 0
+gettimeofday({tv_sec=1657119874, tv_usec=498167}, NULL) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362608783}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=362679609}) = 0
+epoll_wait(14, [], 1024, 570)           = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=933542441}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=933628735}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=933718263}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=933791823}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=933879730}) = 0
+epoll_wait(14, [], 1024, 0)             = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=934196122}) = 0
+clock_gettime(CLOCK_MONOTONIC, {tv_sec=34322826, tv_nsec=934320489}) = 0
+epoll_wait(14, strace: Process 2269527 detached
+ <detached ...>

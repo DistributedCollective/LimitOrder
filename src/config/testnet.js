@@ -2,7 +2,7 @@ module.exports = {
     port: 3003,
     chainId: 31,
     orderBookChainId: 31,
-    baseAPIUrl: 'http://18.217.222.156:3003',
+    baseAPIUrl: 'http://3.144.221.129:3003',
     networkUrl: 'https://testnet.sovryn.app/rpc',
     orderBookNetwork: 'https://testnet.sovryn.app/rpc',
     contracts: {
