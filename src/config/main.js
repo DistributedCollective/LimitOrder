@@ -27,5 +27,6 @@ module.exports = {
         USDT: "0xef213441a85df4d7acbdae0cf78004e1e486bb96",
         ETHs: "0x1d931bf8656d795e50ef6d639562c5bd8ac2b78f",
         BNBs: "0x6d9659bdf5b1a1da217f7bbaf7dbaf8190e2e71b",
+        DLR: "0xc1411567d2670e24d9C4DaAa7CdA95686e1250AA"
     }
 };
