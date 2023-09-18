@@ -27,10 +27,6 @@ contract OrderBookMarginLogic is OrderBookMarginStorage {
      * This function will be called only once by the owner.
      * */
     function initialize() external onlyOwner initializer {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256(
@@ -38,7 +34,7 @@ contract OrderBookMarginLogic is OrderBookMarginStorage {
                 ),
                 keccak256("OrderBookMargin"),
                 keccak256("1"),
-                chainId,
+                30,
                 address(this)
             )
         );

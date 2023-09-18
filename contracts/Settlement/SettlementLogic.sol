@@ -92,10 +92,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     function deposit(address to) public payable override {
         uint256 amount = msg.value;
         require(amount > 0, "deposit-amount-required");
-        address receiver = msg.sender;
-        if (to != address(0)) {
-            receiver = to;
-        }
+        address receiver = to != address(0) ? to : msg.sender;
         balanceOf[receiver] += amount;
         emit Deposit(to, amount);
     }
@@ -123,10 +120,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         onlyOwner
     {
         require(_relayerFeePercent <= 1e20, "value too high");
-        uint256 oldValue = relayerFeePercent;
+        emit SetRelayerFee(msg.sender, relayerFeePercent, _relayerFeePercent);
         relayerFeePercent = _relayerFeePercent;
-
-        emit SetRelayerFee(msg.sender, oldValue, relayerFeePercent);
     }
 
     /**
@@ -134,10 +129,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
      * @param _newGas New minimum txn gas price for spot limit orders.
      * */
     function setMinSwapOrderTxFee(uint256 _newGas) public override onlyOwner {
-        uint256 oldValue = minSwapOrderTxFee;
+        emit SetMinSwapOrderTxFee(msg.sender, minSwapOrderTxFee, _newGas);
         minSwapOrderTxFee = _newGas;
-
-        emit SetMinSwapOrderTxFee(msg.sender, oldValue, minSwapOrderTxFee);
     }
 
     /**
@@ -145,10 +138,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
      * @param _newGas New minimum txn gas price for margin limit orders.
      * */
     function setMinMarginOrderTxFee(uint256 _newGas) public override onlyOwner {
-        uint256 oldValue = minMarginOrderTxFee;
+        emit SetMinMarginOrderTxFee(msg.sender, minMarginOrderTxFee, _newGas);
         minMarginOrderTxFee = _newGas;
-
-        emit SetMinMarginOrderTxFee(msg.sender, oldValue, minMarginOrderTxFee);
     }
 
     /**
@@ -161,10 +152,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         override
         onlyOwner
     {
-        uint256 oldValue = minSwapOrderSize;
+        emit SetMinSwapOrderSize(
+            msg.sender,
+            minSwapOrderSize,
+            _minSwapOrderSize
+        );
         minSwapOrderSize = _minSwapOrderSize;
-
-        emit SetMinSwapOrderSize(msg.sender, oldValue, minSwapOrderSize);
     }
 
     /**
@@ -177,10 +170,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         override
         onlyOwner
     {
-        uint256 oldValue = minMarginOrderSize;
+        emit SetMinMarginOrderSize(
+            msg.sender,
+            minMarginOrderSize,
+            _minMarginOrderSize
+        );
         minMarginOrderSize = _minMarginOrderSize;
-
-        emit SetMinMarginOrderSize(msg.sender, oldValue, minMarginOrderSize);
     }
 
     /**
@@ -188,10 +183,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
      * @param _priceFeeds New address of price feeds oracle.
      * */
     function setPriceFeeds(address _priceFeeds) public override onlyOwner {
-        address oldValue = priceFeeds;
+        emit SetPriceFeeds(msg.sender, priceFeeds, _priceFeeds);
         priceFeeds = _priceFeeds;
-
-        emit SetPriceFeeds(msg.sender, oldValue, priceFeeds);
     }
 
     /**
@@ -212,11 +205,8 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         require(msg.sender == tx.origin, "called-by-contract");
 
         address[] memory path = args.path;
-        require(args.order.fromToken == path[0], "invalid-path-0");
-        require(
-            args.order.toToken == path[path.length - 1],
-            "invalid-path-last"
-        );
+        require(args.order.fromToken == path[0], "invalid fromToken");
+        require(args.order.toToken == path[path.length - 1], "invalid toToken");
 
         // Check if the order is canceled / already fully filled
         bytes32 hash = args.order.hash();
@@ -258,11 +248,9 @@ contract SettlementLogic is ISettlement, SettlementStorage {
 
         _depositOrderAsset(args.order.maker, path[0], args.amountToFillIn);
 
-        address recipient = args.order.recipient;
-        if (path[path.length - 1] == WRBTC_ADDRESS) {
-            //change recipient to settlement for unwrap rbtc after swapping
-            recipient = address(this);
-        }
+        address recipient = path[path.length - 1] == WRBTC_ADDRESS
+            ? address(this)
+            : args.order.recipient;
 
         (
             address sourceToken,
@@ -325,7 +313,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         for (uint256 i = 0; i < args.length; i++) {
             // Returns zero of the order wasn't filled
             amountsOut[i] = fillOrder(args[i]);
-            if (amountsOut[i] > 0) {
+            if (!filled && amountsOut[i] > 0) {
                 // At least one order was filled
                 filled = true;
             }
@@ -374,6 +362,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         ) = _calculateMarginOrderFee(args.order);
 
         IERC20 collateralToken = IERC20(args.order.collateralTokenAddress);
+        // Gets the underlying token address
         address _loanTokenAsset = ISovrynLoanToken(args.order.loanTokenAddress)
             .loanTokenAddress();
 
@@ -473,7 +462,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             (principalAmounts[i], collateralAmounts[i]) = fillMarginOrder(
                 args[i]
             );
-            if (principalAmounts[i] > 0) {
+            if (!filled && principalAmounts[i] > 0) {
                 // At least one order was filled
                 filled = true;
             }
@@ -488,11 +477,12 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     function cancelOrder(Orders.Order memory order) public override {
         bytes32 hash = order.hash();
         require(msg.sender == order.maker, "not-called-by-maker");
+        require(filledAmountInOfHash[hash] < order.amountIn, "order executed");
 
         canceledOfHash[hash] = true;
         canceledHashes.push(hash);
 
-        _checkWithdrawalOnCancel(order.fromToken, order.amountIn);
+        _checkAndWithdrawOnCancel(order.fromToken, order.amountIn);
 
         emit OrderCanceled(hash, order.maker);
     }
@@ -507,18 +497,24 @@ contract SettlementLogic is ISettlement, SettlementStorage {
     {
         bytes32 hash = order.hash();
         require(msg.sender == order.trader, "not-called-by-maker");
+        require(
+            filledAmountInOfHash[hash] <
+                order.collateralTokenSent + order.loanTokenSent,
+            "order executed"
+        );
 
         if (order.collateralTokenSent > 0) {
-            _checkWithdrawalOnCancel(
+            _checkAndWithdrawOnCancel(
                 order.collateralTokenAddress,
                 order.collateralTokenSent
             );
         }
 
         if (order.loanTokenSent > 0) {
+            // Gets the underlying token address
             address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
                 .loanTokenAddress();
-            _checkWithdrawalOnCancel(_loanTokenAsset, order.loanTokenSent);
+            _checkAndWithdrawOnCancel(_loanTokenAsset, order.loanTokenSent);
         }
 
         canceledOfHash[hash] = true;
@@ -637,6 +633,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             uint256 actualLoanTokenAmount
         )
     {
+        // Gets the underlying token address
         address _loanTokenAsset = ISovrynLoanToken(order.loanTokenAddress)
             .loanTokenAddress();
 
@@ -772,7 +769,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
      * @param token The token address.
      * @param amount Amount to be withdrawn.
      * */
-    function _checkWithdrawalOnCancel(address token, uint256 amount) internal {
+    function _checkAndWithdrawOnCancel(address token, uint256 amount) internal {
         if (token == WRBTC_ADDRESS && balanceOf[msg.sender] >= amount) {
             withdraw(amount);
         }

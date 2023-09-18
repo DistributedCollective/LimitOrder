@@ -7,3 +7,9 @@ node_modules
 src/store.json
 logs
 public/dist
+coverage/
+coverage.json
+*.code-workspace
+*.log
+.DS_Store
+.vscode/

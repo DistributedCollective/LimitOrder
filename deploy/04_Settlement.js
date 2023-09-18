@@ -12,7 +12,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let sovrynSwapNetwork;
     let wrbtcAddress, xusdAddress;
     const chainId = network.name === "mainnet" ? 30 : await getChainId();
-    let orderBookChainId = chainId;
+    let orderBookChainId = 30;
     let orderBookAdr, orderBookMarginAdr;
     let priceFeedAdr;
   
@@ -37,7 +37,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         multisig = "0x924f5ad34698Fd20c90Fe5D5A8A0abd3b42dc711";
         xusdAddress = "0xb5999795be0ebb5bab23144aa5fd6a02d080299f";
         priceFeedAdr = "0x437AC62769f386b2d238409B7f0a7596d36506e4";
-        orderBookChainId = 31;
     }
 
     if (network.name === 'mainnet') {

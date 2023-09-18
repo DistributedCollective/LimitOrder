@@ -32,10 +32,13 @@ contract SettlementStorage is Initializable, Ownable {
     //RBTC/WRBTC addresses
     address public WRBTC_ADDRESS;
 
+    // Approval
     uint256 public constant UNLIMITED_ALLOWANCE = (2**256) - 1;
 
+    // AMM contract
     address public sovrynSwapNetwork;
 
+    // Price oracle
     address public priceFeeds;
 
     // Address of OrderBook proxy
