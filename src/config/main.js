@@ -2,9 +2,9 @@ module.exports = {
     port: 3005,
     chainId: 30,
     orderBookChainId: 30,
-    baseAPIUrl: 'http://18.118.207.238:3005/',
-    networkUrl: 'https://rsk-internal.sovryn.app/rpc',
-    orderBookNetwork: 'https://testnet.sovryn.app/rpc',
+    baseAPIUrl: 'http://3.139.253.72:3005/',
+    networkUrl: 'https://mainnet-backend.sovryn.app/rpc',
+    orderBookNetwork: 'https://testnet-backend.sovryn.app/rpc',
     contracts: {
         settlement: '0x823e55322a395516ac3930F4C1ad9C7c2Fe2EACd',
         orderBook: '0x1c910918d6D05feC83e2376D57226d1b08324028',
@@ -17,6 +17,7 @@ module.exports = {
         iDOC: "0xd8d25f03ebba94e15df2ed4d6d38276b595593c1",
         iUSDT: "0x849c47f9c259e9d62f289bf1b2729039698d8387",
         iBPRo: "0x6E2fb26a60dA535732F8149b25018C9c0823a715",
+        iDllr: "0x077FCB01cAb070a30bC14b44559C96F529eE017F"
     },
     tokens: {
         SOV: "0xefc78fc7d48b64958315949279ba181c2114abbd",

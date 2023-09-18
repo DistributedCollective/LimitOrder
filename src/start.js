@@ -61,7 +61,7 @@ const validateContractParams = (res, rawTx, from, contractAddress) => {
         s: parsedTx.s,
         v: parsedTx.v
     });
-    // console.log(signer, parsedTx.from);
+     console.log(signer, parsedTx.from);
     if (signer !== from) {
         res.status(500).json({ error: 'Invalid signature' });
         return false;
