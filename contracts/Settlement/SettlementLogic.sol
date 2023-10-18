@@ -242,7 +242,7 @@ contract SettlementLogic is ISettlement, SettlementStorage {
             );
 
         require(
-            swapbackReturn >= args.amountToFillOut,
+            swapbackReturn >= actualAmountIn.mul(args.order.amountOutMin).div(args.order.amountIn),
             "insufficient-amount-out"
         );
 
