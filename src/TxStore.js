@@ -9,12 +9,16 @@ const {
 
 const filePath = path.resolve(__dirname, './store.json');
 
+const BLOCK_BATCH = 9990;
+const MAX_CHECK_BLOCKS = 100000; //check order created events for 100,000 previous blocks
+
 class TxStore {
     constructor() {
         this.orderTxs = {};
     }
 
     async init(provider) {
+        /** @type {ethers.providers.Provider} */
         this.provider = provider;
         this.orderBookContract = new ethers.Contract(config.contracts.orderBook, orderBookABI, provider);
         this.orderBookMarginContract = new ethers.Contract(config.contracts.orderBookMargin, orderBookMarginABI, provider);
@@ -50,23 +54,37 @@ class TxStore {
 
     async loadAllOrders() {
         try {
-            console.log('Loading all created order hashes');
-            const events = (await this.orderBookContract.queryFilter(this.orderBookContract.filters.OrderCreated())) || [];
-            const marginEvents = (await this.orderBookMarginContract.queryFilter(this.orderBookMarginContract.filters.MarginOrderCreated())) || [];
-            console.log('Total %s spot orders, %s margin orders', events.length, marginEvents.length);
+            const currentBlock = await this.provider.getBlockNumber();
+            let fromBlock = await this.getLastTxBlock();
 
-            events.concat(marginEvents).forEach(event => {
-                const hash = event && event.args && event.args.hash;
-                if (hash && !this.orderTxs[hash]) {
-                    const data = {
-                        tx: event.transactionHash,
-                    };
-                    if (event.args.limitPrice) {
-                        data.limitPrice = String(event.args.limitPrice);
+            fromBlock = Math.max(fromBlock || 0, currentBlock - MAX_CHECK_BLOCKS);
+
+            console.log('Loading created order hashes in block range:', fromBlock, currentBlock);
+
+            for(;fromBlock < currentBlock; fromBlock += BLOCK_BATCH) {
+                const toBlock = Math.min(currentBlock, fromBlock + BLOCK_BATCH);
+
+                let events = await this.orderBookContract.queryFilter(this.orderBookContract.filters.OrderCreated(), fromBlock, toBlock);
+                let marginEvents = await this.orderBookMarginContract.queryFilter(this.orderBookMarginContract.filters.MarginOrderCreated(), fromBlock, toBlock);
+
+                events = events || [];
+                marginEvents = marginEvents || [];
+
+                console.log('Blocks %s - %s: Total %s spot orders, %s margin orders', fromBlock, toBlock, events.length, marginEvents.length);
+    
+                events.concat(marginEvents).forEach(event => {
+                    const hash = event && event.args && event.args.hash;
+                    if (hash && !this.orderTxs[hash]) {
+                        const data = {
+                            tx: event.transactionHash,
+                        };
+                        if (event.args.limitPrice) {
+                            data.limitPrice = String(event.args.limitPrice);
+                        }
+                        this.orderTxs[hash] = data;
                     }
-                    this.orderTxs[hash] = data;
-                }
-            });
+                });
+            }
 
             await this.write();
         } catch (e) {
@@ -101,6 +119,15 @@ class TxStore {
 
     getTx(orderHash) {
         return this.orderTxs[orderHash] || "";
+    }
+
+    async getLastTxBlock() {
+        let lng = Object.values(this.orderTxs).length;
+        const lastTx = Object.values(this.orderTxs)[lng - 1];
+        if (lastTx && lastTx.tx) {
+            const tx = await this.provider.getTransaction(lastTx.tx);
+            return tx.blockNumber;
+        }
     }
 }
 
