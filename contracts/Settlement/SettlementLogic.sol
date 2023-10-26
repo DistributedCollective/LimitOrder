@@ -3,77 +3,10 @@ pragma solidity =0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./SettlementStorage.sol";
-import "../interfaces/ISovrynLoanToken.sol";
-import "../libraries/openzeppelin/SafeMath.sol";
-import "../interfaces/IERC20.sol";
-import "../libraries/openzeppelin/SafeERC20.sol";
-import "../interfaces/IWrbtcERC20.sol";
-import "../libraries/Orders.sol";
-import "../libraries/MarginOrders.sol";
-import "../libraries/EIP712.sol";
-import "../libraries/RSKAddrValidator.sol";
-import "../interfaces/ISettlement.sol";
-import "../interfaces/IPriceFeeds.sol";
-import "../interfaces/ISovrynSwapNetwork.sol";
 
 contract SettlementLogic is ISettlement, SettlementStorage {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-
-    /**
-     * @notice Replace constructor with initialize function for Upgradable Contracts
-     * This function will be called only once by the owner
-     * @param orderBookChainId Chain Id
-     * @param _orderBookAddress OrderBook proxy address
-     * @param _marginOrderBookAddress Margin OrderBook proxy address
-     * @param _sovrynSwapNetwork SovrynSwapNetwork address
-     * @param _WRBTC wRBTC address
-     * */
-    function initialize(
-        uint256 orderBookChainId,
-        address _orderBookAddress,
-        address _marginOrderBookAddress,
-        address _sovrynSwapNetwork,
-        address _priceFeeds,
-        address _WRBTC
-    ) external onlyOwner initializer {
-        DOMAIN_SEPARATOR1 = keccak256(
-            abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
-                keccak256("OrderBook"),
-                keccak256("1"),
-                orderBookChainId,
-                _orderBookAddress
-            )
-        );
-        DOMAIN_SEPARATOR2 = keccak256(
-            abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
-                keccak256("OrderBookMargin"),
-                keccak256("1"),
-                orderBookChainId,
-                _marginOrderBookAddress
-            )
-        );
-
-        sovrynSwapNetwork = _sovrynSwapNetwork;
-        WRBTC_ADDRESS = _WRBTC;
-        orderBookAddress = _orderBookAddress;
-        orderBookMarginAddress = _marginOrderBookAddress;
-    }
-
-    /**
-     * @notice Fallback function to receive tokens.
-     * */
-    receive() external payable {
-        if (msg.sender != WRBTC_ADDRESS) {
-            deposit(msg.sender);
-        }
-    }
 
 
     /**
