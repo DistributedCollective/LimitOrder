@@ -3,11 +3,9 @@ pragma solidity =0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./SettlementStorage.sol";
+import "../interfaces/ISettlement.sol";
 
 contract SettlementLogic is ISettlement, SettlementStorage {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-
 
     /**
      * @notice Withdraw user balance.

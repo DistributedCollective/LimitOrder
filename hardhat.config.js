@@ -44,6 +44,16 @@ const accounts = {
     mnemonic: "test test test test test test test test test test test junk",
 };
 
+const testnetPKs = 
+    [process.env.PRIVATE_KEY ?? "", process.env.PRIVATE_KEY_RELAYER ?? ""]
+.filter((item, i, arr) => item !== "" && arr.indexOf(item) === i);
+const testnetAccounts = testnetPKs.length > 0 ? testnetPKs : accounts;
+
+const mainnetPKs = 
+   [process.env.PRIVATE_KEY ?? ""] 
+.filter((item, i, arr) => item !== "" && arr.indexOf(item) === i);
+const mainnetAccounts = mainnetPKs.length > 0 ? mainnetPKs : accounts;
+
 module.exports = {
     solidity: {
         compilers: [
@@ -101,7 +111,7 @@ module.exports = {
         },
         rsktestnet: {
             url: "https://testnet.sovryn.app/rpc",
-            accounts: [process.env.PRIVATE_KEY, process.env.PRIVATE_KEY_RELAYER],
+            accounts: testnetAccounts,
             network_id: 31,
             confirmations: 4,
             gasMultiplier: 1.25,
@@ -110,7 +120,7 @@ module.exports = {
         },
         mainnet: {
             url: "https://mainnet.sovryn.app/rpc",
-            accounts: [process.env.PRIVATE_KEY],
+            accounts: mainnetAccounts,
             network_id: 30,
             //timeout: 20000, // increase if needed; 20000 is the default value
         },
