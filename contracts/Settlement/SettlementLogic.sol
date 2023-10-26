@@ -75,17 +75,6 @@ contract SettlementLogic is ISettlement, SettlementStorage {
         }
     }
 
-    /**
-     * @notice User deposits a balance to the contract.
-     * @param to Receiver of the funds.
-     * */
-    function deposit(address to) public payable override {
-        uint256 amount = msg.value;
-        require(amount > 0, "deposit-amount-required");
-        address receiver = to != address(0) ? to : msg.sender;
-        balanceOf[receiver] += amount;
-        emit Deposit(to, amount);
-    }
 
     /**
      * @notice Withdraw user balance.

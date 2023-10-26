@@ -8,10 +8,7 @@ import "../libraries/MarginOrders.sol";
 import "./IPriceFeeds.sol";
 
 interface ISettlement {
-    event Deposit(address to, uint256 amount);
     event Withdrawal(address receiver, uint256 amount);
-
-    function deposit(address to) external payable;
 
     function withdraw(uint256 amount) external;
 }
